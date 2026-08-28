@@ -49,7 +49,7 @@ jobs:
       - name: Organize & Rename APKs
         id: rename_apks
         run: |
-          TAG_NAME=${GITHUB_REF#refs/tags/}
+          TAG_NAME=$(echo "${GITHUB_REF#refs/tags/}" | tr '/' '-')
           RELEASE_DIR="${{ github.workspace }}/release-artifacts"
           mkdir -p "$RELEASE_DIR"
           cd app/build/outputs/apk/release/
