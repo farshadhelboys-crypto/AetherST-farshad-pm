@@ -393,6 +393,20 @@ private fun DashboardContent(viewModel: AetherViewModel, scaleFactor: Float, pla
                 modifier = Modifier.align(Alignment.BottomCenter)
             )
         }
+        if (showNavBar) {
+            Button(
+                onClick = { navController.navigate(Screen.LiveTv.route) },
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(end = 16.dp, bottom = totalNavBarHeight + 16.dp)
+                    .size(56.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = IosNavActiveBlue),
+                shape = CircleShape,
+                contentPadding = PaddingValues(0.dp)
+            ) {
+                Icon(Icons.Default.PlayArrow, contentDescription = "Iran International Live")
+            }
+        }
         if (isWaitingForLoginCode) {
             ZeroTrustLoginDialog(
                 onSubmit = { viewModel.submitLoginCode(it) },
