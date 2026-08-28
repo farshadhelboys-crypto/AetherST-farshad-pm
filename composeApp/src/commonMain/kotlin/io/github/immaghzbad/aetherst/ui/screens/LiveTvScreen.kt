@@ -22,9 +22,17 @@ fun LiveTvScreen(onBack: () -> Unit) {
             IconButton(onClick = onBack) {
                 Icon(Icons.Default.ArrowBack, contentDescription = null)
             }
-            Spacer(Modifier.width(8.dp))
-            Text("پخش زنده ایران اینترنشنال")
+
+        Spacer(Modifier.width(8.dp))
+            Column {
+                Text("پخش زنده ایران اینترنشنال")
+                Text(
+                    text = "Live International added by Farshad pm",
+                    style = MaterialTheme.typography.labelSmall
+                )
+            }
         }
+
         PlatformWebView(
             url = "https://www.iranintl.com/live",
             modifier = Modifier.weight(1f).fillMaxWidth()
