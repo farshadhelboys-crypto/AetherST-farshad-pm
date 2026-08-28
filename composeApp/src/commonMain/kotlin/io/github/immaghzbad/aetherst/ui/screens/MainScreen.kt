@@ -1,7 +1,6 @@
 ﻿package io.github.immaghzbad.aetherst.shared.ui.screens
 
 import io.github.immaghzbad.aetherst.shared.ui.theme.AppPalette
-import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
