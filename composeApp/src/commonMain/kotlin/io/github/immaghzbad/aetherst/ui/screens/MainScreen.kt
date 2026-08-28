@@ -282,6 +282,9 @@ private fun DashboardContent(viewModel: AetherViewModel, scaleFactor: Float, pla
                     config = config
                 )
             }
+            composable(Screen.LiveTv.route) {
+                LiveTvScreen(onBack = { navController.popBackStack() })
+            }
             composable(Screen.AutoDetect.route) {
                 AutoDetectScreen(
                     onBack = { navController.popBackStack() },
