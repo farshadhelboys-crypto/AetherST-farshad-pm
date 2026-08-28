@@ -1,4 +1,4 @@
-name: Build & Release Multi-APK
+ه789name: Build & Release Multi-APK
 
 on:
   workflow_dispatch:
@@ -68,7 +68,11 @@ jobs:
             fi
             cp "$apk" "$RELEASE_DIR/$new_name"
           done
-
+      - name: Upload APKs as Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: AetherST-APKs
+          path: release-artifacts/*.apk
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
