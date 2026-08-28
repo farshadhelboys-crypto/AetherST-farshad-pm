@@ -114,7 +114,8 @@ private sealed class Screen(val route: String, val tabIndex: Int?) {
     object RoutingRules : Screen("routing", null)
     object AutoDetect : Screen("autodetect", null)
     object SpeedTest : Screen("speedtest", null)
-}
+    object LiveTv : Screen("livetv", null)
+    }
 
 @Composable
 fun MainScreen(viewModel: AetherViewModel, onboardingViewModel: OnboardingViewModel, platformContext: PlatformContext) {
