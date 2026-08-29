@@ -29,10 +29,10 @@ private val IosActiveBlue = AppPalette.accent
 private val IosActiveGreen = AppPalette.statusConnected
 private val IosPurple = AppPalette.accentVariant
 
-private const val UserGithubUrl = "https://github.com/immaghzbad"
-private const val AetherRepositoryUrl = "https://github.com/CluvexStudio/Aether"
+private const val DeveloperTelegramUrl = "https://t.me/farshad_pm_org"
+private const val AetherSourceRepositoryUrl = "https://github.com/immaghzbad/AetherST"
+private const val AetherCoreRepositoryUrl = "https://github.com/CluvexStudio/Aether"
 private const val HevRepositoryUrl = "https://github.com/heiher/hev-socks5-tunnel"
-private const val DeveloperTelegramUrl = "https://t.me/PowerSigma"
 
 @Composable
 fun AboutUsScreen(
@@ -62,7 +62,7 @@ fun AboutUsScreen(
                     SectionTitle("Overview")
                     Spacer(Modifier.height(4.dp))
                     Text(
-                        text = "AetherST is a modern client for the Aether tunnel ecosystem. It turns advanced protocol management into a calm, focused experience — real-time stats, intelligent presets, and zero clutter.",
+                        text = "Feri PM Tunnel is a secure, private connection client focused on reliability and simplicity — real-time stats, smart presets, and zero clutter.",
                         style = MaterialTheme.typography.bodyMedium,
                         color = colors.textSecondary,
                         fontSize = 14.sp,
@@ -72,7 +72,7 @@ fun AboutUsScreen(
             }
             item {
                 SectionCard {
-                    SectionTitle("Why AetherST")
+                    SectionTitle("Why Feri PM Tunnel")
                     InfoRow(
                         title = "Censorship-Resistant",
                         description = "Engineered to bypass DPI and protocol-based filtering."
@@ -96,45 +96,35 @@ fun AboutUsScreen(
             }
             item {
                 SectionCard {
-                    SectionTitle("Architecture")
-                    InfoRow(
-                        title = "The Aether Core",
-                        description = "Open-source proxy core built for stability in restricted networks, using dynamic gateway discovery and traffic obfuscation."
-                    )
-                    AppDivider()
-                    InfoRow(
-                        title = "Native HEV Stack",
-                        description = "A specialized SOCKS5 tunnel written in C that bridges Android's TUN interface with the Aether core for minimal overhead."
-                    )
-                    AppDivider()
-                    InfoRow(
-                        title = "SocksTunBridge",
-                        description = "A custom Kotlin bridge managing traffic between the system TUN and the proxy core with high compatibility."
+                    SectionTitle("Contact")
+                    IosActionRow(
+                        iconBg = IosActiveBlue.copy(alpha = 0.16f),
+                        title = "Telegram",
+                        subtitle = "@farshad_pm_org",
+                        onClick = { uriHandler.openUri(DeveloperTelegramUrl) }
                     )
                 }
             }
             item {
                 SectionCard {
-                    SectionTitle("Links & Source")
-                    IosActionRow(
-                        iconBg = IosActiveBlue.copy(alpha = 0.16f),
-                        title = "Project Maintainer",
-                        subtitle = "github.com/immaghzbad",
-                        onClick = { uriHandler.openUri(UserGithubUrl) }
+                    SectionTitle("Open Source Credits")
+                    InfoRow(
+                        title = "Built on AetherST",
+                        description = "This app is based on the AetherST client, an open-source project by immaghzbad, redistributed with attribution as required by its license."
                     )
                     AppDivider()
                     IosActionRow(
                         iconBg = IosActiveBlue.copy(alpha = 0.16f),
-                        title = "Telegram Channel",
-                        subtitle = "Support, chat & dev updates",
-                        onClick = { uriHandler.openUri(DeveloperTelegramUrl) }
+                        title = "AetherST Source",
+                        subtitle = "github.com/immaghzbad/AetherST",
+                        onClick = { uriHandler.openUri(AetherSourceRepositoryUrl) }
                     )
                     AppDivider()
                     IosActionRow(
                         iconBg = IosActiveGreen.copy(alpha = 0.16f),
-                        title = "Aether Repository",
-                        subtitle = "Engine source & protocol",
-                        onClick = { uriHandler.openUri(AetherRepositoryUrl) }
+                        title = "Aether Core",
+                        subtitle = "Engine source & protocol (CluvexStudio)",
+                        onClick = { uriHandler.openUri(AetherCoreRepositoryUrl) }
                     )
                     AppDivider()
                     IosActionRow(
@@ -158,7 +148,7 @@ private fun AboutHero(appVersion: String) {
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
-            text = "AetherST",
+            text = "Feri PM Tunnel",
             style = MaterialTheme.typography.headlineMedium,
             fontWeight = FontWeight.Bold,
             color = colors.textPrimary,
@@ -166,7 +156,7 @@ private fun AboutHero(appVersion: String) {
         )
         Spacer(Modifier.height(6.dp))
         Text(
-            text = "Advanced Secure Tunneling Client",
+            text = "Secure Tunneling Client",
             style = MaterialTheme.typography.bodyMedium,
             color = colors.textSecondary,
             fontSize = 14.sp,
@@ -271,11 +261,11 @@ private fun AboutFooter() {
             Icon(
                 imageVector = Icons.Default.Favorite,
                 contentDescription = null,
-                tint = Color(0xFFFF375F),
+                tint = Color(0xFFD4AF37),
                 modifier = Modifier.size(14.dp)
             )
             Text(
-                text = " by PowerSigma Team",
+                text = " by Feri PM",
                 color = colors.textSecondary,
                 fontSize = 13.sp,
                 fontWeight = FontWeight.Medium
@@ -283,7 +273,7 @@ private fun AboutFooter() {
         }
         Spacer(Modifier.height(8.dp))
         Text(
-            text = "AetherST is an independent client project. The Aether core is developed by CluvexStudio and distributed under its own open-source license.",
+            text = "Feri PM Tunnel is an independent client built on the open-source AetherST project. The Aether core is developed by CluvexStudio and distributed under its own open-source license.",
             style = MaterialTheme.typography.bodySmall,
             color = colors.textSecondary.copy(alpha = 0.7f),
             textAlign = TextAlign.Center,
