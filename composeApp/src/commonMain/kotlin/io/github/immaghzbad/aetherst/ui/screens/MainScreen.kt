@@ -1,5 +1,7 @@
 ﻿package io.github.immaghzbad.aetherst.shared.ui.screens
 
+import androidx.compose.material.icons.filled.LiveTv
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.foundation.layout.PaddingValues
 import io.github.immaghzbad.aetherst.shared.ui.theme.AppPalette
@@ -393,10 +395,12 @@ private fun DashboardContent(viewModel: AetherViewModel, scaleFactor: Float, pla
                 scaleFactor = scaleFactor,
                 modifier = Modifier.align(Alignment.BottomCenter)
             )
-        }
+        }}
+    
         if (showNavBar) {
+            val uriHandler = LocalUriHandler.current
             Button(
-                onClick = { navController.navigate(Screen.LiveTv.route) },
+                onClick = { uriHandler.openUri("https://www.iranintl.com/live") },
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
                     .padding(end = 16.dp, bottom = totalNavBarHeight + 16.dp)
@@ -405,10 +409,10 @@ private fun DashboardContent(viewModel: AetherViewModel, scaleFactor: Float, pla
                 shape = CircleShape,
                 contentPadding = PaddingValues(0.dp)
             ) {
-                Icon(Icons.Default.PlayArrow, contentDescription = "Iran International Live")
+                Icon(Icons.Default.LiveTv, contentDescription = "Iran International Live")
             }
         }
-        if (isWaitingForLoginCode) {
+       if (isWaitingForLoginCode) {
             ZeroTrustLoginDialog(
                 onSubmit = { viewModel.submitLoginCode(it) },
                 onDismiss = { viewModel.submitLoginCode("") },
