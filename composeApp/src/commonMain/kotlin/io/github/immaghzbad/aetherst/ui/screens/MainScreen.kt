@@ -1,8 +1,7 @@
-﻿package io.github.immaghzbad.aetherst.shared.ui.screens
+package io.github.immaghzbad.aetherst.shared.ui.screens
 
 import androidx.compose.material.icons.filled.LiveTv
 import androidx.compose.ui.platform.LocalUriHandler
-import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.foundation.layout.PaddingValues
 import io.github.immaghzbad.aetherst.shared.ui.theme.AppPalette
 import androidx.compose.animation.core.Spring
@@ -117,8 +116,7 @@ private sealed class Screen(val route: String, val tabIndex: Int?) {
     object RoutingRules : Screen("routing", null)
     object AutoDetect : Screen("autodetect", null)
     object SpeedTest : Screen("speedtest", null)
-    object LiveTv : Screen("livetv", null)
-    }
+}
 
 @Composable
 fun MainScreen(viewModel: AetherViewModel, onboardingViewModel: OnboardingViewModel, platformContext: PlatformContext) {
@@ -285,9 +283,6 @@ private fun DashboardContent(viewModel: AetherViewModel, scaleFactor: Float, pla
                     config = config
                 )
             }
-            composable(Screen.LiveTv.route) {
-                LiveTvScreen(onBack = { navController.popBackStack() })
-            }
             composable(Screen.AutoDetect.route) {
                 AutoDetectScreen(
                     onBack = { navController.popBackStack() },
@@ -395,8 +390,7 @@ private fun DashboardContent(viewModel: AetherViewModel, scaleFactor: Float, pla
                 scaleFactor = scaleFactor,
                 modifier = Modifier.align(Alignment.BottomCenter)
             )
-        }}
-    
+        }
         if (showNavBar) {
             val uriHandler = LocalUriHandler.current
             Button(
@@ -412,7 +406,7 @@ private fun DashboardContent(viewModel: AetherViewModel, scaleFactor: Float, pla
                 Icon(Icons.Default.LiveTv, contentDescription = "Iran International Live")
             }
         }
-       if (isWaitingForLoginCode) {
+        if (isWaitingForLoginCode) {
             ZeroTrustLoginDialog(
                 onSubmit = { viewModel.submitLoginCode(it) },
                 onDismiss = { viewModel.submitLoginCode("") },
