@@ -129,7 +129,7 @@ private fun OnboardingHeader(scaleFactor: Float) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Spacer(modifier = Modifier.height((48 * scaleFactor).dp))
         Text(
-            text = "AetherST",
+            text = "Feri Pm Tunnel",
             style = MaterialTheme.typography.headlineLarge,
             fontWeight = FontWeight.Bold,
             color = Color.White,
@@ -162,7 +162,7 @@ private fun WelcomeStep(onGetStarted: () -> Unit, scaleFactor: Float) {
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
-            text = "Welcome to AetherST",
+            text = "Welcome to Feri Pm Tunnel، نامحدود برای همیشه ",
             style = MaterialTheme.typography.headlineMedium,
             color = Color.White,
             fontWeight = FontWeight.Bold,
@@ -441,7 +441,7 @@ private fun VerifyingIndicator(scaleFactor: Float) {
 
 @Composable
 private fun VpnPermissionStep(state: OnboardingState, onRequest: () -> Unit, scaleFactor: Float) {
-    PermissionStepWrapper(icon = { Icon(Icons.Default.Lock, contentDescription = null, tint = AppPalette.accent, modifier = Modifier.size((32 * scaleFactor).dp)) }, title = "Allow VPN Access", description = "AetherST needs VPN permission to create a secure tunnel. Your current connection remains untouched for now.", buttonLabel = "Allow Access", state = state, onRequest = onRequest, onSkip = null, scaleFactor = scaleFactor)
+    PermissionStepWrapper(icon = { Icon(Icons.Default.Lock, contentDescription = null, tint = AppPalette.accent, modifier = Modifier.size((32 * scaleFactor).dp)) }, title = "Allow VPN Access", description = "Feri Pm Tunnel needs VPN permission to create a secure tunnel. Your current connection remains untouched for now.", buttonLabel = "Allow Access", state = state, onRequest = onRequest, onSkip = null, scaleFactor = scaleFactor)
 }
 
 @Composable
@@ -451,7 +451,7 @@ private fun NotificationPermissionStep(state: OnboardingState, onRequest: () -> 
 
 @Composable
 private fun BatteryOptimizationStep(state: OnboardingState, onRequest: () -> Unit, onSkip: () -> Unit, scaleFactor: Float) {
-    PermissionStepWrapper(icon = { Icon(Icons.Default.BatteryAlert, contentDescription = null, tint = AppPalette.accent, modifier = Modifier.size((32 * scaleFactor).dp)) }, title = "Unrestricted Background Service", description = "To ensure a stable and persistent tunnel connection, please disable battery optimizations for AetherST.", buttonLabel = "Disable Restrictions", state = state, onRequest = onRequest, onSkip = onSkip, scaleFactor = scaleFactor)
+    PermissionStepWrapper(icon = { Icon(Icons.Default.BatteryAlert, contentDescription = null, tint = AppPalette.accent, modifier = Modifier.size((32 * scaleFactor).dp)) }, title = "Unrestricted Background Service", description = "To ensure a stable and persistent tunnel connection, please disable battery optimizations for Feri Pm Tunnel.", buttonLabel = "Disable Restrictions", state = state, onRequest = onRequest, onSkip = onSkip, scaleFactor = scaleFactor)
 }
 
 @Composable
@@ -462,7 +462,7 @@ private fun SuccessStep(onFinish: () -> Unit, scaleFactor: Float) {
         Text("Setup Complete", style = MaterialTheme.typography.headlineSmall, color = Color.White, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, fontSize = (24 * scaleFactor).sp)
         Spacer(modifier = Modifier.height((16 * scaleFactor).dp))
         Text(
-            text = "AetherST is ready to protect your connection. You can now enter the dashboard and start the tunnel.",
+            text = "Feri Pm Tunnel is ready to protect your connection. You can now enter the dashboard and start the tunnel.",
             color = AppPalette.textSecondary,
             textAlign = TextAlign.Center,
             fontSize = (14 * scaleFactor).sp
