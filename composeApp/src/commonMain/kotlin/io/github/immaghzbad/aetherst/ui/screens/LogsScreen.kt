@@ -142,14 +142,14 @@ fun LogsScreen(
             ) {
                 Column {
                     Text(
-                        text = "AetherST Logs",
+                        text = "گزارش‌های Feri Pm Tunnel",
                         style = MaterialTheme.typography.headlineMedium,
                         fontWeight = FontWeight.Bold,
                         color = Color.White,
                         fontSize = (26 * scaleFactor).sp
                     )
                     Text(
-                        text = "App & Aether Core Logs",
+                        text = "گزارش‌های برنامه و هسته",
                         style = MaterialTheme.typography.bodySmall,
                         color = IosSecondaryLabel,
                         fontSize = (11 * scaleFactor).sp
@@ -160,13 +160,13 @@ fun LogsScreen(
                     IconButton(
                         onClick = {
                             viewModel.copyLogs()
-                            onShowToast("Logs copied to clipboard", false)
+                            onShowToast("گزارش‌ها در کلیپ‌بورد کپی شدند", false)
                         },
                         modifier = Modifier.size((40 * scaleFactor).dp).testTag("copy_logs_button")
                     ) {
                         Icon(
                             imageVector = Icons.Default.ContentCopy,
-                            contentDescription = "Copy Logs",
+                            contentDescription = "کپی گزارش‌ها",
                             tint = IosActiveBlue,
                             modifier = Modifier.size((20 * scaleFactor).dp)
                         )
@@ -178,7 +178,7 @@ fun LogsScreen(
                     ) {
                         Icon(
                             imageVector = Icons.Default.Share,
-                            contentDescription = "Share Logs",
+                            contentDescription = "اشتراک‌گذاری گزارش‌ها",
                             tint = IosActiveBlue,
                             modifier = Modifier.size((20 * scaleFactor).dp)
                         )
@@ -190,7 +190,7 @@ fun LogsScreen(
                     ) {
                         Icon(
                             imageVector = Icons.Default.Delete,
-                            contentDescription = "Clear Logs",
+                            contentDescription = "پاک کردن گزارش‌ها",
                             tint = IosErrorRed,
                             modifier = Modifier.size((20 * scaleFactor).dp)
                         )
@@ -213,13 +213,13 @@ fun LogsScreen(
                     ) {
                         Icon(
                             imageVector = Icons.Default.Info,
-                            contentDescription = "Info",
+                            contentDescription = "اطلاعات",
                             tint = IosActiveBlue,
                             modifier = Modifier.size((18 * scaleFactor).dp)
                         )
                         Spacer(modifier = Modifier.width((10 * scaleFactor).dp))
                         Text(
-                            text = "Core logging is OFF to eliminate RAM overhead. Set Log Level in Settings to record engine events.",
+                            text = "ثبت گزارش هسته غیرفعال است تا مصرف حافظه کاهش یابد. سطح گزارش را در تنظیمات تغییر دهید تا رویدادهای موتور ثبت شوند.",
                             style = MaterialTheme.typography.bodySmall,
                             color = IosSecondaryLabel,
                             fontSize = (10 * scaleFactor).sp,
@@ -254,14 +254,14 @@ fun LogsScreen(
                     ) {
                         Icon(
                             imageVector = Icons.Default.Search,
-                            contentDescription = "Search",
+                            contentDescription = "جستجو",
                             tint = IosSecondaryLabel,
                             modifier = Modifier.size((18 * scaleFactor).dp)
                         )
                         Spacer(modifier = Modifier.width((8 * scaleFactor).dp))
                         Box(contentAlignment = Alignment.CenterStart) {
                             if (searchQuery.isEmpty()) {
-                                Text("Search logs...", color = IosSecondaryLabel, fontSize = (13 * scaleFactor).sp)
+                                Text("جستجو در گزارش‌ها...", color = IosSecondaryLabel, fontSize = (13 * scaleFactor).sp)
                             }
                             innerTextField()
                         }
@@ -300,9 +300,9 @@ fun LogsScreen(
                     ) {
                         Text(
                             text = when (label) {
-                                "CORE" -> "AETHER CORE"
-                                "APP" -> "APP ONLY"
-                                else -> "ALL SOURCES"
+                                "CORE" -> "هسته"
+                                "APP" -> "برنامه"
+                                else -> "همه منابع"
                             },
                             style = MaterialTheme.typography.labelSmall,
                             fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
@@ -324,11 +324,11 @@ fun LogsScreen(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 val filters = listOf(
-                    "ALL" to null,
-                    "INFO" to LogLevel.INFO,
-                    "WARN" to LogLevel.WARN,
-                    "ERROR" to LogLevel.ERROR,
-                    "DEBUG" to LogLevel.DEBUG
+                    "همه" to null,
+                    "اطلاعات" to LogLevel.INFO,
+                    "اخطار" to LogLevel.WARN,
+                    "خطا" to LogLevel.ERROR,
+                    "اشکال‌زدایی" to LogLevel.DEBUG
                 )
 
                 filters.forEach { (label, level) ->
@@ -368,9 +368,9 @@ fun LogsScreen(
                         contentAlignment = Alignment.Center
                     ) {
                         val msg = if (config.coreLogLevel == AetherLogLevel.OFF && config.appLogLevel == AetherLogLevel.OFF) {
-                            "Logging disabled in Config"
+                            "ثبت گزارش در تنظیمات غیرفعال است"
                         } else {
-                            "No log records found"
+                            "هیچ گزارشی یافت نشد"
                         }
                         Text(
                             text = msg,
@@ -444,7 +444,7 @@ fun LogsScreen(
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.ArrowDownward,
-                                    contentDescription = "Scroll to bottom",
+                                    contentDescription = "رفتن به انتهای لیست",
                                     modifier = Modifier.size(18.dp)
                                 )
                             }
@@ -527,7 +527,7 @@ fun IosLogLineItem(
                     color = if (isCoreEntry) AppPalette.accentVariant.copy(alpha = 0.3f) else Color.White.copy(alpha = 0.08f)
                 ) {
                     Text(
-                        text = if (isCoreEntry) "CORE" else "APP",
+                        text = if (isCoreEntry) "هسته" else "برنامه",
                         style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.Bold,
                         color = if (isCoreEntry) Color(0xFFB5A8FF) else IosSecondaryLabel,
