@@ -2,7 +2,7 @@
   <img src="https://img.shields.io/badge/AetherST-Tunnel-007AFF?style=for-the-badge&logo=shield&logoColor=white" alt="AetherST Logo" width="200">
 </p>
 
-<h1 align="center">AetherST Tunnel</h1>
+<h1 align="center">Farshad pm Tunnel</h1>
 
 <p align="center">
   <strong>Advanced, High-Performance Censorship Circumvention Client for Android & Windows</strong>
