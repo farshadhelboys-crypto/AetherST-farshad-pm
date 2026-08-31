@@ -240,7 +240,7 @@ private fun AboutFooter() {
         }
         Spacer(Modifier.height(8.dp))
         Text(
-            text = "Feri PM Tunnel یک کلاینت مستقل است که بر روی پروژه منبع‌باز AetherST ساخته شده است. هسته Aether توسط CluvexStudio توسعه داده شده و تحت مجوز منبع‌باز خود توزیع می‌شود.",
+            text = " همیشه متصل باشید هیچ نگران حجم نباشید به فرشاد پی ام بسپارید.",
             style = MaterialTheme.typography.bodySmall,
             color = colors.textSecondary.copy(alpha = 0.7f),
             textAlign = TextAlign.Center,
