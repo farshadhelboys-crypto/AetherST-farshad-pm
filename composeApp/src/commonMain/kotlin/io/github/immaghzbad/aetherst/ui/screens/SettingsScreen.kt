@@ -208,7 +208,7 @@ fun SettingsScreen(
     ) {
         item {
             Column(modifier = Modifier.padding(bottom = 4.dp)) {
-                Text("AetherST Settings", fontWeight = FontWeight.Bold, color = Color.White, fontSize = 26.sp, lineHeight = 30.sp)
+                Text("Feri Pm Tunenel Settings", fontWeight = FontWeight.Bold, color = Color.White, fontSize = 26.sp, lineHeight = 30.sp)
                 Text("Configure engine protocols, obfuscation & transport", color = IosSecondaryLabel, fontSize = 12.sp)
             }
         }
