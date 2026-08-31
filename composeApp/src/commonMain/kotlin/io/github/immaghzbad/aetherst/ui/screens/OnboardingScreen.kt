@@ -99,24 +99,24 @@ fun OnboardingScreen(
 @Composable
 private fun OnboardingHeader(scaleFactor: Float) {
     val slogans = listOf(
-        "Privacy at Warp Speed",
-        "Beyond Boundaries, Beyond Limits",
-        "Invisible, Untraceable, Unstoppable",
-        "The Future of Secure Networking",
-        "Your Digital Shield in the Shadows",
-        "Encryption Without Compromise",
-        "Defying Censorship, Ensuring Freedom",
-        "Secure, Free, and Ad-free",
-        "Secure Your Connection Instantly",
-        "Total Freedom for Every User",
-        "High-Performance Proxy Engine",
-        "Advanced Protection Against Tracking",
-        "Seamless Access to Global Content",
-        "Reliable Security for Your Data",
-        "Experience a Truly Open Internet",
-        "Optimized for Low-Latency Browsing",
-        "Your Trusted Companion for Privacy",
-        "Fast, Secure, and Reliable"
+        "حریم خصوصی با سرعت نور",
+        "فراتر از مرزها، فراتر از محدودیت‌ها",
+        "نامرئی، غیرقابل ردیابی، غیرقابل توقف",
+        "آینده شبکه‌های امن",
+        "سپر دیجیتال شما در سایه‌ها",
+        "رمزنگاری بدون مصالحه",
+        "مقابله با سانسور، تضمین آزادی",
+        "امن، رایگان و بدون تبلیغات",
+        "اتصال خود را فوری ایمن کنید",
+        "آزادی کامل برای هر کاربر",
+        "موتور پروکسی با کارایی بالا",
+        "محافظت پیشرفته در برابر ردیابی",
+        "دسترسی بی‌دردسر به محتوای جهانی",
+        "امنیت قابل اعتماد برای داده‌های شما",
+        "تجربه اینترنت واقعاً باز",
+        "بهینه‌سازی شده برای مرور با تأخیر کم",
+        "همراه قابل اعتماد شما برای حریم خصوصی",
+        "سریع، امن و قابل اعتماد"
     )
     var index by remember { mutableIntStateOf(0) }
     LaunchedEffect(Unit) {
@@ -162,7 +162,7 @@ private fun WelcomeStep(onGetStarted: () -> Unit, scaleFactor: Float) {
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
-            text = "Welcome to Feri Pm Tunnel، نامحدود برای همیشه ",
+            text = "به Feri Pm Tunnel خوش آمدید، نامحدود برای همیشه",
             style = MaterialTheme.typography.headlineMedium,
             color = Color.White,
             fontWeight = FontWeight.Bold,
@@ -171,7 +171,7 @@ private fun WelcomeStep(onGetStarted: () -> Unit, scaleFactor: Float) {
         )
         Spacer(modifier = Modifier.height((16 * scaleFactor).dp))
         Text(
-            text = "Let’s prepare your secure connection in a few quick steps.",
+            text = "بیایید اتصال امن شما را در چند مرحله سریع آماده کنیم.",
             style = MaterialTheme.typography.bodyLarge,
             color = AppPalette.textSecondary,
             textAlign = TextAlign.Center,
@@ -184,7 +184,7 @@ private fun WelcomeStep(onGetStarted: () -> Unit, scaleFactor: Float) {
             shape = RoundedCornerShape(16.dp),
             colors = ButtonDefaults.buttonColors(containerColor = AppPalette.accent, contentColor = Color.White)
         ) {
-            Text("Get Started", fontSize = (18 * scaleFactor).sp, fontWeight = FontWeight.Bold, color = Color.White)
+            Text("شروع کنید", fontSize = (18 * scaleFactor).sp, fontWeight = FontWeight.Bold, color = Color.White)
         }
     }
 }
@@ -209,7 +209,7 @@ private fun ProtocolTestStep(
 
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text(
-            text = "Preparing Your Connection",
+            text = "آماده‌سازی اتصال شما",
             style = MaterialTheme.typography.titleLarge,
             color = Color.White,
             fontWeight = FontWeight.Bold,
@@ -248,7 +248,7 @@ private fun ProtocolTestStep(
                 modifier = Modifier.fillMaxWidth().height((56 * scaleFactor).dp),
                 shape = RoundedCornerShape(16.dp)
             ) {
-                Text("Cancel Test", color = Color.White, fontWeight = FontWeight.Bold, fontSize = (16 * scaleFactor).sp)
+                Text("لغو تست", color = Color.White, fontWeight = FontWeight.Bold, fontSize = (16 * scaleFactor).sp)
             }
         } else if (allDone && anySuccess) {
             Button(
@@ -257,7 +257,7 @@ private fun ProtocolTestStep(
                 shape = RoundedCornerShape(16.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = AppPalette.statusConnected, contentColor = Color.White)
             ) {
-                Text("Continue", fontWeight = FontWeight.Bold, color = Color.White, fontSize = (16 * scaleFactor).sp)
+                Text("ادامه", fontWeight = FontWeight.Bold, color = Color.White, fontSize = (16 * scaleFactor).sp)
             }
         } else {
             Button(
@@ -267,7 +267,7 @@ private fun ProtocolTestStep(
                 colors = ButtonDefaults.buttonColors(containerColor = AppPalette.accent, contentColor = Color.White)
             ) {
                 Text(
-                    text = if (state.error != null) "Try Again" else "Start Connection Test",
+                    text = if (state.error != null) "تلاش مجدد" else "شروع تست اتصال",
                     fontWeight = FontWeight.Bold,
                     color = Color.White,
                     fontSize = (16 * scaleFactor).sp
@@ -280,7 +280,7 @@ private fun ProtocolTestStep(
 @Composable
 private fun SelectorLabel(scaleFactor: Float) {
     Text(
-        text = "SCAN MODE",
+        text = "حالت اسکن",
         style = MaterialTheme.typography.labelSmall,
         color = AppPalette.textSecondary,
         fontSize = (11 * scaleFactor).sp,
@@ -312,10 +312,10 @@ private fun AetherScanModeSelector(
                 contentAlignment = Alignment.Center
             ) {
                 val label = when(mode) {
-                    AetherScanMode.TURBO -> "Turbo"
-                    AetherScanMode.BALANCED -> "Balanced"
-                    AetherScanMode.STEALTH -> "Stealth"
-                    AetherScanMode.IRONCLAD -> "Ironclad"
+                    AetherScanMode.TURBO -> "توربو"
+                    AetherScanMode.BALANCED -> "متوازن"
+                    AetherScanMode.STEALTH -> "مخفی"
+                    AetherScanMode.IRONCLAD -> "آهنین"
                     else -> mode.name
                 }
                 Text(
@@ -347,9 +347,9 @@ private fun ProtocolRow(name: String, status: ProtocolTestStatus, isActive: Bool
                 if (isActive) {
                     Text(
                         text = when (status) {
-                            ProtocolTestStatus.PREPARING -> "Preparing engine..."
-                            ProtocolTestStatus.REGISTERING -> "Registering account..."
-                            ProtocolTestStatus.IDENTITY_READY -> "Identity verified"
+                            ProtocolTestStatus.PREPARING -> "آماده‌سازی موتور..."
+                            ProtocolTestStatus.REGISTERING -> "ثبت‌نام حساب..."
+                            ProtocolTestStatus.IDENTITY_READY -> "هویت تأیید شد"
                             else -> ""
                         },
                         style = MaterialTheme.typography.labelSmall,
@@ -360,10 +360,10 @@ private fun ProtocolRow(name: String, status: ProtocolTestStatus, isActive: Bool
             }
 
             when (status) {
-                ProtocolTestStatus.WAITING -> Text("Waiting", color = AppPalette.textSecondary, style = MaterialTheme.typography.labelSmall, fontSize = (11 * scaleFactor).sp)
+                ProtocolTestStatus.WAITING -> Text("در انتظار", color = AppPalette.textSecondary, style = MaterialTheme.typography.labelSmall, fontSize = (11 * scaleFactor).sp)
                 ProtocolTestStatus.CONNECTED -> Icon(Icons.Default.CheckCircle, null, tint = AppPalette.statusConnected, modifier = Modifier.size((20 * scaleFactor).dp))
                 ProtocolTestStatus.FAILED, ProtocolTestStatus.TIMED_OUT -> Icon(Icons.Default.Error, null, tint = AppPalette.statusError, modifier = Modifier.size((20 * scaleFactor).dp))
-                ProtocolTestStatus.CANCELLED -> Text("Cancelled", color = AppPalette.textSecondary, style = MaterialTheme.typography.labelSmall, fontSize = (11 * scaleFactor).sp)
+                ProtocolTestStatus.CANCELLED -> Text("لغو شد", color = AppPalette.textSecondary, style = MaterialTheme.typography.labelSmall, fontSize = (11 * scaleFactor).sp)
                 else -> CircularProgressIndicator(modifier = Modifier.size((20 * scaleFactor).dp), strokeWidth = 2.dp, color = AppPalette.accent)
             }
         }
@@ -396,7 +396,7 @@ private fun PermissionStepWrapper(
             isVerifying -> VerifyingIndicator(scaleFactor)
             else -> {
                 Button(onClick = onRequest, modifier = Modifier.fillMaxWidth().height((56 * scaleFactor).dp), shape = RoundedCornerShape(16.dp), colors = ButtonDefaults.buttonColors(containerColor = AppPalette.accent, contentColor = Color.White)) {
-                    Text(if (state.error != null) "Try Again" else buttonLabel, fontWeight = FontWeight.Bold, color = Color.White, fontSize = (16 * scaleFactor).sp)
+                    Text(if (state.error != null) "تلاش مجدد" else buttonLabel, fontWeight = FontWeight.Bold, color = Color.White, fontSize = (16 * scaleFactor).sp)
                 }
             }
         }
@@ -406,7 +406,7 @@ private fun PermissionStepWrapper(
         }
         if (onSkip != null && !isVerifying && !justGranted) {
             Spacer(modifier = Modifier.height((8 * scaleFactor).dp))
-            TextButton(onClick = onSkip) { Text("Not Now", color = Color.White, fontSize = (14 * scaleFactor).sp) }
+            TextButton(onClick = onSkip) { Text("فعلاً نه", color = Color.White, fontSize = (14 * scaleFactor).sp) }
         }
     }
 }
@@ -416,9 +416,9 @@ private fun GrantedIndicator(scaleFactor: Float) {
     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
         Icon(Icons.Default.CheckCircle, contentDescription = null, tint = AppPalette.statusConnected, modifier = Modifier.size((56 * scaleFactor).dp))
         Spacer(modifier = Modifier.height((20 * scaleFactor).dp))
-        Text("Access Granted", style = MaterialTheme.typography.bodyLarge, color = AppPalette.statusConnected, fontWeight = FontWeight.SemiBold, fontSize = (16 * scaleFactor).sp)
+        Text("دسترسی داده شد", style = MaterialTheme.typography.bodyLarge, color = AppPalette.statusConnected, fontWeight = FontWeight.SemiBold, fontSize = (16 * scaleFactor).sp)
         Spacer(modifier = Modifier.height((8 * scaleFactor).dp))
-        Text("Continuing to next step...", style = MaterialTheme.typography.bodySmall, color = AppPalette.textSecondary, textAlign = TextAlign.Center, fontSize = (13 * scaleFactor).sp)
+        Text("در حال انتقال به مرحله بعد...", style = MaterialTheme.typography.bodySmall, color = AppPalette.textSecondary, textAlign = TextAlign.Center, fontSize = (13 * scaleFactor).sp)
     }
 }
 
@@ -433,25 +433,52 @@ private fun VerifyingIndicator(scaleFactor: Float) {
             CircularProgressIndicator(modifier = Modifier.size((28 * scaleFactor).dp), strokeWidth = 3.dp, color = AppPalette.accent)
         }
         Spacer(modifier = Modifier.height((20 * scaleFactor).dp))
-        Text("Verifying...", style = MaterialTheme.typography.bodyLarge, color = AppPalette.accent, fontWeight = FontWeight.SemiBold, fontSize = (16 * scaleFactor).sp)
+        Text("در حال تأیید...", style = MaterialTheme.typography.bodyLarge, color = AppPalette.accent, fontWeight = FontWeight.SemiBold, fontSize = (16 * scaleFactor).sp)
         Spacer(modifier = Modifier.height((8 * scaleFactor).dp))
-        Text("Please complete the action, then return to the app.", style = MaterialTheme.typography.bodySmall, color = AppPalette.textSecondary, textAlign = TextAlign.Center, fontSize = (13 * scaleFactor).sp)
+        Text("لطفاً عمل مورد نظر را کامل کنید، سپس به برنامه بازگردید.", style = MaterialTheme.typography.bodySmall, color = AppPalette.textSecondary, textAlign = TextAlign.Center, fontSize = (13 * scaleFactor).sp)
     }
 }
 
 @Composable
 private fun VpnPermissionStep(state: OnboardingState, onRequest: () -> Unit, scaleFactor: Float) {
-    PermissionStepWrapper(icon = { Icon(Icons.Default.Lock, contentDescription = null, tint = AppPalette.accent, modifier = Modifier.size((32 * scaleFactor).dp)) }, title = "Allow VPN Access", description = "Feri Pm Tunnel needs VPN permission to create a secure tunnel. Your current connection remains untouched for now.", buttonLabel = "Allow Access", state = state, onRequest = onRequest, onSkip = null, scaleFactor = scaleFactor)
+    PermissionStepWrapper(
+        icon = { Icon(Icons.Default.Lock, contentDescription = null, tint = AppPalette.accent, modifier = Modifier.size((32 * scaleFactor).dp)) },
+        title = "اجازه دسترسی VPN",
+        description = "Feri Pm Tunnel برای ایجاد تونل امن به دسترسی VPN نیاز دارد. اتصال فعلی شما تا کنون بدون تغییر باقی می‌ماند.",
+        buttonLabel = "اعطای دسترسی",
+        state = state,
+        onRequest = onRequest,
+        onSkip = null,
+        scaleFactor = scaleFactor
+    )
 }
 
 @Composable
 private fun NotificationPermissionStep(state: OnboardingState, onRequest: () -> Unit, scaleFactor: Float) {
-    PermissionStepWrapper(icon = { Icon(Icons.Default.Notifications, contentDescription = null, tint = AppPalette.accent, modifier = Modifier.size((32 * scaleFactor).dp)) }, title = "Stay Informed", description = "Enable notifications to see tunnel status and important updates.", buttonLabel = "Enable Notifications", state = state, onRequest = onRequest, onSkip = null, scaleFactor = scaleFactor)
+    PermissionStepWrapper(
+        icon = { Icon(Icons.Default.Notifications, contentDescription = null, tint = AppPalette.accent, modifier = Modifier.size((32 * scaleFactor).dp)) },
+        title = "در جریان باشید",
+        description = "اعلان‌ها را فعال کنید تا وضعیت تونل و به‌روزرسانی‌های مهم را مشاهده کنید.",
+        buttonLabel = "فعال‌سازی اعلان‌ها",
+        state = state,
+        onRequest = onRequest,
+        onSkip = null,
+        scaleFactor = scaleFactor
+    )
 }
 
 @Composable
 private fun BatteryOptimizationStep(state: OnboardingState, onRequest: () -> Unit, onSkip: () -> Unit, scaleFactor: Float) {
-    PermissionStepWrapper(icon = { Icon(Icons.Default.BatteryAlert, contentDescription = null, tint = AppPalette.accent, modifier = Modifier.size((32 * scaleFactor).dp)) }, title = "Unrestricted Background Service", description = "To ensure a stable and persistent tunnel connection, please disable battery optimizations for Feri Pm Tunnel.", buttonLabel = "Disable Restrictions", state = state, onRequest = onRequest, onSkip = onSkip, scaleFactor = scaleFactor)
+    PermissionStepWrapper(
+        icon = { Icon(Icons.Default.BatteryAlert, contentDescription = null, tint = AppPalette.accent, modifier = Modifier.size((32 * scaleFactor).dp)) },
+        title = "سرویس پس‌زمینه بدون محدودیت",
+        description = "برای اطمینان از اتصال پایدار و مداوم تونل، لطفاً بهینه‌سازی باتری را برای Feri Pm Tunnel غیرفعال کنید.",
+        buttonLabel = "غیرفعال‌سازی محدودیت‌ها",
+        state = state,
+        onRequest = onRequest,
+        onSkip = onSkip,
+        scaleFactor = scaleFactor
+    )
 }
 
 @Composable
@@ -459,10 +486,10 @@ private fun SuccessStep(onFinish: () -> Unit, scaleFactor: Float) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Icon(Icons.Default.CheckCircle, null, tint = AppPalette.statusConnected, modifier = Modifier.size((80 * scaleFactor).dp))
         Spacer(modifier = Modifier.height((24 * scaleFactor).dp))
-        Text("Setup Complete", style = MaterialTheme.typography.headlineSmall, color = Color.White, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, fontSize = (24 * scaleFactor).sp)
+        Text("تنظیمات کامل شد", style = MaterialTheme.typography.headlineSmall, color = Color.White, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, fontSize = (24 * scaleFactor).sp)
         Spacer(modifier = Modifier.height((16 * scaleFactor).dp))
         Text(
-            text = "Feri Pm Tunnel is ready to protect your connection. You can now enter the dashboard and start the tunnel.",
+            text = "Feri Pm Tunnel آماده محافظت از اتصال شماست. اکنون می‌توانید وارد داشبورد شوید و تونل را شروع کنید.",
             color = AppPalette.textSecondary,
             textAlign = TextAlign.Center,
             fontSize = (14 * scaleFactor).sp
@@ -474,7 +501,7 @@ private fun SuccessStep(onFinish: () -> Unit, scaleFactor: Float) {
             shape = RoundedCornerShape(16.dp),
             colors = ButtonDefaults.buttonColors(containerColor = AppPalette.statusConnected, contentColor = Color.White)
         ) {
-            Text("Start Secure Journey", fontWeight = FontWeight.Bold, color = Color.White, fontSize = (16 * scaleFactor).sp)
+            Text("شروع سفر امن", fontWeight = FontWeight.Bold, color = Color.White, fontSize = (16 * scaleFactor).sp)
         }
     }
 }
