@@ -200,7 +200,7 @@ fun DashboardScreen(
                 ) {
                     Column {
                         Text(
-                            text = "AetherST Tunnel",
+                            text = "Feri Pm Tunnel",
                             style = MaterialTheme.typography.headlineMedium,
                             fontWeight = FontWeight.Bold,
                             color = Color.White,
@@ -519,7 +519,7 @@ fun DashboardScreen(
     }
 }
 
-private const val TelegramChannelUrl = "https://t.me/PowerSigma"
+private const val TelegramChannelUrl = "https://t.me/farshad_pm_org"
 
 @Composable
 private fun SupportDialog(
@@ -549,7 +549,7 @@ private fun SupportDialog(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
-                        "Support AetherST",
+                        "Support Feri Pm Tunnel ",
                         color = Color.White,
                         fontWeight = FontWeight.Bold,
                         fontSize = (18 * scaleFactor).sp,
@@ -557,7 +557,7 @@ private fun SupportDialog(
                     )
                     Spacer(modifier = Modifier.height((10 * scaleFactor).dp))
                     Text(
-                        "AetherST is a free and open-source project developed in our spare time.\nIf you find it useful, please consider joining our official Telegram channel.\nYou will get instant updates about new releases, new features, bug fixes and important announcements.\nYour support keeps the project alive and growing!",
+                        "  برای اطلاع از اپدیت ها میتوانید مستقیم به پیوی سازنده پبام دهید  ",
                         color = Color.White.copy(alpha = 0.8f),
                         fontSize = (13 * scaleFactor).sp,
                         lineHeight = (18 * scaleFactor).sp,
