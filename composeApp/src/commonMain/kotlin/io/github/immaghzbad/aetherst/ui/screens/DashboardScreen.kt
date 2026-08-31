@@ -297,7 +297,7 @@ fun DashboardScreen(
                             Icon(Icons.Default.Refresh, null, tint = IosErrorRed, modifier = Modifier.size(16.dp))
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                "Connection failed. Please try reconnecting.",
+                                "اتصال برقرار نشد لطفا دوباره تلاش کنید .",
                                 color = IosErrorRed,
                                 fontSize = (11 * scaleFactor).sp,
                                 fontWeight = FontWeight.Medium
@@ -892,13 +892,13 @@ fun IosStatusHeroCard(
                                 Text(
                                     text = when (connectionStatus) {
                                         ConnectionStatus.RUNNING, ConnectionStatus.TUN_ACTIVE -> if (config.connectionMode == ConnectionMode.TUNNEL) "PROTECTED & CONNECTED" else "PROXY ACTIVE"
-                                        ConnectionStatus.STARTING -> "FINDING SERVERS..."
+                                        ConnectionStatus.STARTING -> "درحال اتصال به بهترین سرور..."
                                         ConnectionStatus.VALIDATING, ConnectionStatus.DATAPLANE_VALIDATED -> "ESTABLISHING LINK..."
-                                        ConnectionStatus.SOCKS_READY -> "CONNECTING..."
-                                        ConnectionStatus.RECONNECTING -> "RECONNECTING..."
+                                        ConnectionStatus.SOCKS_READY -> "درحال اتصال..."
+                                        ConnectionStatus.RECONNECTING -> "تلاش مجدد..."
             ConnectionStatus.STOPPING -> "SWIPE TO FORCE STOP"
-                                        ConnectionStatus.ERROR, ConnectionStatus.FAILED -> "CONNECTION ERROR"
-                                        ConnectionStatus.STOPPED -> "READY TO CONNECT"
+                                        ConnectionStatus.ERROR, ConnectionStatus.FAILED -> "خطا در اتصال یا اینترنت"
+                                        ConnectionStatus.STOPPED -> "آماده اتصال "
                                     },
                                     style = MaterialTheme.typography.labelSmall,
                                     fontWeight = FontWeight.Bold,
@@ -1066,7 +1066,7 @@ fun IosStatusHeroCard(
                                 Text(
                                     text = when {
                                         ipInfo.country.isNotEmpty() -> if (ipInfo.countryCode.isNotEmpty()) "${ipInfo.country} (${ipInfo.countryCode})" else ipInfo.country
-                                        ipInfo.isLoading -> "Wait..."
+                                        ipInfo.isLoading -> "صبر کنبد..."
                                         ipInfo.error != null -> "Error"
                                         else -> "Unknown"
                                     },
@@ -1078,7 +1078,7 @@ fun IosStatusHeroCard(
                             Text(
                                 text = when {
                                     ipInfo.ip.isNotEmpty() -> ipInfo.ip
-                                    ipInfo.isLoading -> "LOCATING YOUR IP..."
+                                    ipInfo.isLoading -> "آی پی موقعیت شما ..."
                                     ipInfo.error != null -> "COULD NOT FIND IP"
                                     else -> "SHOW PUBLIC IP"
                                 },
