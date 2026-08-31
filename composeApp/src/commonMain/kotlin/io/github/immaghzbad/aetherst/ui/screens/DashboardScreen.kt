@@ -208,7 +208,7 @@ fun DashboardScreen(
                             lineHeight = (30 * scaleFactor).sp
                         )
                         Text(
-                            text = if (config.connectionMode == ConnectionMode.TUNNEL) "Secure & Private Tunneling" else "High-Performance Local Proxy",
+                            text = if (config.connectionMode == ConnectionMode.TUNNEL) "تونل امن و خصوصی" else "پروکسی محلی با کارایی بالا",
                             style = MaterialTheme.typography.bodySmall,
                             color = IosSecondaryLabel,
                             fontSize = (12 * scaleFactor).sp,
@@ -222,7 +222,7 @@ fun DashboardScreen(
                                 Text(
                                     text = buildString {
                                         append(config.teamName)
-                                        val who = config.accessEmail.ifBlank { config.accessId.ifBlank { config.accessToken.takeIf { it.isNotBlank() }?.let { "token" } } }
+                                        val who = config.accessEmail.ifBlank { config.accessId.ifBlank { config.accessToken.takeIf { it.isNotBlank() }?.let { "توکن" } } }
                                         if (!who.isNullOrBlank()) append(" • $who")
                                     },
                                     style = MaterialTheme.typography.bodySmall,
@@ -241,7 +241,7 @@ fun DashboardScreen(
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.Info,
-                                    contentDescription = "Proxy Info",
+                                    contentDescription = "اطلاعات پروکسی",
                                     tint = IosActiveBlue,
                                     modifier = Modifier.size((22 * scaleFactor).dp)
                                 )
@@ -257,7 +257,7 @@ fun DashboardScreen(
                             }
                         ) {
                             Text(
-                                text = "v$appVersion",
+                                text = "نسخه $appVersion",
                                 modifier = Modifier.padding(horizontal = (12 * scaleFactor).dp, vertical = (6 * scaleFactor).dp),
                                 style = MaterialTheme.typography.labelSmall,
                                 fontWeight = FontWeight.Bold,
@@ -297,7 +297,7 @@ fun DashboardScreen(
                             Icon(Icons.Default.Refresh, null, tint = IosErrorRed, modifier = Modifier.size(16.dp))
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                "اتصال برقرار نشد لطفا دوباره تلاش کنید .",
+                                "اتصال برقرار نشد، لطفاً دوباره تلاش کنید.",
                                 color = IosErrorRed,
                                 fontSize = (11 * scaleFactor).sp,
                                 fontWeight = FontWeight.Medium
@@ -391,8 +391,8 @@ fun DashboardScreen(
                                     }
                                     Spacer(modifier = Modifier.width(10.dp))
                                     Column(modifier = Modifier.weight(1f)) {
-                                        Text("Psiphon Chain", fontWeight = FontWeight.Bold, color = Color.White, fontSize = (13 * scaleFactor).sp)
-                                        Text(if (psiphonAllowed) "Route via Psiphon for non-Iran IP" else "Only available with MASQUE", color = IosSecondaryLabel, fontSize = (10 * scaleFactor).sp)
+                                        Text("زنجیره سایفون", fontWeight = FontWeight.Bold, color = Color.White, fontSize = (13 * scaleFactor).sp)
+                                        Text(if (psiphonAllowed) "مسیریابی از طریق سایفون برای آی‌پی غیرایرانی" else "فقط با پروتکل MASQUE در دسترس است", color = IosSecondaryLabel, fontSize = (10 * scaleFactor).sp)
                                     }
                                 }
                                 Switch(
@@ -415,7 +415,7 @@ fun DashboardScreen(
                                     IosPickerRow(
                                         icon = Icons.Default.Public,
                                         iconBg = Color(0xFF30B0C7),
-                                        title = "Exit Location",
+                                        title = "موقعیت خروجی",
                                         value = CountryNames.label(selectedRegion),
                                         options = regionOptions,
                                         onOptionSelected = { idx -> onUpdateConfig(config.copy(psiphonEgressRegion = regionCodes[idx])) }
@@ -549,7 +549,7 @@ private fun SupportDialog(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
-                        "Support Feri Pm Tunnel ",
+                        "پشتیبانی Feri Pm Tunnel",
                         color = Color.White,
                         fontWeight = FontWeight.Bold,
                         fontSize = (18 * scaleFactor).sp,
@@ -557,7 +557,7 @@ private fun SupportDialog(
                     )
                     Spacer(modifier = Modifier.height((10 * scaleFactor).dp))
                     Text(
-                        "  برای اطلاع از اپدیت ها میتوانید مستقیم به پیوی سازنده پبام دهید  ",
+                        "برای اطلاع از به‌روزرسانی‌ها می‌توانید مستقیماً به پیوی سازنده پیام دهید",
                         color = Color.White.copy(alpha = 0.8f),
                         fontSize = (13 * scaleFactor).sp,
                         lineHeight = (18 * scaleFactor).sp,
@@ -573,7 +573,7 @@ private fun SupportDialog(
                         Icon(Icons.AutoMirrored.Filled.Send, null, modifier = Modifier.size(18.dp))
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            "Join Telegram Channel",
+                            "عضویت در کانال تلگرام",
                             fontWeight = FontWeight.Bold,
                             fontSize = (14 * scaleFactor).sp,
                             maxLines = 1,
@@ -586,7 +586,7 @@ private fun SupportDialog(
                         modifier = Modifier.fillMaxWidth().height((42 * scaleFactor).dp)
                     ) {
                         Text(
-                            if (autoShow) "Skip" else "Cancel",
+                            if (autoShow) "رد کردن" else "انصراف",
                             color = IosSecondaryLabel,
                             fontWeight = FontWeight.Bold,
                             fontSize = (13 * scaleFactor).sp
@@ -652,7 +652,7 @@ fun AdminRequiredDialog(
                     Spacer(modifier = Modifier.height((20 * scaleFactor).dp))
                     
                     Text(
-                        text = "Admin Privileges Required",
+                        text = "نیاز به دسترسی مدیر",
                         style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.Bold,
                         color = Color.White,
@@ -663,7 +663,7 @@ fun AdminRequiredDialog(
                     Spacer(modifier = Modifier.height((12 * scaleFactor).dp))
                     
                     Text(
-                        text = "TUN Mode requires administrator rights to create a virtual network interface. Please relaunch the app as Administrator.",
+                        text = "حالت TUN برای ایجاد رابط شبکه مجازی به دسترسی مدیر نیاز دارد. لطفاً برنامه را به عنوان مدیر اجرا کنید.",
                         style = MaterialTheme.typography.bodyMedium,
                         color = Color.White.copy(alpha = 0.7f),
                         fontSize = (14 * scaleFactor).sp,
@@ -691,7 +691,7 @@ fun AdminRequiredDialog(
                                 Icon(Icons.Default.FlashOn, null, modifier = Modifier.size(18.dp))
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Text(
-                                    text = "Relaunch as Admin",
+                                    text = "اجرا به عنوان مدیر",
                                     fontWeight = FontWeight.Bold,
                                     fontSize = (15 * scaleFactor).sp
                                 )
@@ -706,7 +706,7 @@ fun AdminRequiredDialog(
                             shape = RoundedCornerShape(14.dp)
                         ) {
                             Text(
-                                text = "Cancel",
+                                text = "انصراف",
                                 color = Color.White.copy(alpha = 0.5f),
                                 fontWeight = FontWeight.Medium,
                                 fontSize = (15 * scaleFactor).sp
@@ -822,7 +822,7 @@ private fun ProxyCopyRow(
         }
         Icon(
             imageVector = Icons.Default.ContentCopy,
-            contentDescription = "Copy",
+            contentDescription = "کپی",
             tint = Color.White.copy(alpha = 0.6f),
             modifier = Modifier.size((14 * scaleFactor).dp)
         )
@@ -891,14 +891,14 @@ fun IosStatusHeroCard(
                         Spacer(modifier = Modifier.width((5 * scaleFactor).dp))
                                 Text(
                                     text = when (connectionStatus) {
-                                        ConnectionStatus.RUNNING, ConnectionStatus.TUN_ACTIVE -> if (config.connectionMode == ConnectionMode.TUNNEL) "PROTECTED & CONNECTED" else "PROXY ACTIVE"
-                                        ConnectionStatus.STARTING -> "درحال اتصال به بهترین سرور..."
-                                        ConnectionStatus.VALIDATING, ConnectionStatus.DATAPLANE_VALIDATED -> "ESTABLISHING LINK..."
-                                        ConnectionStatus.SOCKS_READY -> "درحال اتصال..."
+                                        ConnectionStatus.RUNNING, ConnectionStatus.TUN_ACTIVE -> if (config.connectionMode == ConnectionMode.TUNNEL) "محافظت شده و متصل" else "پروکسی فعال"
+                                        ConnectionStatus.STARTING -> "در حال اتصال به بهترین سرور..."
+                                        ConnectionStatus.VALIDATING, ConnectionStatus.DATAPLANE_VALIDATED -> "برقراری ارتباط..."
+                                        ConnectionStatus.SOCKS_READY -> "در حال اتصال..."
                                         ConnectionStatus.RECONNECTING -> "تلاش مجدد..."
-            ConnectionStatus.STOPPING -> "SWIPE TO FORCE STOP"
+            ConnectionStatus.STOPPING -> "برای توقف اجباری بکشید"
                                         ConnectionStatus.ERROR, ConnectionStatus.FAILED -> "خطا در اتصال یا اینترنت"
-                                        ConnectionStatus.STOPPED -> "آماده اتصال "
+                                        ConnectionStatus.STOPPED -> "آماده اتصال"
                                     },
                                     style = MaterialTheme.typography.labelSmall,
                                     fontWeight = FontWeight.Bold,
@@ -962,7 +962,7 @@ fun IosStatusHeroCard(
                             } else {
                                 Icon(
                                     imageVector = Icons.Default.Speed,
-                                    contentDescription = "Ping",
+                                    contentDescription = "پینگ",
                                     tint = if (pingState.error != null) IosErrorRed else IosActiveBlue,
                                     modifier = Modifier.size((15 * scaleFactor).dp)
                                 )
@@ -971,9 +971,9 @@ fun IosStatusHeroCard(
                             Text(
                                 text = when {
                                     pingState.isPinging -> "..."
-                                    pingState.error != null -> "TIMEOUT"
+                                    pingState.error != null -> "عدم پاسخ"
                                     pingState.ms >= 0 -> "${pingState.ms}ms"
-                                    else -> "PING"
+                                    else -> "پینگ"
                                 },
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
@@ -983,7 +983,7 @@ fun IosStatusHeroCard(
                         }
                     } else {
                         Text(
-                            text = if (connectionStatus == ConnectionStatus.RECONNECTING) "RETRY" else "NO UPLINK",
+                            text = if (connectionStatus == ConnectionStatus.RECONNECTING) "تلاش مجدد" else "بدون ارتباط",
                             style = MaterialTheme.typography.labelMedium,
                             fontWeight = FontWeight.Bold,
                             color = if (connectionStatus == ConnectionStatus.RECONNECTING) IosScanningAmber else IosSecondaryLabel,
@@ -1005,7 +1005,7 @@ fun IosStatusHeroCard(
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         TrafficValue(
-                            label = "UPLOAD",
+                            label = "ارسال",
                             value = formatTrafficBytes(sessionTraffic.uploadedBytes),
                             speed = sessionTraffic.uploadSpeedBps,
                             color = IosActiveBlue,
@@ -1014,7 +1014,7 @@ fun IosStatusHeroCard(
                             scaleFactor = scaleFactor
                         )
                         TrafficValue(
-                            label = "DOWNLOAD",
+                            label = "دریافت",
                             value = formatTrafficBytes(sessionTraffic.downloadedBytes),
                             speed = sessionTraffic.downloadSpeedBps,
                             color = IosActiveGreen,
@@ -1066,9 +1066,9 @@ fun IosStatusHeroCard(
                                 Text(
                                     text = when {
                                         ipInfo.country.isNotEmpty() -> if (ipInfo.countryCode.isNotEmpty()) "${ipInfo.country} (${ipInfo.countryCode})" else ipInfo.country
-                                        ipInfo.isLoading -> "صبر کنبد..."
-                                        ipInfo.error != null -> "Error"
-                                        else -> "Unknown"
+                                        ipInfo.isLoading -> "در حال دریافت..."
+                                        ipInfo.error != null -> "خطا"
+                                        else -> "ناشناخته"
                                     },
                                     style = MaterialTheme.typography.labelLarge,
                                     fontWeight = FontWeight.Bold,
@@ -1078,9 +1078,9 @@ fun IosStatusHeroCard(
                             Text(
                                 text = when {
                                     ipInfo.ip.isNotEmpty() -> ipInfo.ip
-                                    ipInfo.isLoading -> "آی پی موقعیت شما ..."
-                                    ipInfo.error != null -> "COULD NOT FIND IP"
-                                    else -> "SHOW PUBLIC IP"
+                                    ipInfo.isLoading -> "دریافت آی‌پی موقعیت شما..."
+                                    ipInfo.error != null -> "آی‌پی یافت نشد"
+                                    else -> "نمایش آی‌پی عمومی"
                                 },
                                 style = MaterialTheme.typography.bodySmall,
                                 color = when {
@@ -1102,7 +1102,7 @@ fun IosStatusHeroCard(
                         } else {
                             Icon(
                                 imageVector = Icons.Default.Refresh,
-                                contentDescription = "Refresh",
+                                contentDescription = "به‌روزرسانی",
                                 tint = IosSecondaryLabel,
                                 modifier = Modifier.size((12 * scaleFactor).dp)
                             )
@@ -1121,9 +1121,9 @@ fun IosStatusHeroCard(
                             .padding(6.dp),
                         horizontalArrangement = Arrangement.SpaceAround
                     ) {
-                        IosConfigChip(label = "BYPASS", value = config.noise.displayName.split(" ")[0], scaleFactor = scaleFactor)
-                        IosConfigChip(label = "SPEED", value = config.scanMode.name.take(6), scaleFactor = scaleFactor)
-                        IosConfigChip(label = "NETWORK", value = config.ipMode.rawValue, scaleFactor = scaleFactor)
+                        IosConfigChip(label = "مسیر", value = config.noise.displayName.split(" ")[0], scaleFactor = scaleFactor)
+                        IosConfigChip(label = "سرعت", value = config.scanMode.name.take(6), scaleFactor = scaleFactor)
+                        IosConfigChip(label = "شبکه", value = config.ipMode.rawValue, scaleFactor = scaleFactor)
                     }
                 }
             }
@@ -1346,11 +1346,11 @@ fun CapsuleConnectButton(
         else -> IosGroupBg
     }
     val label = when {
-        connectionStatus == ConnectionStatus.STOPPING -> "FORCE STOP"
-        isWorking -> "CONNECTING..."
-        isConnected -> "DISCONNECT"
-        isError -> "RECONNECT"
-        else -> "CONNECT"
+        connectionStatus == ConnectionStatus.STOPPING -> "توقف اجباری"
+        isWorking -> "در حال اتصال..."
+        isConnected -> "قطع اتصال"
+        isError -> "اتصال مجدد"
+        else -> "اتصال"
     }
     Box(
         modifier = modifier
@@ -1407,14 +1407,14 @@ fun WindowsSwipeSwitch(
         }, label = "trackColor"
     )
     val text = when (connectionStatus) {
-        ConnectionStatus.STARTING -> "FINDING SERVERS..."
-        ConnectionStatus.VALIDATING -> "VALIDATING..."
-        ConnectionStatus.DATAPLANE_VALIDATED, ConnectionStatus.SOCKS_READY, ConnectionStatus.TUN_ACTIVE -> "CONNECTING..."
-        ConnectionStatus.RECONNECTING -> "RECONNECTING..."
-        ConnectionStatus.STOPPING -> "SWIPE TO FORCE STOP"
-        ConnectionStatus.RUNNING -> "SWIPE TO DISCONNECT"
-        ConnectionStatus.ERROR, ConnectionStatus.FAILED -> "SWIPE TO RECONNECT"
-        ConnectionStatus.STOPPED -> "SWIPE TO CONNECT"
+        ConnectionStatus.STARTING -> "در یافتن سرورها..."
+        ConnectionStatus.VALIDATING -> "در حال اعتبارسنجی..."
+        ConnectionStatus.DATAPLANE_VALIDATED, ConnectionStatus.SOCKS_READY, ConnectionStatus.TUN_ACTIVE -> "در حال اتصال..."
+        ConnectionStatus.RECONNECTING -> "اتصال مجدد..."
+        ConnectionStatus.STOPPING -> "برای توقف اجباری بکشید"
+        ConnectionStatus.RUNNING -> "برای قطع اتصال بکشید"
+        ConnectionStatus.ERROR, ConnectionStatus.FAILED -> "برای اتصال مجدد بکشید"
+        ConnectionStatus.STOPPED -> "برای اتصال بکشید"
     }
     val hintTransition = rememberInfiniteTransition(label = "hint")
     val hintShift by hintTransition.animateFloat(
@@ -1480,7 +1480,7 @@ fun WindowsSwipeSwitch(
             contentAlignment = Alignment.Center
         ) {
             Text(
-                text = if (isDisconnectDrag) "RELEASE TO DISCONNECT" else text,
+                text = if (isDisconnectDrag) "برای قطع اتصال رها کنید" else text,
                 color = Color.White.copy(alpha = 0.95f),
                 fontWeight = FontWeight.Bold,
                 fontSize = ((11 * sf).coerceIn(10f, 13f)).sp,
@@ -1619,9 +1619,9 @@ fun IosConnectionModeSegmentedControl(
     scaleFactor: Float = 1f
 ) {
     val modes = listOf(
-        ConnectionMode.TUNNEL to "TUN Mode",
-        ConnectionMode.SYSTEM_PROXY to "System Proxy",
-        ConnectionMode.PROXY_ONLY to "Proxy Only"
+        ConnectionMode.TUNNEL to "حالت TUN",
+        ConnectionMode.SYSTEM_PROXY to "پروکسی سیستم",
+        ConnectionMode.PROXY_ONLY to "فقط پروکسی"
     )
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -1730,7 +1730,7 @@ fun IosProtocolSegmentedControl(
                         targetValue = if (selected) Color.White else IosSecondaryLabel,
                         animationSpec = tween(250), label = "protoText"
                     )
-                    val label = if (proto == AetherProtocol.ZERO_TRUST) "Z-TRUST" else proto.displayName.split(" ")[0].uppercase()
+                    val label = if (proto == AetherProtocol.ZERO_TRUST) "اعتماد صفر" else proto.displayName.split(" ")[0].uppercase()
                     Box(
                         modifier = Modifier
                             .weight(1f)
