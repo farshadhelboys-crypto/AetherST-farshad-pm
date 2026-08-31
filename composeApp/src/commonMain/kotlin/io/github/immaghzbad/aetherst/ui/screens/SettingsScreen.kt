@@ -135,16 +135,16 @@ private val IosDividerColor = AppPalette.divider
 private val IosActiveGreen = AppPalette.statusConnected
 
 enum class SettingsPage(val title: String) {
-    PRESETS("Configuration Profiles"),
-    CONNECTION("Connection & Tunneling"),
-    PROTOCOL("Protocol & Transport"),
+    PRESETS("پروفایل‌های تنظیمات"),
+    CONNECTION("اتصال و تونل‌زنی"),
+    PROTOCOL("پروتکل و حمل‌ونقل"),
     ZEROTRUST("Cloudflare Zero Trust"),
-    NETWORK("Network Parameters"),
-    SECURITY("Security & Reliability"),
-    DIAGNOSTICS("Diagnostics & Core"),
-    PSIPHON("Psiphon Chain"),
-    SYSTEM("System & Maintenance"),
-    HEV_ENGINE("HEV Engine")
+    NETWORK("پارامترهای شبکه"),
+    SECURITY("امنیت و قابلیت اطمینان"),
+    DIAGNOSTICS("تشخیص و هسته"),
+    PSIPHON("زنجیره سایفون"),
+    SYSTEM("سیستم و نگهداری"),
+    HEV_ENGINE("موتور HEV")
 }
 
 @Composable
@@ -208,35 +208,35 @@ fun SettingsScreen(
     ) {
         item {
             Column(modifier = Modifier.padding(bottom = 4.dp)) {
-                Text("Feri Pm Tunenel Settings", fontWeight = FontWeight.Bold, color = Color.White, fontSize = 26.sp, lineHeight = 30.sp)
-                Text("Configure engine protocols, obfuscation & transport", color = IosSecondaryLabel, fontSize = 12.sp)
+                Text("تنظیمات Feri Pm Tunnel", fontWeight = FontWeight.Bold, color = Color.White, fontSize = 26.sp, lineHeight = 30.sp)
+                Text("پیکربندی پروتکل‌های موتور، مبهم‌سازی و حمل‌ونقل", color = IosSecondaryLabel, fontSize = 12.sp)
             }
         }
         item {
             IosGroupCard {
                 Column {
-                    IosActionRow(icon = Icons.Default.Speed, iconBg = AppPalette.statusScanning, title = "Internet Speed Test", subtitle = "Measure download, upload, ping & jitter", onClick = onOpenSpeedTest)
+                    IosActionRow(icon = Icons.Default.Speed, iconBg = AppPalette.statusScanning, title = "تست سرعت اینترنت", subtitle = "اندازه‌گیری دانلود، آپلود، پینگ و لرزش", onClick = onOpenSpeedTest)
                     HorizontalDivider(color = IosDividerColor, thickness = 0.5.dp)
-                    IosActionRow(icon = Icons.Default.Radar, iconBg = AppPalette.accent, title = "Smart Auto-Detect", subtitle = "Detect the best protocol & settings for your network", onClick = onOpenAutoDetect)
+                    IosActionRow(icon = Icons.Default.Radar, iconBg = AppPalette.accent, title = "تشخیص خودکار هوشمند", subtitle = "تشخیص بهترین پروتکل و تنظیمات برای شبکه شما", onClick = onOpenAutoDetect)
                 }
             }
         }
-        item { CategoryCard(icon = Icons.Default.Tune, iconBg = AppPalette.textSecondary, title = "Configuration Profiles", subtitle = "Presets & manual tweaks", onClick = { currentPage = SettingsPage.PRESETS }) }
-        item { CategoryCard(icon = Icons.Default.VpnLock, iconBg = AppPalette.statusConnected, title = "Connection & Tunneling", subtitle = "Mode, engine, split tunneling, routing", onClick = { currentPage = SettingsPage.CONNECTION }) }
+        item { CategoryCard(icon = Icons.Default.Tune, iconBg = AppPalette.textSecondary, title = "پروفایل‌های تنظیمات", subtitle = "پیش‌تنظیمات و تنظیمات دستی", onClick = { currentPage = SettingsPage.PRESETS }) }
+        item { CategoryCard(icon = Icons.Default.VpnLock, iconBg = AppPalette.statusConnected, title = "اتصال و تونل‌زنی", subtitle = "حالت، موتور، تونل‌زنی تقسیم‌شده، مسیریابی", onClick = { currentPage = SettingsPage.CONNECTION }) }
         if (isAndroid) {
-            item { CategoryCard(icon = Icons.Default.Shield, iconBg = AppPalette.accentVariant, title = "Psiphon Chain", subtitle = "Route via Psiphon for non-Iran IP", onClick = { currentPage = SettingsPage.PSIPHON }) }
+            item { CategoryCard(icon = Icons.Default.Shield, iconBg = AppPalette.accentVariant, title = "زنجیره سایفون", subtitle = "مسیریابی از طریق سایفون برای آی‌پی غیرایرانی", onClick = { currentPage = SettingsPage.PSIPHON }) }
         }
-        item { CategoryCard(icon = Icons.Default.Shield, iconBg = IosActiveBlue, title = "Protocol & Transport", subtitle = "MASQUE, H2, ECH, obfuscation, MTU", onClick = { currentPage = SettingsPage.PROTOCOL }) }
+        item { CategoryCard(icon = Icons.Default.Shield, iconBg = IosActiveBlue, title = "پروتکل و حمل‌ونقل", subtitle = "MASQUE، H2، ECH، مبهم‌سازی، MTU", onClick = { currentPage = SettingsPage.PROTOCOL }) }
         if (config.protocol == AetherProtocol.ZERO_TRUST) {
-            item { CategoryCard(icon = Icons.Default.Business, iconBg = AppPalette.accentVariant, title = "Cloudflare Zero Trust", subtitle = "Team, gateway & authentication", onClick = { currentPage = SettingsPage.ZEROTRUST }) }
+            item { CategoryCard(icon = Icons.Default.Business, iconBg = AppPalette.accentVariant, title = "Cloudflare Zero Trust", subtitle = "تیم، دروازه و احراز هویت", onClick = { currentPage = SettingsPage.ZEROTRUST }) }
         }
-        item { CategoryCard(icon = Icons.Default.Language, iconBg = IosActiveBlue, title = "Network Parameters", subtitle = "SOCKS5, HTTP, ports, DNS, peer", onClick = { currentPage = SettingsPage.NETWORK }) }
-        item { CategoryCard(icon = Icons.Default.Lock, iconBg = AppPalette.statusError, title = "Security & Reliability", subtitle = "Kill switch, IPv6 leak, reconnect", onClick = { currentPage = SettingsPage.SECURITY }) }
-        item { CategoryCard(icon = Icons.Default.BugReport, iconBg = AppPalette.debugCyan, title = "Diagnostics & Core", subtitle = "Logging, perf, upstream proxy", onClick = { currentPage = SettingsPage.DIAGNOSTICS }) }
+        item { CategoryCard(icon = Icons.Default.Language, iconBg = IosActiveBlue, title = "پارامترهای شبکه", subtitle = "SOCKS5، HTTP، پورت‌ها، DNS، همتا", onClick = { currentPage = SettingsPage.NETWORK }) }
+        item { CategoryCard(icon = Icons.Default.Lock, iconBg = AppPalette.statusError, title = "امنیت و قابلیت اطمینان", subtitle = "قطع کننده اتصال، نشت IPv6، اتصال مجدد", onClick = { currentPage = SettingsPage.SECURITY }) }
+        item { CategoryCard(icon = Icons.Default.BugReport, iconBg = AppPalette.debugCyan, title = "تشخیص و هسته", subtitle = "ثبت وقایع، کارایی، پروکسی بالادست", onClick = { currentPage = SettingsPage.DIAGNOSTICS }) }
         if (isAndroid) {
-            item { CategoryCard(icon = Icons.Default.Memory, iconBg = AppPalette.accentVariantAlt, title = "HEV Engine", subtitle = "Log level, timeouts, session limits (Advanced)", onClick = { currentPage = SettingsPage.HEV_ENGINE }) }
+            item { CategoryCard(icon = Icons.Default.Memory, iconBg = AppPalette.accentVariantAlt, title = "موتور HEV", subtitle = "سطح گزارش، زمان‌بندی‌ها، محدودیت جلسات (پیشرفته)", onClick = { currentPage = SettingsPage.HEV_ENGINE }) }
         }
-        item { CategoryCard(icon = Icons.Default.Settings, iconBg = AppPalette.textSecondary, title = "System & Maintenance", subtitle = "Backup, restore, reset", onClick = { currentPage = SettingsPage.SYSTEM }) }
+        item { CategoryCard(icon = Icons.Default.Settings, iconBg = AppPalette.textSecondary, title = "سیستم و نگهداری", subtitle = "پشتیبان‌گیری، بازیابی، بازنشانی", onClick = { currentPage = SettingsPage.SYSTEM }) }
         item { Spacer(modifier = Modifier.height(16.dp)) }
     }
 }
@@ -283,15 +283,22 @@ private fun SettingsSubPage(page: SettingsPage, config: AetherConfig, isBatteryO
             item { Spacer(modifier = Modifier.height(16.dp)) }
         }
     }
-    if (showResetDialog) IosConfirmationDialog(title = "Reset All Settings?", message = "This will restore all protocols, engine tweaks, and security settings to their factory defaults. This action cannot be undone.", confirmText = "Reset Everything", confirmColor = AppPalette.statusError, onConfirm = { onResetAll(); showResetDialog = false; onShowToast("System restored to defaults", false) }, onDismiss = { showResetDialog = false })
+    if (showResetDialog) IosConfirmationDialog(
+        title = "بازنشانی همه تنظیمات؟",
+        message = "این کار همه پروتکل‌ها، تنظیمات موتور و تنظیمات امنیتی را به حالت پیش‌فرض کارخانه بازمی‌گرداند. این عمل قابل بازگشت نیست.",
+        confirmText = "بازنشانی همه",
+        confirmColor = AppPalette.statusError,
+        onConfirm = { onResetAll(); showResetDialog = false; onShowToast("سیستم به حالت پیش‌فرض بازگردانده شد", false) },
+        onDismiss = { showResetDialog = false }
+    )
 }
 
 @Composable private fun PresetPage(config: AetherConfig, onApplyPreset: (String) -> Unit, onShowToast: (String, Boolean) -> Unit) {
     IosGroupCard { Column {
-        IosPresetItem(icon = Icons.Default.Tune, iconBg = AppPalette.textSecondary, title = "Custom Manual Tweaks", subtitle = "Your own independent configuration", isActive = config.presetId == "custom", onClick = { onApplyPreset("custom"); onShowToast("Applied manual configuration", false) })
-        AppDivider(); IosPresetItem(icon = Icons.Default.Lock, iconBg = AppPalette.accentVariant, title = "Bypass UDP / TLS", subtitle = "MASQUE + H2 Fallback + Fragmentation", isActive = config.presetId == "bypass_udp", onClick = { onApplyPreset("bypass_udp"); onShowToast("Applied UDP/TLS Bypass preset", false) })
-        AppDivider(); IosPresetItem(icon = Icons.Default.Shield, iconBg = IosActiveBlue, title = "Ironclad Stealth", subtitle = "MASQUE + GFW Noise + Ironclad Probe", isActive = config.presetId == "ironclad_stealth", onClick = { onApplyPreset("ironclad_stealth"); onShowToast("Applied Ironclad Stealth preset", false) })
-        AppDivider(); IosPresetItem(icon = Icons.Default.Bolt, iconBg = AppPalette.statusScanning, title = "Turbo Speed", subtitle = "WireGuard + Balanced Noise + Turbo Scan", isActive = config.presetId == "turbo_wg", onClick = { onApplyPreset("turbo_wg"); onShowToast("Applied Turbo Speed preset", false) })
+        IosPresetItem(icon = Icons.Default.Tune, iconBg = AppPalette.textSecondary, title = "تنظیمات دستی سفارشی", subtitle = "پیکربندی مستقل شما", isActive = config.presetId == "custom", onClick = { onApplyPreset("custom"); onShowToast("تنظیمات دستی اعمال شد", false) })
+        AppDivider(); IosPresetItem(icon = Icons.Default.Lock, iconBg = AppPalette.accentVariant, title = "عبور از UDP / TLS", subtitle = "MASQUE + H2 Fallback + تکه‌تکه‌سازی", isActive = config.presetId == "bypass_udp", onClick = { onApplyPreset("bypass_udp"); onShowToast("پیش‌تنظیم عبور از UDP/TLS اعمال شد", false) })
+        AppDivider(); IosPresetItem(icon = Icons.Default.Shield, iconBg = IosActiveBlue, title = "مخفی کاری آهنین", subtitle = "MASQUE + GFW Noise + Ironclad Probe", isActive = config.presetId == "ironclad_stealth", onClick = { onApplyPreset("ironclad_stealth"); onShowToast("پیش‌تنظیم مخفی کاری آهنین اعمال شد", false) })
+        AppDivider(); IosPresetItem(icon = Icons.Default.Bolt, iconBg = AppPalette.statusScanning, title = "سرعت توربو", subtitle = "WireGuard + Balanced Noise + Turbo Scan", isActive = config.presetId == "turbo_wg", onClick = { onApplyPreset("turbo_wg"); onShowToast("پیش‌تنظیم سرعت توربو اعمال شد", false) })
     } }
 }
 
@@ -300,25 +307,25 @@ private fun SettingsSubPage(page: SettingsPage, config: AetherConfig, isBatteryO
         IosPickerRow(
             icon = Icons.Default.TouchApp,
             iconBg = IosActiveBlue,
-            title = "Connect Button Style",
-            value = if (config.connectButtonStyle == "capsule") "Tap (Capsule)" else "Swipe",
-            options = listOf("Swipe", "Tap (Capsule)"),
+            title = "سبک دکمه اتصال",
+            value = if (config.connectButtonStyle == "capsule") "لمسی (کپسولی)" else "کشویی",
+            options = listOf("کشویی", "لمسی (کپسولی)"),
             onOptionSelected = { idx -> onUpdateConfig(config.copy(connectButtonStyle = if (idx == 0) "swipe" else "capsule")) }
         )
     }
     Spacer(modifier = Modifier.height(12.dp))
     IosGroupCard { Column {
-        val opts = if (isAndroid) listOf("Tunnel", "Proxy Only") else if (isDesktop) listOf("TUN Mode (Global)", "System Proxy", "Proxy Only") else listOf("TUN Mode (Global)", "System Proxy", "Proxy Only")
-        IosPickerRow(icon = Icons.Default.VpnLock, iconBg = AppPalette.statusConnected,             title = "Connection Mode", value = when (config.connectionMode) { ConnectionMode.TUNNEL -> if (isAndroid) "Tunnel" else "TUN Mode (Global)"; ConnectionMode.SYSTEM_PROXY -> "System Proxy"; else -> "Proxy Only" }, options = opts, onOptionSelected = { val m = if (isAndroid) { if (it == 0) ConnectionMode.TUNNEL else ConnectionMode.PROXY_ONLY } else if (isDesktop) { when (it) { 0 -> ConnectionMode.TUNNEL; 1 -> ConnectionMode.SYSTEM_PROXY; else -> ConnectionMode.PROXY_ONLY } } else { when (it) { 0 -> ConnectionMode.TUNNEL; 1 -> ConnectionMode.SYSTEM_PROXY; else -> ConnectionMode.PROXY_ONLY } }; onUpdateConfig(config.copy(connectionMode = m)) })
+        val opts = if (isAndroid) listOf("تونل", "فقط پروکسی") else if (isDesktop) listOf("حالت TUN (سراسری)", "پروکسی سیستم", "فقط پروکسی") else listOf("حالت TUN (سراسری)", "پروکسی سیستم", "فقط پروکسی")
+        IosPickerRow(icon = Icons.Default.VpnLock, iconBg = AppPalette.statusConnected, title = "حالت اتصال", value = when (config.connectionMode) { ConnectionMode.TUNNEL -> if (isAndroid) "تونل" else "حالت TUN (سراسری)"; ConnectionMode.SYSTEM_PROXY -> "پروکسی سیستم"; else -> "فقط پروکسی" }, options = opts, onOptionSelected = { val m = if (isAndroid) { if (it == 0) ConnectionMode.TUNNEL else ConnectionMode.PROXY_ONLY } else if (isDesktop) { when (it) { 0 -> ConnectionMode.TUNNEL; 1 -> ConnectionMode.SYSTEM_PROXY; else -> ConnectionMode.PROXY_ONLY } } else { when (it) { 0 -> ConnectionMode.TUNNEL; 1 -> ConnectionMode.SYSTEM_PROXY; else -> ConnectionMode.PROXY_ONLY } }; onUpdateConfig(config.copy(connectionMode = m)) })
         if (config.connectionMode == ConnectionMode.TUNNEL) {
-            AppDivider(); IosPickerRow(icon = Icons.Default.VpnLock, iconBg = AppPalette.accentVariant, title = "Tunnel Engine", value = config.tunnelEngine.displayName, options = TunnelEngine.entries.map { it.displayName }, onOptionSelected = { onUpdateTunnelEngine(TunnelEngine.entries[it]) })
+            AppDivider(); IosPickerRow(icon = Icons.Default.VpnLock, iconBg = AppPalette.accentVariant, title = "موتور تونل", value = config.tunnelEngine.displayName, options = TunnelEngine.entries.map { it.displayName }, onOptionSelected = { onUpdateTunnelEngine(TunnelEngine.entries[it]) })
             if (!isDesktop) {
-                AppDivider(); IosSwitchRow(icon = Icons.Default.AllInclusive, iconBg = IosActiveBlue, title = "Tunnel Whole Device", subtitle = "Route all application traffic through VPN", checked = config.tunnelAllApps, onCheckedChange = { onUpdateConfig(config.copy(tunnelAllApps = it)) }, testTag = "switch_tunnel_all"); AppDivider(); IosPickerRow(icon = Icons.Default.Tune, iconBg = AppPalette.accentVariant, title = "Split Tunneling", value = if (config.tunnelAllApps) "All Apps Tunneled" else "${config.tunneledPackages.size + config.blockedPackages.size} Apps • Default Bypass", options = emptyList(), onOptionSelected = {}, onClickOverride = onOpenSplitTunneling, enabled = !config.tunnelAllApps)
+                AppDivider(); IosSwitchRow(icon = Icons.Default.AllInclusive, iconBg = IosActiveBlue, title = "تونل کل دستگاه", subtitle = "مسیریابی همه ترافیک برنامه‌ها از طریق VPN", checked = config.tunnelAllApps, onCheckedChange = { onUpdateConfig(config.copy(tunnelAllApps = it)) }, testTag = "switch_tunnel_all"); AppDivider(); IosPickerRow(icon = Icons.Default.Tune, iconBg = AppPalette.accentVariant, title = "تونل‌زنی تقسیم‌شده", value = if (config.tunnelAllApps) "همه برنامه‌ها تونل می‌شوند" else "${config.tunneledPackages.size + config.blockedPackages.size} برنامه • پیش‌فرض عبور", options = emptyList(), onOptionSelected = {}, onClickOverride = onOpenSplitTunneling, enabled = !config.tunnelAllApps)
             }
             AppDivider()
         }
-        IosPickerRow(icon = Icons.AutoMirrored.Filled.AltRoute, iconBg = IosActiveBlue, title = "Domain & IP Routing", value = "${config.routingRules.size} Rules", options = emptyList(), onOptionSelected = {}, onClickOverride = onOpenRoutingRules)
-        if (isAndroid) { AppDivider(); IosSwitchRow(icon = Icons.Default.Share, iconBg = AppPalette.accentVariantAlt, title = "Share via Hotspot", subtitle = "Allow other devices to connect to proxy", checked = config.shareHotspot, onCheckedChange = { onUpdateConfig(config.copy(shareHotspot = it)) }, testTag = "switch_share_hotspot"); if (config.shareHotspot) HotspotInfo(config) }
+        IosPickerRow(icon = Icons.AutoMirrored.Filled.AltRoute, iconBg = IosActiveBlue, title = "مسیریابی دامنه و آی‌پی", value = "${config.routingRules.size} قانون", options = emptyList(), onOptionSelected = {}, onClickOverride = onOpenRoutingRules)
+        if (isAndroid) { AppDivider(); IosSwitchRow(icon = Icons.Default.Share, iconBg = AppPalette.accentVariantAlt, title = "اشتراک‌گذاری از طریق هات‌اسپات", subtitle = "اجازه اتصال دستگاه‌های دیگر به پروکسی", checked = config.shareHotspot, onCheckedChange = { onUpdateConfig(config.copy(shareHotspot = it)) }, testTag = "switch_share_hotspot"); if (config.shareHotspot) HotspotInfo(config) }
     } }
 }
 
@@ -327,57 +334,57 @@ private fun SettingsSubPage(page: SettingsPage, config: AetherConfig, isBatteryO
         var localIp by remember { mutableStateOf<String?>(null) }
         LaunchedEffect(Unit) { localIp = NetworkUtils.getLocalIpAddress() }
         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
-            Row(modifier = Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) { Icon(if (localIp != null) Icons.Default.CheckCircle else Icons.Default.Warning, null, tint = if (localIp != null) IosActiveGreen else AppPalette.statusScanning, modifier = Modifier.size(16.dp)); Spacer(modifier = Modifier.width(8.dp)); Text(if (localIp != null) "Hotspot Active" else "Hotspot Inactive", color = if (localIp != null) IosActiveGreen else AppPalette.statusScanning, fontWeight = FontWeight.Bold, fontSize = 13.sp) }
+            Row(modifier = Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) { Icon(if (localIp != null) Icons.Default.CheckCircle else Icons.Default.Warning, null, tint = if (localIp != null) IosActiveGreen else AppPalette.statusScanning, modifier = Modifier.size(16.dp)); Spacer(modifier = Modifier.width(8.dp)); Text(if (localIp != null) "هات‌اسپات فعال" else "هات‌اسپات غیرفعال", color = if (localIp != null) IosActiveGreen else AppPalette.statusScanning, fontWeight = FontWeight.Bold, fontSize = 13.sp) }
             IconButton(onClick = { localIp = NetworkUtils.getLocalIpAddress() }, modifier = Modifier.size(28.dp)) { Icon(Icons.Default.Refresh, null, tint = IosActiveBlue, modifier = Modifier.size(18.dp)) }
         }
-        if (localIp != null) { Spacer(modifier = Modifier.height(10.dp)); Surface(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(10.dp), color = Color.Black.copy(alpha = 0.3f)) { Column(modifier = Modifier.padding(12.dp)) { Text("PROXY ADDRESS", color = IosSecondaryLabel, fontSize = 9.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.8.sp); Spacer(modifier = Modifier.height(6.dp)); Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) { Text("$localIp:${config.socksPort}", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 15.sp) } } } }
+        if (localIp != null) { Spacer(modifier = Modifier.height(10.dp)); Surface(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(10.dp), color = Color.Black.copy(alpha = 0.3f)) { Column(modifier = Modifier.padding(12.dp)) { Text("آدرس پروکسی", color = IosSecondaryLabel, fontSize = 9.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.8.sp); Spacer(modifier = Modifier.height(6.dp)); Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) { Text("$localIp:${config.socksPort}", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 15.sp) } } } }
     }
 }
 
 @Composable private fun ProtocolPage(config: AetherConfig, onUpdateConfig: (AetherConfig) -> Unit, onOptimizeMtu: () -> Unit, isOptimizingMtu: Boolean) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         IosGroupCard { Column {
-            IosPickerRow(icon = Icons.Default.VpnLock, iconBg = IosActiveBlue, title = "Transport Protocol", value = config.protocol.displayName, options = AetherProtocol.entries.map { it.displayName }, onOptionSelected = { onUpdateConfig(config.copy(protocol = AetherProtocol.entries[it])) })
-            if (config.protocol == AetherProtocol.MASQUE) { AppDivider(); IosSwitchRow(icon = Icons.Default.Http, iconBg = IosActiveBlue, title = "HTTP/2 Fallback Mode", subtitle = "Force MASQUE over TCP/TLS instead of QUIC", checked = config.h2Mode, onCheckedChange = { onUpdateConfig(config.copy(h2Mode = it)) }, testTag = "switch_h2_mode"); AppDivider(); IosSwitchRow(icon = Icons.Default.VerticalSplit, iconBg = AppPalette.accentVariant, title = "Packet Fragmentation", subtitle = "Bypass SNI filters (H2 mode only)", checked = config.h2Fragment, onCheckedChange = { onUpdateConfig(config.copy(h2Fragment = it)) }, testTag = "switch_fragment"); if (config.h2Fragment) { IosInputFieldRow(icon = Icons.Default.Straighten, iconBg = IosSecondaryLabel, label = "Fragment Size (Bytes)", value = config.fragmentSize, onValueChange = { onUpdateConfig(config.copy(fragmentSize = it)) }, placeholder = "16-32", testTag = "fragment_size_input"); AppDivider(); IosInputFieldRow(icon = Icons.Default.Timer, iconBg = IosSecondaryLabel, label = "Fragment Delay (ms)", value = config.fragmentDelay, onValueChange = { onUpdateConfig(config.copy(fragmentDelay = it)) }, placeholder = "2-10", testTag = "fragment_delay_input"); AppDivider() }; IosSwitchRow(icon = Icons.Default.EnhancedEncryption, iconBg = IosActiveGreen, title = "Encrypted Client Hello (ECH)", subtitle = "Hide SNI from network observers", checked = config.echEnabled, onCheckedChange = { onUpdateConfig(config.copy(echEnabled = it)) }, testTag = "switch_ech_enabled"); AppDivider() }
-            IosSwitchRow(icon = Icons.Default.DataUsage, iconBg = AppPalette.statusScanning, title = "Disable Data Verification", subtitle = "Skip waiting for initial packet exchange", checked = config.noDataCheck, onCheckedChange = { onUpdateConfig(config.copy(noDataCheck = it)) }, testTag = "switch_no_data_check"); AppDivider()
+            IosPickerRow(icon = Icons.Default.VpnLock, iconBg = IosActiveBlue, title = "پروتکل حمل‌ونقل", value = config.protocol.displayName, options = AetherProtocol.entries.map { it.displayName }, onOptionSelected = { onUpdateConfig(config.copy(protocol = AetherProtocol.entries[it])) })
+            if (config.protocol == AetherProtocol.MASQUE) { AppDivider(); IosSwitchRow(icon = Icons.Default.Http, iconBg = IosActiveBlue, title = "حالت بازگشت HTTP/2", subtitle = "اجبار MASQUE از طریق TCP/TLS به جای QUIC", checked = config.h2Mode, onCheckedChange = { onUpdateConfig(config.copy(h2Mode = it)) }, testTag = "switch_h2_mode"); AppDivider(); IosSwitchRow(icon = Icons.Default.VerticalSplit, iconBg = AppPalette.accentVariant, title = "تکه‌تکه‌سازی بسته‌ها", subtitle = "عبور از فیلترهای SNI (فقط حالت H2)", checked = config.h2Fragment, onCheckedChange = { onUpdateConfig(config.copy(h2Fragment = it)) }, testTag = "switch_fragment"); if (config.h2Fragment) { IosInputFieldRow(icon = Icons.Default.Straighten, iconBg = IosSecondaryLabel, label = "اندازه تکه (بایت)", value = config.fragmentSize, onValueChange = { onUpdateConfig(config.copy(fragmentSize = it)) }, placeholder = "16-32", testTag = "fragment_size_input"); AppDivider(); IosInputFieldRow(icon = Icons.Default.Timer, iconBg = IosSecondaryLabel, label = "تاخیر تکه (میلی‌ثانیه)", value = config.fragmentDelay, onValueChange = { onUpdateConfig(config.copy(fragmentDelay = it)) }, placeholder = "2-10", testTag = "fragment_delay_input"); AppDivider() }; IosSwitchRow(icon = Icons.Default.EnhancedEncryption, iconBg = IosActiveGreen, title = "ECH رمزگذاری شده Client Hello", subtitle = "پنهان‌سازی SNI از ناظران شبکه", checked = config.echEnabled, onCheckedChange = { onUpdateConfig(config.copy(echEnabled = it)) }, testTag = "switch_ech_enabled"); AppDivider() }
+            IosSwitchRow(icon = Icons.Default.DataUsage, iconBg = AppPalette.statusScanning, title = "غیرفعال‌سازی تأیید داده", subtitle = "صرف‌نظر از انتظار برای تبادل اولیه بسته", checked = config.noDataCheck, onCheckedChange = { onUpdateConfig(config.copy(noDataCheck = it)) }, testTag = "switch_no_data_check"); AppDivider()
             val availNoise = if (config.protocol == AetherProtocol.MASQUE) listOf(AetherNoise.FIREWALL, AetherNoise.GFW, AetherNoise.OFF) else listOf(AetherNoise.BALANCED, AetherNoise.AGGRESSIVE, AetherNoise.LIGHT, AetherNoise.OFF)
-            IosPickerRow(icon = Icons.Default.Tune, iconBg = AppPalette.accentVariantAlt, title = "Bypass Obfuscation", value = config.noise.displayName.substringBefore(" ("), options = availNoise.map { it.displayName }, onOptionSelected = { onUpdateConfig(config.copy(noise = availNoise[it])) }); AppDivider()
-            IosPickerRow(icon = Icons.Default.NetworkCheck, iconBg = AppPalette.statusScanning, title = "Speed Strategy", value = config.scanMode.name.lowercase().replaceFirstChar { it.uppercase() }, options = AetherScanMode.entries.map { "${it.name.lowercase().replaceFirstChar { c -> c.uppercase() }} (${it.description})" }, onOptionSelected = { onUpdateConfig(config.copy(scanMode = AetherScanMode.entries[it])) }); AppDivider()
-            IosPickerRow(icon = Icons.AutoMirrored.Filled.AltRoute, iconBg = AppPalette.accentVariant, title = "Network Stack", value = config.ipMode.rawValue, options = AetherIpMode.entries.map { it.displayName }, onOptionSelected = { onUpdateConfig(config.copy(ipMode = AetherIpMode.entries[it])) }); AppDivider()
-            Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.Bottom) { Row(modifier = Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) { IosIconBadge(icon = Icons.Default.Tune, backgroundColor = IosActiveGreen); Spacer(modifier = Modifier.width(12.dp)); IosInputField(label = "Custom MTU Size", value = config.mtu.toString(), onValueChange = { onUpdateConfig(config.copy(mtu = it.toIntOrNull() ?: 1100)) }, modifier = Modifier.weight(1f), placeholder = "1100", keyboardType = KeyboardType.Number, testTag = "mtu_input") }; Spacer(modifier = Modifier.width(8.dp)); Button(onClick = onOptimizeMtu, enabled = !isOptimizingMtu, modifier = Modifier.height(46.dp), shape = RoundedCornerShape(10.dp), colors = ButtonDefaults.buttonColors(containerColor = IosActiveBlue.copy(alpha = 0.15f), contentColor = IosActiveBlue, disabledContainerColor = IosActiveBlue.copy(alpha = 0.05f), disabledContentColor = IosActiveBlue.copy(alpha = 0.3f)), contentPadding = PaddingValues(horizontal = 16.dp)) { if (isOptimizingMtu) CircularProgressIndicator(modifier = Modifier.size(18.dp), color = IosActiveBlue, strokeWidth = 2.dp) else Text("Optimize", fontSize = 13.sp, fontWeight = FontWeight.Bold) } }
+            IosPickerRow(icon = Icons.Default.Tune, iconBg = AppPalette.accentVariantAlt, title = "مبهم‌سازی عبور", value = config.noise.displayName.substringBefore(" ("), options = availNoise.map { it.displayName }, onOptionSelected = { onUpdateConfig(config.copy(noise = availNoise[it])) }); AppDivider()
+            IosPickerRow(icon = Icons.Default.NetworkCheck, iconBg = AppPalette.statusScanning, title = "استراتژی سرعت", value = config.scanMode.name.lowercase().replaceFirstChar { it.uppercase() }, options = AetherScanMode.entries.map { "${it.name.lowercase().replaceFirstChar { c -> c.uppercase() }} (${it.description})" }, onOptionSelected = { onUpdateConfig(config.copy(scanMode = AetherScanMode.entries[it])) }); AppDivider()
+            IosPickerRow(icon = Icons.AutoMirrored.Filled.AltRoute, iconBg = AppPalette.accentVariant, title = "پشته شبکه", value = config.ipMode.rawValue, options = AetherIpMode.entries.map { it.displayName }, onOptionSelected = { onUpdateConfig(config.copy(ipMode = AetherIpMode.entries[it])) }); AppDivider()
+            Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.Bottom) { Row(modifier = Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) { IosIconBadge(icon = Icons.Default.Tune, backgroundColor = IosActiveGreen); Spacer(modifier = Modifier.width(12.dp)); IosInputField(label = "اندازه MTU سفارشی", value = config.mtu.toString(), onValueChange = { onUpdateConfig(config.copy(mtu = it.toIntOrNull() ?: 1100)) }, modifier = Modifier.weight(1f), placeholder = "1100", keyboardType = KeyboardType.Number, testTag = "mtu_input") }; Spacer(modifier = Modifier.width(8.dp)); Button(onClick = onOptimizeMtu, enabled = !isOptimizingMtu, modifier = Modifier.height(46.dp), shape = RoundedCornerShape(10.dp), colors = ButtonDefaults.buttonColors(containerColor = IosActiveBlue.copy(alpha = 0.15f), contentColor = IosActiveBlue, disabledContainerColor = IosActiveBlue.copy(alpha = 0.05f), disabledContentColor = IosActiveBlue.copy(alpha = 0.3f)), contentPadding = PaddingValues(horizontal = 16.dp)) { if (isOptimizingMtu) CircularProgressIndicator(modifier = Modifier.size(18.dp), color = IosActiveBlue, strokeWidth = 2.dp) else Text("بهینه‌سازی", fontSize = 13.sp, fontWeight = FontWeight.Bold) } }
         } }
-        Text("CLOAK OBFUSCATION (Native - MASQUE H2 Only)", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold, color = IosSecondaryLabel, fontSize = 11.sp, letterSpacing = 0.5.sp, modifier = Modifier.padding(start = 8.dp, top = 4.dp))
+        Text("مبهم‌سازی CLOAK (بومی - فقط MASQUE H2)", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold, color = IosSecondaryLabel, fontSize = 11.sp, letterSpacing = 0.5.sp, modifier = Modifier.padding(start = 8.dp, top = 4.dp))
         IosGroupCard { Column {
-            IosSwitchRow(icon = Icons.Default.Security, iconBg = AppPalette.accentVariant, title = "Cloak Decoy (Native)", subtitle = if (config.cloakEnabled) "Enabled - TTL decoy for DPI bypass" else "Disabled - Native JNI libcloak.so", checked = config.cloakEnabled, onCheckedChange = { onUpdateConfig(config.copy(cloakEnabled = it)) }, testTag = "switch_cloak_enabled")
+            IosSwitchRow(icon = Icons.Default.Security, iconBg = AppPalette.accentVariant, title = "Cloak Decoy (بومی)", subtitle = if (config.cloakEnabled) "فعال - TTL فریبنده برای عبور از DPI" else "غیرفعال - کتابخانه بومی JNI libcloak.so", checked = config.cloakEnabled, onCheckedChange = { onUpdateConfig(config.copy(cloakEnabled = it)) }, testTag = "switch_cloak_enabled")
             if (config.cloakEnabled) {
                 AppDivider()
                 if (config.protocol != AetherProtocol.MASQUE || !config.h2Mode) {
                     Row(modifier = Modifier.fillMaxWidth().background(AppPalette.statusScanning.copy(alpha = 0.12f)).padding(10.dp), verticalAlignment = Alignment.Top) {
                         Icon(Icons.Default.Info, null, tint = AppPalette.statusScanning, modifier = Modifier.size(16.dp))
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("Cloak works only with MASQUE + H2 Fallback. Current: ${config.protocol.displayName} ${if (config.h2Mode) "H2" else "H3"}", color = AppPalette.statusScanning, fontSize = 11.sp, lineHeight = 14.sp)
+                        Text("Cloak فقط با MASQUE + H2 Fallback کار می‌کند. فعلی: ${config.protocol.displayName} ${if (config.h2Mode) "H2" else "H3"}", color = AppPalette.statusScanning, fontSize = 11.sp, lineHeight = 14.sp)
                     }
                     AppDivider()
                 }
-                IosInputFieldRow(icon = Icons.Default.Public, iconBg = IosActiveGreen, label = "Decoy SNI List", value = config.cloakSniList, onValueChange = { onUpdateConfig(config.copy(cloakSniList = it)) }, placeholder = "www.bing.com,www.hcaptcha.com", testTag = "cloak_sni_input"); AppDivider()
-                IosInputFieldRow(icon = Icons.Default.Timer, iconBg = AppPalette.statusScanning, label = "TTL List", value = config.cloakTtlList, onValueChange = { onUpdateConfig(config.copy(cloakTtlList = it)) }, placeholder = "4,5,6,8", testTag = "cloak_ttl_input"); AppDivider()
+                IosInputFieldRow(icon = Icons.Default.Public, iconBg = IosActiveGreen, label = "لیست SNI فریبنده", value = config.cloakSniList, onValueChange = { onUpdateConfig(config.copy(cloakSniList = it)) }, placeholder = "www.bing.com,www.hcaptcha.com", testTag = "cloak_sni_input"); AppDivider()
+                IosInputFieldRow(icon = Icons.Default.Timer, iconBg = AppPalette.statusScanning, label = "لیست TTL", value = config.cloakTtlList, onValueChange = { onUpdateConfig(config.copy(cloakTtlList = it)) }, placeholder = "4,5,6,8", testTag = "cloak_ttl_input"); AppDivider()
                 Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Row(modifier = Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) { IosIconBadge(icon = Icons.Default.Timer, backgroundColor = IosSecondaryLabel); Spacer(modifier = Modifier.width(12.dp)); IosInputField(label = "Jitter Min (ms)", value = config.cloakJitterMin.toString(), onValueChange = { onUpdateConfig(config.copy(cloakJitterMin = it.toIntOrNull() ?: 20)) }, placeholder = "20", keyboardType = KeyboardType.Number, testTag = "cloak_jitter_min") }
+                    Row(modifier = Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) { IosIconBadge(icon = Icons.Default.Timer, backgroundColor = IosSecondaryLabel); Spacer(modifier = Modifier.width(12.dp)); IosInputField(label = "حداقل Jitter (ms)", value = config.cloakJitterMin.toString(), onValueChange = { onUpdateConfig(config.copy(cloakJitterMin = it.toIntOrNull() ?: 20)) }, placeholder = "20", keyboardType = KeyboardType.Number, testTag = "cloak_jitter_min") }
                     Spacer(modifier = Modifier.width(12.dp))
-                    Row(modifier = Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) { IosInputField(label = "Jitter Max (ms)", value = config.cloakJitterMax.toString(), onValueChange = { onUpdateConfig(config.copy(cloakJitterMax = it.toIntOrNull() ?: 80)) }, placeholder = "80", keyboardType = KeyboardType.Number, testTag = "cloak_jitter_max") }
+                    Row(modifier = Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) { IosInputField(label = "حداکثر Jitter (ms)", value = config.cloakJitterMax.toString(), onValueChange = { onUpdateConfig(config.copy(cloakJitterMax = it.toIntOrNull() ?: 80)) }, placeholder = "80", keyboardType = KeyboardType.Number, testTag = "cloak_jitter_max") }
                 }; AppDivider()
-                IosSwitchRow(icon = Icons.Default.VerticalSplit, iconBg = AppPalette.accentVariant, title = "Fragment Real Hello", subtitle = "Split SNI across packets (PattNG style)", checked = config.cloakFragment, onCheckedChange = { onUpdateConfig(config.copy(cloakFragment = it)) }, testTag = "switch_cloak_fragment"); AppDivider()
-                IosSwitchRow(icon = Icons.Default.Refresh, iconBg = IosActiveGreen, title = "Adaptive Stats", subtitle = "Remember best TTL/server via cloak.stats", checked = config.cloakAdaptive, onCheckedChange = { onUpdateConfig(config.copy(cloakAdaptive = it)) }, testTag = "switch_cloak_adaptive"); AppDivider()
-                IosSwitchRow(icon = Icons.Default.FontDownload, iconBg = IosSecondaryLabel, title = "Randomize SNI Case", subtitle = "wWw.BiNg.CoM to evade exact match", checked = config.cloakRandomizeSniCase, onCheckedChange = { onUpdateConfig(config.copy(cloakRandomizeSniCase = it)) }, testTag = "switch_cloak_randomize"); AppDivider()
-                IosInputFieldRow(icon = Icons.Default.Dns, iconBg = IosActiveBlue, label = "Fallback Ports", value = config.cloakFallbackPorts, onValueChange = { onUpdateConfig(config.copy(cloakFallbackPorts = it)) }, placeholder = "443,2053,2083,2087,2096,8443", testTag = "cloak_fallback_input"); AppDivider()
-                IosPickerRow(icon = Icons.Default.BugReport, iconBg = IosSecondaryLabel, title = "Cloak Log Level", value = config.cloakLogLevel, options = listOf("error", "warn", "info", "debug"), onOptionSelected = { idx -> val lvl = listOf("error", "warn", "info", "debug")[idx]; onUpdateConfig(config.copy(cloakLogLevel = lvl)) })
+                IosSwitchRow(icon = Icons.Default.VerticalSplit, iconBg = AppPalette.accentVariant, title = "تکه‌تکه‌سازی Hello واقعی", subtitle = "تقسیم SNI در بین بسته‌ها (سبک PattNG)", checked = config.cloakFragment, onCheckedChange = { onUpdateConfig(config.copy(cloakFragment = it)) }, testTag = "switch_cloak_fragment"); AppDivider()
+                IosSwitchRow(icon = Icons.Default.Refresh, iconBg = IosActiveGreen, title = "آمار تطبیقی", subtitle = "به خاطر سپاری بهترین TTL/سرور از طریق cloak.stats", checked = config.cloakAdaptive, onCheckedChange = { onUpdateConfig(config.copy(cloakAdaptive = it)) }, testTag = "switch_cloak_adaptive"); AppDivider()
+                IosSwitchRow(icon = Icons.Default.FontDownload, iconBg = IosSecondaryLabel, title = "تصادفی‌سازی حروف SNI", subtitle = "wWw.BiNg.CoM برای دور زدن تطابق دقیق", checked = config.cloakRandomizeSniCase, onCheckedChange = { onUpdateConfig(config.copy(cloakRandomizeSniCase = it)) }, testTag = "switch_cloak_randomize"); AppDivider()
+                IosInputFieldRow(icon = Icons.Default.Dns, iconBg = IosActiveBlue, label = "پورت‌های بازگشت", value = config.cloakFallbackPorts, onValueChange = { onUpdateConfig(config.copy(cloakFallbackPorts = it)) }, placeholder = "443,2053,2083,2087,2096,8443", testTag = "cloak_fallback_input"); AppDivider()
+                IosPickerRow(icon = Icons.Default.BugReport, iconBg = IosSecondaryLabel, title = "سطح گزارش Cloak", value = config.cloakLogLevel, options = listOf("error", "warn", "info", "debug"), onOptionSelected = { idx -> val lvl = listOf("error", "warn", "info", "debug")[idx]; onUpdateConfig(config.copy(cloakLogLevel = lvl)) })
             }
         } }
         IosGroupCard {
             Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp)) {
-                Text("About Cloak", fontWeight = FontWeight.Bold, color = Color.White, fontSize = 14.sp)
+                Text("درباره Cloak", fontWeight = FontWeight.Bold, color = Color.White, fontSize = 14.sp)
                 Spacer(modifier = Modifier.height(6.dp))
-                Text("Cloak is a native decoy system for MASQUE over H2 (TCP/TLS). Before the real TLS handshake it sends a few low-TTL decoy ClientHellos with common SNIs — for example www.bing.com — that expire in transit and are seen by DPI, followed by the real handshake with its actual SNI. This hides the real SNI from SNI-based filters. It works only with MASQUE + H2 Fallback over TCP and is useful when direct MASQUE fails due to SNI inspection while the underlying network path is still reachable. When direct MASQUE already connects, Cloak adds only extra packets and jitter with no speed benefit. Logs appear on the Logs screen with tag CloakCore.", color = IosSecondaryLabel, fontSize = 12.sp, lineHeight = 17.sp)
+                Text("Cloak یک سیستم فریبنده بومی برای MASQUE از طریق H2 (TCP/TLS) است. قبل از دست دادن واقعی TLS، چند ClientHello فریبنده با TTL پایین و SNIهای رایج - برای مثال www.bing.com - ارسال می‌کند که در مسیر منقضی می‌شوند و توسط DPI دیده می‌شوند، و سپس دست دادن واقعی با SNI اصلی انجام می‌شود. این کار SNI واقعی را از فیلترهای مبتنی بر SNI پنهان می‌کند. فقط با MASQUE + H2 Fallback از طریق TCP کار می‌کند و زمانی مفید است که MASQUE مستقیم به دلیل بازرسی SNI شکست می‌خورد در حالی که مسیر شبکه زیرین همچنان قابل دسترسی است. وقتی MASQUE مستقیم وصل می‌شود، Cloak فقط بسته‌ها و Jitter اضافی اضافه می‌کند و هیچ مزیت سرعتی ندارد. گزارش‌ها در صفحه گزارش‌ها با برچسب CloakCore ظاهر می‌شوند.", color = IosSecondaryLabel, fontSize = 12.sp, lineHeight = 17.sp)
             }
         }
     }
@@ -389,15 +396,15 @@ private fun SettingsSubPage(page: SettingsPage, config: AetherConfig, isBatteryO
     val hasAuth = config.teamName.isNotBlank() &&
         (config.accessEmail.isNotBlank() || config.accessId.isNotBlank() || config.accessSecret.isNotBlank() || config.accessToken.isNotBlank())
     IosGroupCard { Column {
-        IosInputFieldRow(icon = Icons.Default.Business, iconBg = AppPalette.accentVariant, label = if (isZt) "Organization Team Name *" else "Organization Team Name", value = config.teamName, onValueChange = { onUpdateConfig(config.copy(teamName = it)) }, placeholder = "e.g. my-org", testTag = "zt_team_input"); AppDivider()
-        IosInputFieldRow(icon = Icons.Default.Language, iconBg = IosActiveBlue, label = if (isZt) "Cloudflare Access Email" else "Cloudflare Access Email", value = config.accessEmail, onValueChange = { onUpdateConfig(config.copy(accessEmail = it)) }, placeholder = "user@example.com", testTag = "zt_email_input"); AppDivider()
-        IosSwitchRow(icon = Icons.Default.Shield, iconBg = IosActiveGreen, title = "Gateway Filtering Proxy", subtitle = "Route via org Gateway for filtering & logs (off by default)", checked = config.useGateway, onCheckedChange = { onUpdateConfig(config.copy(useGateway = it)) }, testTag = "switch_zt_gateway"); AppDivider()
-        IosSwitchRow(icon = Icons.Default.CheckCircle, iconBg = IosActiveBlue, title = "Stay Signed In", subtitle = "Keep this device enrolled (reuse token until it expires)", checked = config.ztStaySignedIn, onCheckedChange = { onUpdateConfig(config.copy(ztStaySignedIn = it)) }, testTag = "switch_zt_stay_signed_in"); AppDivider()
+        IosInputFieldRow(icon = Icons.Default.Business, iconBg = AppPalette.accentVariant, label = if (isZt) "نام تیم سازمان *" else "نام تیم سازمان", value = config.teamName, onValueChange = { onUpdateConfig(config.copy(teamName = it)) }, placeholder = "مثلاً my-org", testTag = "zt_team_input"); AppDivider()
+        IosInputFieldRow(icon = Icons.Default.Language, iconBg = IosActiveBlue, label = if (isZt) "ایمیل Cloudflare Access" else "ایمیل Cloudflare Access", value = config.accessEmail, onValueChange = { onUpdateConfig(config.copy(accessEmail = it)) }, placeholder = "user@example.com", testTag = "zt_email_input"); AppDivider()
+        IosSwitchRow(icon = Icons.Default.Shield, iconBg = IosActiveGreen, title = "پروکسی فیلترینگ دروازه", subtitle = "مسیریابی از طریق دروازه سازمان برای فیلترینگ و گزارش‌ها (پیش‌فرض غیرفعال)", checked = config.useGateway, onCheckedChange = { onUpdateConfig(config.copy(useGateway = it)) }, testTag = "switch_zt_gateway"); AppDivider()
+        IosSwitchRow(icon = Icons.Default.CheckCircle, iconBg = IosActiveBlue, title = "وارد شده بمانید", subtitle = "این دستگاه را ثبت‌شده نگه دارید (استفاده مجدد از توکن تا زمان انقضا)", checked = config.ztStaySignedIn, onCheckedChange = { onUpdateConfig(config.copy(ztStaySignedIn = it)) }, testTag = "switch_zt_stay_signed_in"); AppDivider()
         if (hasAuth) {
-            Row(modifier = Modifier.fillMaxWidth().clickable { onUpdateConfig(config.copy(teamName = "", accessEmail = "", accessId = "", accessSecret = "", accessToken = "", ztTokenExpiry = 0, ztStaySignedIn = false)) }.padding(horizontal = 16.dp, vertical = 14.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) { Row(verticalAlignment = Alignment.CenterVertically) { IosIconBadge(icon = Icons.AutoMirrored.Filled.Logout, backgroundColor = AppPalette.statusError); Spacer(modifier = Modifier.width(12.dp)); Text("Sign Out", fontWeight = FontWeight.Medium, color = AppPalette.statusError, fontSize = 15.sp) } }
+            Row(modifier = Modifier.fillMaxWidth().clickable { onUpdateConfig(config.copy(teamName = "", accessEmail = "", accessId = "", accessSecret = "", accessToken = "", ztTokenExpiry = 0, ztStaySignedIn = false)) }.padding(horizontal = 16.dp, vertical = 14.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) { Row(verticalAlignment = Alignment.CenterVertically) { IosIconBadge(icon = Icons.AutoMirrored.Filled.Logout, backgroundColor = AppPalette.statusError); Spacer(modifier = Modifier.width(12.dp)); Text("خروج", fontWeight = FontWeight.Medium, color = AppPalette.statusError, fontSize = 15.sp) } }
         }
-        Row(modifier = Modifier.fillMaxWidth().clickable { onToggleAdvanced(!showAdvanced) }.padding(horizontal = 16.dp, vertical = 14.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) { Row(verticalAlignment = Alignment.CenterVertically) { IosIconBadge(icon = Icons.Default.Lock, backgroundColor = IosSecondaryLabel); Spacer(modifier = Modifier.width(12.dp)); Text("Advanced Authentication", fontWeight = FontWeight.Medium, color = Color.White, fontSize = 15.sp) }; Icon(if (showAdvanced) Icons.Default.ExpandLess else Icons.Default.ExpandMore, null, tint = IosSecondaryLabel, modifier = Modifier.size(18.dp)) }
-        AnimatedVisibility(visible = showAdvanced, enter = fadeIn() + expandVertically(), exit = fadeOut() + shrinkVertically()) { Column(modifier = Modifier.fillMaxWidth().background(IosGroupBg.copy(alpha = 0.4f)).padding(14.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) { Text("Choose exactly one sign-in method.", color = IosSecondaryLabel, fontSize = 12.sp); IosInputField(label = if (isZt) "Access Client ID" else "Access Client ID", value = config.accessId, onValueChange = { onUpdateConfig(config.copy(accessId = it)) }, placeholder = "Required for Service Tokens", testTag = "zt_access_id"); IosInputField(label = if (isZt) "Access Client Secret" else "Access Client Secret", value = config.accessSecret, onValueChange = { onUpdateConfig(config.copy(accessSecret = it)) }, placeholder = "Required for Service Tokens", testTag = "zt_access_secret"); IosInputField(label = if (isZt) "Manual JWT Access Token" else "Manual JWT Access Token", value = config.accessToken, onValueChange = { onUpdateConfig(config.copy(accessToken = it, ztTokenExpiry = config.parseJwtExpiry(it))) }, placeholder = "Existing token you already hold", testTag = "zt_access_token") } }
+        Row(modifier = Modifier.fillMaxWidth().clickable { onToggleAdvanced(!showAdvanced) }.padding(horizontal = 16.dp, vertical = 14.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) { Row(verticalAlignment = Alignment.CenterVertically) { IosIconBadge(icon = Icons.Default.Lock, backgroundColor = IosSecondaryLabel); Spacer(modifier = Modifier.width(12.dp)); Text("احراز هویت پیشرفته", fontWeight = FontWeight.Medium, color = Color.White, fontSize = 15.sp) }; Icon(if (showAdvanced) Icons.Default.ExpandLess else Icons.Default.ExpandMore, null, tint = IosSecondaryLabel, modifier = Modifier.size(18.dp)) }
+        AnimatedVisibility(visible = showAdvanced, enter = fadeIn() + expandVertically(), exit = fadeOut() + shrinkVertically()) { Column(modifier = Modifier.fillMaxWidth().background(IosGroupBg.copy(alpha = 0.4f)).padding(14.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) { Text("دقیقاً یک روش ورود را انتخاب کنید.", color = IosSecondaryLabel, fontSize = 12.sp); IosInputField(label = if (isZt) "شناسه مشتری Access" else "شناسه مشتری Access", value = config.accessId, onValueChange = { onUpdateConfig(config.copy(accessId = it)) }, placeholder = "برای توکن‌های سرویس الزامی است", testTag = "zt_access_id"); IosInputField(label = if (isZt) "رمز مشتری Access" else "رمز مشتری Access", value = config.accessSecret, onValueChange = { onUpdateConfig(config.copy(accessSecret = it)) }, placeholder = "برای توکن‌های سرویس الزامی است", testTag = "zt_access_secret"); IosInputField(label = if (isZt) "توکن دسترسی JWT دستی" else "توکن دسترسی JWT دستی", value = config.accessToken, onValueChange = { onUpdateConfig(config.copy(accessToken = it, ztTokenExpiry = config.parseJwtExpiry(it))) }, placeholder = "توکن موجود که از قبل دارید", testTag = "zt_access_token") } }
     } }
     if (ztError != null) {
         Text(
@@ -412,26 +419,26 @@ private fun SettingsSubPage(page: SettingsPage, config: AetherConfig, isBatteryO
 
 @Composable private fun NetworkPage(config: AetherConfig, isAndroid: Boolean, onUpdateConfig: (AetherConfig) -> Unit) {
     IosGroupCard { Column {
-        Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) { IosIconBadge(icon = Icons.Default.Language, backgroundColor = IosActiveBlue); Spacer(modifier = Modifier.width(12.dp)); IosInputField(label = "SOCKS5 Host", value = config.socksHost, onValueChange = { onUpdateConfig(config.copy(socksHost = it)) }, modifier = Modifier.weight(1f), placeholder = "127.0.0.1", testTag = "socks_host_input"); Spacer(modifier = Modifier.width(10.dp)); IosInputField(label = "SOCKS Port", value = config.socksPort, onValueChange = { onUpdateConfig(config.copy(socksPort = it)) }, modifier = Modifier.width(75.dp), placeholder = "1819", keyboardType = KeyboardType.Number, testTag = "socks_port_input"); Spacer(modifier = Modifier.width(8.dp)); IosInputField(label = "HTTP Port", value = config.httpPort, onValueChange = { onUpdateConfig(config.copy(httpPort = it)) }, modifier = Modifier.width(75.dp), placeholder = "1820", keyboardType = KeyboardType.Number, testTag = "http_port_input") }
-        AppDivider(); IosSwitchRow(icon = Icons.Default.Http, iconBg = IosActiveBlue, title = "Internal HTTP Proxy", subtitle = "Expose an HTTP CONNECT proxy alongside SOCKS5", checked = config.httpProxyEnabled, onCheckedChange = { onUpdateConfig(config.copy(httpProxyEnabled = it)) }, testTag = "switch_http_proxy_enabled"); AppDivider()
-        IosInputFieldRow(icon = Icons.Default.Code, iconBg = IosSecondaryLabel, label = "TLS Key Groups", value = config.tlsGroups, onValueChange = { onUpdateConfig(config.copy(tlsGroups = it)) }, placeholder = "P-256:X25519:P-384", testTag = "tls_groups_input"); AppDivider()
-        if (isAndroid) { IosInputFieldRow(icon = Icons.Default.Dns, iconBg = IosActiveBlue, label = "Tunnel DNS Servers", value = config.dnsList, onValueChange = { onUpdateConfig(config.copy(dnsList = it.replace(Regex("\\s*,\\s*"), ","))) }, placeholder = "1.1.1.1,1.0.0.1", testTag = "dns_list_input"); AppDivider() }
-        IosInputFieldRow(icon = Icons.AutoMirrored.Filled.AltRoute, iconBg = AppPalette.accentVariant, label = "Forced Peer IP", value = config.peer, onValueChange = { onUpdateConfig(config.copy(peer = it)) }, placeholder = "e.g. 1.2.3.4:443", testTag = "peer_input"); AppDivider()
-        IosSwitchRow(icon = Icons.Default.Bolt, iconBg = AppPalette.statusScanning, title = "Keepalive Packets", subtitle = if (config.keepaliveEnabled) "Maintain NAT binding with periodic pings" else "Disabled — no keepalive (battery saver)", checked = config.keepaliveEnabled, onCheckedChange = { onUpdateConfig(config.copy(keepaliveEnabled = it)) }, testTag = "switch_keepalive_enabled"); AppDivider()
-        AnimatedVisibility(visible = config.keepaliveEnabled, enter = fadeIn() + expandVertically(), exit = fadeOut() + shrinkVertically()) { Column { IosInputFieldRow(icon = Icons.Default.Bolt, iconBg = AppPalette.statusScanning, label = "Keepalive Interval (Secs)", value = config.keepalive.toString(), onValueChange = { onUpdateConfig(config.copy(keepalive = it.toIntOrNull() ?: 5)) }, placeholder = "5", keyboardType = KeyboardType.Number, testTag = "keepalive_input"); AppDivider() } }
-        IosInputFieldRow(icon = Icons.Default.Timer, iconBg = IosSecondaryLabel, label = "Validation Interval (Secs)", value = config.validateSecs.toString(), onValueChange = { onUpdateConfig(config.copy(validateSecs = it.toIntOrNull() ?: 10)) }, placeholder = "10", keyboardType = KeyboardType.Number, testTag = "validate_secs_input")
+        Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) { IosIconBadge(icon = Icons.Default.Language, backgroundColor = IosActiveBlue); Spacer(modifier = Modifier.width(12.dp)); IosInputField(label = "میزبان SOCKS5", value = config.socksHost, onValueChange = { onUpdateConfig(config.copy(socksHost = it)) }, modifier = Modifier.weight(1f), placeholder = "127.0.0.1", testTag = "socks_host_input"); Spacer(modifier = Modifier.width(10.dp)); IosInputField(label = "پورت SOCKS", value = config.socksPort, onValueChange = { onUpdateConfig(config.copy(socksPort = it)) }, modifier = Modifier.width(75.dp), placeholder = "1819", keyboardType = KeyboardType.Number, testTag = "socks_port_input"); Spacer(modifier = Modifier.width(8.dp)); IosInputField(label = "پورت HTTP", value = config.httpPort, onValueChange = { onUpdateConfig(config.copy(httpPort = it)) }, modifier = Modifier.width(75.dp), placeholder = "1820", keyboardType = KeyboardType.Number, testTag = "http_port_input") }
+        AppDivider(); IosSwitchRow(icon = Icons.Default.Http, iconBg = IosActiveBlue, title = "پروکسی HTTP داخلی", subtitle = "نمایش یک پروکسی HTTP CONNECT در کنار SOCKS5", checked = config.httpProxyEnabled, onCheckedChange = { onUpdateConfig(config.copy(httpProxyEnabled = it)) }, testTag = "switch_http_proxy_enabled"); AppDivider()
+        IosInputFieldRow(icon = Icons.Default.Code, iconBg = IosSecondaryLabel, label = "گروه‌های کلید TLS", value = config.tlsGroups, onValueChange = { onUpdateConfig(config.copy(tlsGroups = it)) }, placeholder = "P-256:X25519:P-384", testTag = "tls_groups_input"); AppDivider()
+        if (isAndroid) { IosInputFieldRow(icon = Icons.Default.Dns, iconBg = IosActiveBlue, label = "سرورهای DNS تونل", value = config.dnsList, onValueChange = { onUpdateConfig(config.copy(dnsList = it.replace(Regex("\\s*,\\s*"), ","))) }, placeholder = "1.1.1.1,1.0.0.1", testTag = "dns_list_input"); AppDivider() }
+        IosInputFieldRow(icon = Icons.AutoMirrored.Filled.AltRoute, iconBg = AppPalette.accentVariant, label = "آی‌پی همتا اجباری", value = config.peer, onValueChange = { onUpdateConfig(config.copy(peer = it)) }, placeholder = "مثلاً 1.2.3.4:443", testTag = "peer_input"); AppDivider()
+        IosSwitchRow(icon = Icons.Default.Bolt, iconBg = AppPalette.statusScanning, title = "بسته‌های نگهداری اتصال", subtitle = if (config.keepaliveEnabled) "حفظ اتصال NAT با پینگ‌های دوره‌ای" else "غیرفعال - بدون نگهداری اتصال (صرفه‌جویی در باتری)", checked = config.keepaliveEnabled, onCheckedChange = { onUpdateConfig(config.copy(keepaliveEnabled = it)) }, testTag = "switch_keepalive_enabled"); AppDivider()
+        AnimatedVisibility(visible = config.keepaliveEnabled, enter = fadeIn() + expandVertically(), exit = fadeOut() + shrinkVertically()) { Column { IosInputFieldRow(icon = Icons.Default.Bolt, iconBg = AppPalette.statusScanning, label = "فاصله نگهداری اتصال (ثانیه)", value = config.keepalive.toString(), onValueChange = { onUpdateConfig(config.copy(keepalive = it.toIntOrNull() ?: 5)) }, placeholder = "5", keyboardType = KeyboardType.Number, testTag = "keepalive_input"); AppDivider() } }
+        IosInputFieldRow(icon = Icons.Default.Timer, iconBg = IosSecondaryLabel, label = "فاصله اعتبارسنجی (ثانیه)", value = config.validateSecs.toString(), onValueChange = { onUpdateConfig(config.copy(validateSecs = it.toIntOrNull() ?: 10)) }, placeholder = "10", keyboardType = KeyboardType.Number, testTag = "validate_secs_input")
     } }
 }
 
 @Composable private fun SecurityPage(config: AetherConfig, isAndroid: Boolean, isBatteryOptimized: Boolean, onUpdateConfig: (AetherConfig) -> Unit, onRequestBatteryOptimization: () -> Unit) {
     IosGroupCard { Column {
-        IosSwitchRow(icon = Icons.Default.VpnLock, iconBg = AppPalette.accentVariant, title = "Strict Kill Switch", subtitle = "Prevent any leak even during manual stop", checked = config.strictKillSwitch, onCheckedChange = { onUpdateConfig(config.copy(strictKillSwitch = it)) }, testTag = "switch_strict_kill_switch"); AppDivider()
-        IosSwitchRow(icon = Icons.Default.Lock, iconBg = AppPalette.statusError, title = "Kill Switch", subtitle = "Block traffic when VPN is disconnected", checked = config.killSwitch, onCheckedChange = { onUpdateConfig(config.copy(killSwitch = it)) }, testTag = "switch_kill_switch"); AppDivider()
-        IosSwitchRow(icon = Icons.Default.Security, iconBg = AppPalette.accentVariant, title = "IPv6 Leak Protection", subtitle = "Force all IPv6 traffic through tunnel", checked = config.ipv6Leak, onCheckedChange = { onUpdateConfig(config.copy(ipv6Leak = it)) }, testTag = "switch_ipv6_leak"); AppDivider()
-        IosSwitchRow(icon = Icons.Default.Restore, iconBg = IosActiveGreen, title = "Smart Reconnect", subtitle = "Attempt auto-recovery on network failure", checked = config.smartReconnect, onCheckedChange = { onUpdateConfig(config.copy(smartReconnect = it)) }, testTag = "switch_smart_reconnect")
-        if (config.smartReconnect) { AppDivider(); Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) { Row(modifier = Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) { IosIconBadge(icon = Icons.Default.Repeat, backgroundColor = IosSecondaryLabel); Spacer(modifier = Modifier.width(12.dp)); IosInputField(label = "Max Retries", value = config.reconnectRetryLimit.toString(), onValueChange = { onUpdateConfig(config.copy(reconnectRetryLimit = it.toIntOrNull() ?: 10)) }, placeholder = "10", keyboardType = KeyboardType.Number, testTag = "reconnect_limit_input") }; Spacer(modifier = Modifier.width(12.dp)); Row(modifier = Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) { IosInputField(label = "Delay (Secs)", value = config.reconnectSecs.toString(), onValueChange = { onUpdateConfig(config.copy(reconnectSecs = it.toIntOrNull() ?: 2)) }, placeholder = "2", keyboardType = KeyboardType.Number, testTag = "reconnect_secs_input") } } }
-        AppDivider(); IosSwitchRow(icon = Icons.Default.Sync, iconBg = IosActiveGreen, title = "Cloudflare Reprovision", subtitle = "Auto-register fresh device on identity loss", checked = config.reprovision, onCheckedChange = { onUpdateConfig(config.copy(reprovision = it)) }, testTag = "switch_reprovision")
-        if (isAndroid) { AppDivider(); IosSwitchRow(icon = Icons.Default.BatteryAlert, iconBg = AppPalette.statusError, title = "Battery Optimization", subtitle = "Allow AetherST to run without restrictions", checked = isBatteryOptimized, enabled = !isBatteryOptimized, onCheckedChange = { if (it) onRequestBatteryOptimization() }, testTag = "switch_battery_opt") }
+        IosSwitchRow(icon = Icons.Default.VpnLock, iconBg = AppPalette.accentVariant, title = "قطع کننده اتصال سخت‌گیرانه", subtitle = "جلوگیری از هرگونه نشت حتی در هنگام توقف دستی", checked = config.strictKillSwitch, onCheckedChange = { onUpdateConfig(config.copy(strictKillSwitch = it)) }, testTag = "switch_strict_kill_switch"); AppDivider()
+        IosSwitchRow(icon = Icons.Default.Lock, iconBg = AppPalette.statusError, title = "قطع کننده اتصال", subtitle = "مسدود کردن ترافیک وقتی VPN قطع است", checked = config.killSwitch, onCheckedChange = { onUpdateConfig(config.copy(killSwitch = it)) }, testTag = "switch_kill_switch"); AppDivider()
+        IosSwitchRow(icon = Icons.Default.Security, iconBg = AppPalette.accentVariant, title = "محافظت در برابر نشت IPv6", subtitle = "اجبار همه ترافیک IPv6 از طریق تونل", checked = config.ipv6Leak, onCheckedChange = { onUpdateConfig(config.copy(ipv6Leak = it)) }, testTag = "switch_ipv6_leak"); AppDivider()
+        IosSwitchRow(icon = Icons.Default.Restore, iconBg = IosActiveGreen, title = "اتصال مجدد هوشمند", subtitle = "تلاش برای بازیابی خودکار در صورت خرابی شبکه", checked = config.smartReconnect, onCheckedChange = { onUpdateConfig(config.copy(smartReconnect = it)) }, testTag = "switch_smart_reconnect")
+        if (config.smartReconnect) { AppDivider(); Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) { Row(modifier = Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) { IosIconBadge(icon = Icons.Default.Repeat, backgroundColor = IosSecondaryLabel); Spacer(modifier = Modifier.width(12.dp)); IosInputField(label = "حداکثر تلاش مجدد", value = config.reconnectRetryLimit.toString(), onValueChange = { onUpdateConfig(config.copy(reconnectRetryLimit = it.toIntOrNull() ?: 10)) }, placeholder = "10", keyboardType = KeyboardType.Number, testTag = "reconnect_limit_input") }; Spacer(modifier = Modifier.width(12.dp)); Row(modifier = Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) { IosInputField(label = "تاخیر (ثانیه)", value = config.reconnectSecs.toString(), onValueChange = { onUpdateConfig(config.copy(reconnectSecs = it.toIntOrNull() ?: 2)) }, placeholder = "2", keyboardType = KeyboardType.Number, testTag = "reconnect_secs_input") } } }
+        AppDivider(); IosSwitchRow(icon = Icons.Default.Sync, iconBg = IosActiveGreen, title = "بازیابی Cloudflare", subtitle = "ثبت‌نام خودکار دستگاه جدید در صورت از دست رفتن هویت", checked = config.reprovision, onCheckedChange = { onUpdateConfig(config.copy(reprovision = it)) }, testTag = "switch_reprovision")
+        if (isAndroid) { AppDivider(); IosSwitchRow(icon = Icons.Default.BatteryAlert, iconBg = AppPalette.statusError, title = "بهینه‌سازی باتری", subtitle = "اجازه اجرای AetherST بدون محدودیت", checked = isBatteryOptimized, enabled = !isBatteryOptimized, onCheckedChange = { if (it) onRequestBatteryOptimization() }, testTag = "switch_battery_opt") }
     } }
 }
 
@@ -465,40 +472,40 @@ private fun encodeUpstreamCredential(s: String): String = s.replace("@", "%40").
 
 @Composable private fun DiagnosticsPage(config: AetherConfig, onUpdateConfig: (AetherConfig) -> Unit) {
     IosGroupCard { Column {
-        IosPickerRow(icon = Icons.Default.BugReport, iconBg = AppPalette.debugCyan, title = "App System Logging", value = config.appLogLevel.displayName.substringBefore(" ("), options = AetherLogLevel.entries.map { it.displayName }, onOptionSelected = { onUpdateConfig(config.copy(appLogLevel = AetherLogLevel.entries[it])) }); AppDivider()
-        IosPickerRow(icon = Icons.Default.VpnLock, iconBg = IosSecondaryLabel, title = "Aether Core Logging", value = config.coreLogLevel.displayName.substringBefore(" ("), options = AetherLogLevel.entries.map { it.displayName }, onOptionSelected = { onUpdateConfig(config.copy(coreLogLevel = AetherLogLevel.entries[it])) }); AppDivider()
-        IosPickerRow(icon = Icons.Default.Speed, iconBg = IosActiveGreen, title = "Core Performance Profile", value = config.perfProfile.displayName, options = AetherPerfProfile.entries.map { it.displayName }, onOptionSelected = { onUpdateConfig(config.copy(perfProfile = AetherPerfProfile.entries[it])) }); AppDivider()
+        IosPickerRow(icon = Icons.Default.BugReport, iconBg = AppPalette.debugCyan, title = "ثبت وقایع برنامه", value = config.appLogLevel.displayName.substringBefore(" ("), options = AetherLogLevel.entries.map { it.displayName }, onOptionSelected = { onUpdateConfig(config.copy(appLogLevel = AetherLogLevel.entries[it])) }); AppDivider()
+        IosPickerRow(icon = Icons.Default.VpnLock, iconBg = IosSecondaryLabel, title = "ثبت وقایع هسته Aether", value = config.coreLogLevel.displayName.substringBefore(" ("), options = AetherLogLevel.entries.map { it.displayName }, onOptionSelected = { onUpdateConfig(config.copy(coreLogLevel = AetherLogLevel.entries[it])) }); AppDivider()
+        IosPickerRow(icon = Icons.Default.Speed, iconBg = IosActiveGreen, title = "پروفایل کارایی هسته", value = config.perfProfile.displayName, options = AetherPerfProfile.entries.map { it.displayName }, onOptionSelected = { onUpdateConfig(config.copy(perfProfile = AetherPerfProfile.entries[it])) }); AppDivider()
         Column {
-            IosSwitchRow(icon = Icons.AutoMirrored.Filled.AltRoute, iconBg = AppPalette.accentVariantAlt, title = "Chain External Proxy", subtitle = "Route through a local SOCKS/HTTP proxy (another app)", checked = config.upstreamProxyEnabled, onCheckedChange = { onUpdateConfig(config.copy(upstreamProxyEnabled = it, upstreamProxy = if (it) config.upstreamProxy.ifBlank { "socks5://127.0.0.1:1080" } else "")) }, testTag = "switch_upstream_proxy")
+            IosSwitchRow(icon = Icons.AutoMirrored.Filled.AltRoute, iconBg = AppPalette.accentVariantAlt, title = "زنجیره پروکسی خارجی", subtitle = "مسیریابی از طریق یک پروکسی SOCKS/HTTP محلی (برنامه دیگر)", checked = config.upstreamProxyEnabled, onCheckedChange = { onUpdateConfig(config.copy(upstreamProxyEnabled = it, upstreamProxy = if (it) config.upstreamProxy.ifBlank { "socks5://127.0.0.1:1080" } else "")) }, testTag = "switch_upstream_proxy")
             if (config.upstreamProxyEnabled) {
                 AppDivider()
                 val up = remember(config.upstreamProxy) { parseUpstreamProxy(config.upstreamProxy) }
                 val updateUpstream: (ParsedUpstreamProxy) -> Unit = { onUpdateConfig(config.copy(upstreamProxy = buildUpstreamProxy(it))) }
-                IosPickerRow(icon = Icons.Default.Shuffle, iconBg = AppPalette.accentVariantAlt, title = "Proxy Type", value = up.scheme.uppercase(), options = listOf("SOCKS5", "HTTP"), onOptionSelected = { idx -> updateUpstream(up.copy(scheme = if (idx == 0) "socks5" else "http")) })
+                IosPickerRow(icon = Icons.Default.Shuffle, iconBg = AppPalette.accentVariantAlt, title = "نوع پروکسی", value = up.scheme.uppercase(), options = listOf("SOCKS5", "HTTP"), onOptionSelected = { idx -> updateUpstream(up.copy(scheme = if (idx == 0) "socks5" else "http")) })
                 AppDivider()
-                IosInputFieldRow(icon = Icons.Default.Dns, iconBg = AppPalette.textSecondary, label = "Host", value = up.host, onValueChange = { updateUpstream(up.copy(host = it)) }, placeholder = "127.0.0.1", testTag = "upstream_proxy_host")
+                IosInputFieldRow(icon = Icons.Default.Dns, iconBg = AppPalette.textSecondary, label = "میزبان", value = up.host, onValueChange = { updateUpstream(up.copy(host = it)) }, placeholder = "127.0.0.1", testTag = "upstream_proxy_host")
                 AppDivider()
-                IosInputFieldRow(icon = Icons.Default.Numbers, iconBg = AppPalette.textSecondary, label = "Port", value = up.port, onValueChange = { updateUpstream(up.copy(port = it.filter { c -> c.isDigit() }.take(5))) }, placeholder = "1080", keyboardType = KeyboardType.Number, testTag = "upstream_proxy_port")
+                IosInputFieldRow(icon = Icons.Default.Numbers, iconBg = AppPalette.textSecondary, label = "پورت", value = up.port, onValueChange = { updateUpstream(up.copy(port = it.filter { c -> c.isDigit() }.take(5))) }, placeholder = "1080", keyboardType = KeyboardType.Number, testTag = "upstream_proxy_port")
                 AppDivider()
-                IosInputFieldRow(icon = Icons.Default.Person, iconBg = AppPalette.textSecondary, label = "Username (optional)", value = up.user, onValueChange = { updateUpstream(up.copy(user = it)) }, placeholder = "user", testTag = "upstream_proxy_user")
+                IosInputFieldRow(icon = Icons.Default.Person, iconBg = AppPalette.textSecondary, label = "نام کاربری (اختیاری)", value = up.user, onValueChange = { updateUpstream(up.copy(user = it)) }, placeholder = "user", testTag = "upstream_proxy_user")
                 AppDivider()
-                IosInputFieldRow(icon = Icons.Default.Lock, iconBg = AppPalette.textSecondary, label = "Password (optional)", value = up.pass, onValueChange = { updateUpstream(up.copy(pass = it)) }, placeholder = "password", testTag = "upstream_proxy_pass")
+                IosInputFieldRow(icon = Icons.Default.Lock, iconBg = AppPalette.textSecondary, label = "رمز عبور (اختیاری)", value = up.pass, onValueChange = { updateUpstream(up.copy(pass = it)) }, placeholder = "password", testTag = "upstream_proxy_pass")
             }
         }; AppDivider()
-        IosSwitchRow(icon = Icons.AutoMirrored.Filled.Rule, iconBg = IosActiveBlue, title = "Domain Sniffing", subtitle = "Sniff SNI/Host for domain routing rules", checked = config.routeSniffing, onCheckedChange = { onUpdateConfig(config.copy(routeSniffing = it)) }, testTag = "switch_route_sniffing")
-        if (config.routeSniffing) { AppDivider(); IosInputFieldRow(icon = Icons.Default.Timer, iconBg = IosSecondaryLabel, label = "Sniffing Timeout (ms)", value = config.sniffingTimeoutMs.toString(), onValueChange = { onUpdateConfig(config.copy(sniffingTimeoutMs = it.toIntOrNull() ?: 100)) }, placeholder = "100", keyboardType = KeyboardType.Number, testTag = "sniffing_timeout_input") }
-        AppDivider(); IosSwitchRow(icon = Icons.Default.Restore, iconBg = IosActiveGreen, title = "Quick Reconnect Strategy", subtitle = "Optimize session recovery timing", checked = config.quickReconnect, onCheckedChange = { onUpdateConfig(config.copy(quickReconnect = it)) }, testTag = "switch_quick_reconnect"); AppDivider()
-        IosSwitchRow(icon = Icons.Default.Block, iconBg = AppPalette.statusError, title = "Strict Profile Lock", subtitle = "Disable fallback to other profiles", checked = config.noProfileRetry, onCheckedChange = { onUpdateConfig(config.copy(noProfileRetry = it)) }, testTag = "switch_no_profile_retry")
+        IosSwitchRow(icon = Icons.AutoMirrored.Filled.Rule, iconBg = IosActiveBlue, title = "تشخیص دامنه", subtitle = "تشخیص SNI/Host برای قوانین مسیریابی دامنه", checked = config.routeSniffing, onCheckedChange = { onUpdateConfig(config.copy(routeSniffing = it)) }, testTag = "switch_route_sniffing")
+        if (config.routeSniffing) { AppDivider(); IosInputFieldRow(icon = Icons.Default.Timer, iconBg = IosSecondaryLabel, label = "زمان انتظار تشخیص (ms)", value = config.sniffingTimeoutMs.toString(), onValueChange = { onUpdateConfig(config.copy(sniffingTimeoutMs = it.toIntOrNull() ?: 100)) }, placeholder = "100", keyboardType = KeyboardType.Number, testTag = "sniffing_timeout_input") }
+        AppDivider(); IosSwitchRow(icon = Icons.Default.Restore, iconBg = IosActiveGreen, title = "استراتژی اتصال مجدد سریع", subtitle = "بهینه‌سازی زمان بازیابی جلسه", checked = config.quickReconnect, onCheckedChange = { onUpdateConfig(config.copy(quickReconnect = it)) }, testTag = "switch_quick_reconnect"); AppDivider()
+        IosSwitchRow(icon = Icons.Default.Block, iconBg = AppPalette.statusError, title = "قفل سخت‌گیرانه پروفایل", subtitle = "غیرفعال‌سازی بازگشت به پروفایل‌های دیگر", checked = config.noProfileRetry, onCheckedChange = { onUpdateConfig(config.copy(noProfileRetry = it)) }, testTag = "switch_no_profile_retry")
     } }
 }
 
 @Composable private fun PsiphonPage(config: AetherConfig, onUpdateConfig: (AetherConfig) -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         IosGroupCard { Column {
-            IosSwitchRow(icon = Icons.Default.Shield, iconBg = AppPalette.accentVariant, title = "Psiphon Chain", subtitle = if (config.psiphonEnabled) "Enabled - route via Psiphon for non-Iran IP" else "Disabled", checked = config.psiphonEnabled, onCheckedChange = { onUpdateConfig(config.copy(psiphonEnabled = it, psiphonChainOuter = "masque")) }, testTag = "switch_psiphon_enabled")
+            IosSwitchRow(icon = Icons.Default.Shield, iconBg = AppPalette.accentVariant, title = "زنجیره سایفون", subtitle = if (config.psiphonEnabled) "فعال - مسیریابی از طریق سایفون برای آی‌پی غیرایرانی" else "غیرفعال", checked = config.psiphonEnabled, onCheckedChange = { onUpdateConfig(config.copy(psiphonEnabled = it, psiphonChainOuter = "masque")) }, testTag = "switch_psiphon_enabled")
             if (config.psiphonEnabled) {
                 AppDivider()
-                IosPickerRow(icon = Icons.Default.VpnLock, iconBg = AppPalette.statusConnected, title = "Chain Outer Protocol", value = "masque", options = listOf("masque"), onOptionSelected = { onUpdateConfig(config.copy(psiphonChainOuter = "masque")) })
+                IosPickerRow(icon = Icons.Default.VpnLock, iconBg = AppPalette.statusConnected, title = "پروتکل بیرونی زنجیره", value = "masque", options = listOf("masque"), onOptionSelected = { onUpdateConfig(config.copy(psiphonChainOuter = "masque")) })
                 AppDivider()
                 val availableRegions by PsiphonEgressRegistry.availableRegions.collectAsStateWithLifecycle()
                 val selectedRegion = config.psiphonEgressRegion.trim().uppercase()
@@ -508,14 +515,14 @@ private fun encodeUpstreamCredential(s: String): String = s.replace("@", "%40").
                     if (selectedRegion.isNotEmpty() && selectedRegion !in availableRegions) add(selectedRegion)
                 }
                 val regionOptions = regionCodes.map { CountryNames.label(it) }
-                IosPickerRow(icon = Icons.Default.Public, iconBg = Color(0xFF30B0C7), title = "Exit Location", value = CountryNames.label(selectedRegion), options = regionOptions, onOptionSelected = { idx -> onUpdateConfig(config.copy(psiphonEgressRegion = regionCodes[idx])) })
+                IosPickerRow(icon = Icons.Default.Public, iconBg = Color(0xFF30B0C7), title = "موقعیت خروجی", value = CountryNames.label(selectedRegion), options = regionOptions, onOptionSelected = { idx -> onUpdateConfig(config.copy(psiphonEgressRegion = regionCodes[idx])) })
             }
         } }
         IosGroupCard {
             Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp)) {
-                Text("About Psiphon Chain", fontWeight = FontWeight.Bold, color = Color.White, fontSize = 14.sp)
+                Text("درباره زنجیره سایفون", fontWeight = FontWeight.Bold, color = Color.White, fontSize = 14.sp)
                 Spacer(modifier = Modifier.height(6.dp))
-                Text("Psiphon is chained as inner tunnel over the selected outer protocol (for example masque). Outer handles censorship bypass, inner provides non-Iran exit. Enable the switch on Dashboard or here, select outer protocol, then connect. Works only on Android. When disabled, connection uses single aether core.", color = IosSecondaryLabel, fontSize = 12.sp, lineHeight = 17.sp)
+                Text("سایفون به عنوان تونل داخلی بر روی پروتکل بیرونی انتخاب شده (مثلاً masque) زنجیره می‌شود. بیرونی عبور از سانسور را انجام می‌دهد، داخلی خروجی غیرایرانی را فراهم می‌کند. کلید را در داشبورد یا اینجا فعال کنید، پروتکل بیرونی را انتخاب کنید، سپس متصل شوید. فقط در اندروید کار می‌کند. وقتی غیرفعال است، اتصال از یک هسته Aether استفاده می‌کند.", color = IosSecondaryLabel, fontSize = 12.sp, lineHeight = 17.sp)
             }
         }
     }
@@ -523,13 +530,13 @@ private fun encodeUpstreamCredential(s: String): String = s.replace("@", "%40").
 
 @Composable private fun HevEnginePage(config: AetherConfig, onUpdateConfig: (AetherConfig) -> Unit) {
     val hevLevels = listOf("error", "warn", "info", "debug")
-    val levelLabels = mapOf("error" to "Error", "warn" to "Warn (Default)", "info" to "Info", "debug" to "Debug (Verbose)")
+    val levelLabels = mapOf("error" to "خطا", "warn" to "اخطار (پیش‌فرض)", "info" to "اطلاعات", "debug" to "اشکال‌زدایی (مفصل)")
     val currentLevel = if (config.hevLogLevel in hevLevels) config.hevLogLevel else "warn"
     val hevUdpOptions = listOf("udp", "icmp", "off")
     val hevUdpLabels = mapOf(
         "udp" to "UDP (ASSOCIATE)",
         "icmp" to "UDP (ICMP-in-TCP)",
-        "off" to "Disabled"
+        "off" to "غیرفعال"
     )
     val hevUdpMode = if (config.hevUdpMode in hevUdpOptions) config.hevUdpMode else "udp"
 
@@ -537,30 +544,30 @@ private fun encodeUpstreamCredential(s: String): String = s.replace("@", "%40").
         IosPickerRow(
             icon = Icons.Default.BugReport,
             iconBg = AppPalette.accentVariantAlt,
-            title = "HEV Log Level",
-            value = levelLabels[currentLevel] ?: "Warn (Default)",
+            title = "سطح گزارش HEV",
+            value = levelLabels[currentLevel] ?: "اخطار (پیش‌فرض)",
             options = hevLevels.map { levelLabels[it]!! },
             onOptionSelected = { index -> onUpdateConfig(config.copy(hevLogLevel = hevLevels[index])) }
         ); AppDivider()
         Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
             Row(modifier = Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
                 IosIconBadge(icon = Icons.Default.Timer, backgroundColor = IosActiveBlue); Spacer(modifier = Modifier.width(12.dp))
-                IosInputField(label = "Connect Timeout (ms)", value = config.hevConnectTimeoutMs.toString(), onValueChange = { onUpdateConfig(config.copy(hevConnectTimeoutMs = it.toIntOrNull()?.coerceIn(500, 120000) ?: 5000)) }, modifier = Modifier.weight(1f), placeholder = "5000", keyboardType = KeyboardType.Number, testTag = "hev_connect_timeout_input")
+                IosInputField(label = "زمان انتظار اتصال (ms)", value = config.hevConnectTimeoutMs.toString(), onValueChange = { onUpdateConfig(config.copy(hevConnectTimeoutMs = it.toIntOrNull()?.coerceIn(500, 120000) ?: 5000)) }, modifier = Modifier.weight(1f), placeholder = "5000", keyboardType = KeyboardType.Number, testTag = "hev_connect_timeout_input")
             }
             Spacer(modifier = Modifier.width(12.dp))
             Row(modifier = Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
                 IosIconBadge(icon = Icons.Default.SwapHoriz, backgroundColor = IosActiveGreen); Spacer(modifier = Modifier.width(12.dp))
-                IosInputField(label = "RW Timeout (ms)", value = config.hevReadWriteTimeoutMs.toString(), onValueChange = { onUpdateConfig(config.copy(hevReadWriteTimeoutMs = it.toIntOrNull()?.coerceIn(1000, 600000) ?: 60000)) }, modifier = Modifier.weight(1f), placeholder = "60000", keyboardType = KeyboardType.Number, testTag = "hev_rw_timeout_input")
+                IosInputField(label = "زمان انتظار خواندن/نوشتن (ms)", value = config.hevReadWriteTimeoutMs.toString(), onValueChange = { onUpdateConfig(config.copy(hevReadWriteTimeoutMs = it.toIntOrNull()?.coerceIn(1000, 600000) ?: 60000)) }, modifier = Modifier.weight(1f), placeholder = "60000", keyboardType = KeyboardType.Number, testTag = "hev_rw_timeout_input")
             }
         }
         AppDivider()
-        IosInputFieldRow(icon = Icons.Default.Layers, iconBg = AppPalette.accentVariant, label = "Max Sessions (0 = Unlimited)", value = config.hevMaxSessionCount.toString(), onValueChange = { onUpdateConfig(config.copy(hevMaxSessionCount = it.toIntOrNull()?.coerceIn(0, 200000) ?: 0)) }, placeholder = "0", keyboardType = KeyboardType.Number, testTag = "hev_max_sessions_input"); AppDivider()
-        IosInputFieldRow(icon = Icons.Default.Storage, iconBg = AppPalette.statusScanning, label = "MapDNS Cache Size", value = config.hevMapdnsCacheSize.toString(), onValueChange = { onUpdateConfig(config.copy(hevMapdnsCacheSize = it.toIntOrNull()?.coerceIn(100, 1000000) ?: 10000)) }, placeholder = "10000", keyboardType = KeyboardType.Number, testTag = "hev_mapdns_cache_input")
+        IosInputFieldRow(icon = Icons.Default.Layers, iconBg = AppPalette.accentVariant, label = "حداکثر جلسات (0 = نامحدود)", value = config.hevMaxSessionCount.toString(), onValueChange = { onUpdateConfig(config.copy(hevMaxSessionCount = it.toIntOrNull()?.coerceIn(0, 200000) ?: 0)) }, placeholder = "0", keyboardType = KeyboardType.Number, testTag = "hev_max_sessions_input"); AppDivider()
+        IosInputFieldRow(icon = Icons.Default.Storage, iconBg = AppPalette.statusScanning, label = "اندازه حافظه نهان MapDNS", value = config.hevMapdnsCacheSize.toString(), onValueChange = { onUpdateConfig(config.copy(hevMapdnsCacheSize = it.toIntOrNull()?.coerceIn(100, 1000000) ?: 10000)) }, placeholder = "10000", keyboardType = KeyboardType.Number, testTag = "hev_mapdns_cache_input")
         AppDivider()
         IosPickerRow(
             icon = Icons.Default.SwapVert,
             iconBg = Color(0xFF30B0C7),
-            title = "UDP Forwarding Mode",
+            title = "حالت ارسال UDP",
             value = hevUdpLabels[hevUdpMode] ?: "UDP (ASSOCIATE)",
             options = hevUdpOptions.map { hevUdpLabels[it]!! },
             onOptionSelected = { index -> onUpdateConfig(config.copy(hevUdpMode = hevUdpOptions[index])) }
@@ -569,9 +576,9 @@ private fun encodeUpstreamCredential(s: String): String = s.replace("@", "%40").
     Spacer(modifier = Modifier.height(8.dp))
     IosGroupCard {
         Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp)) {
-            Text("About HEV Engine", fontWeight = FontWeight.Bold, color = Color.White, fontSize = 14.sp)
+            Text("درباره موتور HEV", fontWeight = FontWeight.Bold, color = Color.White, fontSize = 14.sp)
             Spacer(modifier = Modifier.height(6.dp))
-            Text("These values configure the native HEV tun2socks engine used in Tunnel mode on Android. Changes apply after the VPN reconnects. Timeouts are clamped to safe ranges; Max Sessions 0 means unlimited.", color = IosSecondaryLabel, fontSize = 12.sp, lineHeight = 17.sp)
+            Text("این مقادیر موتور بومی HEV tun2socks را که در حالت تونل در اندروید استفاده می‌شود، پیکربندی می‌کنند. تغییرات پس از اتصال مجدد VPN اعمال می‌شوند. زمان‌های انتظار در محدوده‌های ایمن محدود شده‌اند؛ جلسات حداکثر 0 به معنای نامحدود است.", color = IosSecondaryLabel, fontSize = 12.sp, lineHeight = 17.sp)
         }
     }
 }
@@ -579,10 +586,10 @@ private fun encodeUpstreamCredential(s: String): String = s.replace("@", "%40").
 @Composable private fun SystemPage(isAndroid: Boolean, onExportBackup: () -> Unit, onImportBackup: () -> Unit, onOpenVpnSettings: () -> Unit, onResetClick: () -> Unit) {
     IosGroupCard { Column {
         if (isAndroid) {
-            IosActionRow(icon = Icons.Default.Lock, iconBg = Color(0xFF0A84FF), title = "Always-on VPN", subtitle = "Open system VPN settings to keep AetherST always connected", onClick = onOpenVpnSettings); AppDivider()
+            IosActionRow(icon = Icons.Default.Lock, iconBg = Color(0xFF0A84FF), title = "VPN همیشه روشن", subtitle = "باز کردن تنظیمات سیستم VPN برای始终保持 AetherST متصل", onClick = onOpenVpnSettings); AppDivider()
         }
-        IosActionRow(icon = Icons.Default.CloudUpload, iconBg = AppPalette.accentVariant, title = "Full Configuration Backup", subtitle = "Export all settings to .astf file", onClick = onExportBackup); AppDivider()
-        IosActionRow(icon = Icons.Default.CloudDownload, iconBg = IosActiveGreen, title = "Restore from Backup", subtitle = "Import settings from an .astf file", onClick = onImportBackup); AppDivider()
-        IosActionRow(icon = Icons.Default.DeleteForever, iconBg = AppPalette.statusError, title = "Reset to Factory Defaults", subtitle = "Wipe all custom tweaks and restart", onClick = onResetClick, titleColor = AppPalette.statusError)
+        IosActionRow(icon = Icons.Default.CloudUpload, iconBg = AppPalette.accentVariant, title = "پشتیبان‌گیری کامل تنظیمات", subtitle = "خروجی همه تنظیمات به فایل .astf", onClick = onExportBackup); AppDivider()
+        IosActionRow(icon = Icons.Default.CloudDownload, iconBg = IosActiveGreen, title = "بازیابی از پشتیبان", subtitle = "وارد کردن تنظیمات از فایل .astf", onClick = onImportBackup); AppDivider()
+        IosActionRow(icon = Icons.Default.DeleteForever, iconBg = AppPalette.statusError, title = "بازنشانی به حالت پیش‌فرض کارخانه", subtitle = "پاک کردن همه تنظیمات سفارشی و راه‌اندازی مجدد", onClick = onResetClick, titleColor = AppPalette.statusError)
     } }
 }
