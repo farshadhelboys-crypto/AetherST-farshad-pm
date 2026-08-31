@@ -29,10 +29,7 @@ private val IosActiveBlue = AppPalette.accent
 private val IosActiveGreen = AppPalette.statusConnected
 private val IosPurple = AppPalette.accentVariant
 
-private const val DeveloperTelegramUrl = "https://t.me/farshad_pm_org"
-private const val AetherSourceRepositoryUrl = "https://github.com/immaghzbad/AetherST"
-private const val AetherCoreRepositoryUrl = "https://github.com/CluvexStudio/Aether"
-private const val HevRepositoryUrl = "https://github.com/heiher/hev-socks5-tunnel"
+private const val DeveloperTelegramUrl = "https://t.me/Feri_pm_tunnel"
 
 @Composable
 fun AboutUsScreen(
@@ -59,10 +56,10 @@ fun AboutUsScreen(
             item { AboutHero(appVersion = appVersion) }
             item {
                 SectionCard {
-                    SectionTitle("Overview")
+                    SectionTitle("معرفی")
                     Spacer(Modifier.height(4.dp))
                     Text(
-                        text = "Feri PM Tunnel is a secure, private connection client focused on reliability and simplicity — real-time stats, smart presets, and zero clutter.",
+                        text = "Feri PM Tunnel یک کلاینت اتصال امن و خصوصی است که بر قابلیت اطمینان و سادگی تمرکز دارد — آمار لحظه‌ای، تنظیمات هوشمند و بدون شلوغی.",
                         style = MaterialTheme.typography.bodyMedium,
                         color = colors.textSecondary,
                         fontSize = 14.sp,
@@ -72,66 +69,36 @@ fun AboutUsScreen(
             }
             item {
                 SectionCard {
-                    SectionTitle("Why Feri PM Tunnel")
+                    SectionTitle("چرا Feri PM Tunnel")
                     InfoRow(
-                        title = "Censorship-Resistant",
-                        description = "Engineered to bypass DPI and protocol-based filtering."
+                        title = "مقاوم در برابر سانسور",
+                        description = "طراحی شده برای عبور از DPI و فیلترهای مبتنی بر پروتکل."
                     )
                     AppDivider()
                     InfoRow(
-                        title = "Hybrid Transports",
-                        description = "Support for MASQUE (HTTP/2 & HTTP/3), WireGuard, and cascaded tunnels."
+                        title = "ترابری ترکیبی",
+                        description = "پشتیبانی از MASQUE (HTTP/2 و HTTP/3)، WireGuard و تونل‌های آبشاری."
                     )
                     AppDivider()
                     InfoRow(
-                        title = "Gateway Validation",
-                        description = "Verifies gateway health and integrity before routing any data."
+                        title = "اعتبارسنجی دروازه",
+                        description = "سلامت و یکپارچگی دروازه را قبل از مسیریابی داده‌ها تأیید می‌کند."
                     )
                     AppDivider()
                     InfoRow(
-                        title = "Fast Recovery",
-                        description = "Automatic reconnection logic that adapts to network changes."
+                        title = "بازیابی سریع",
+                        description = "منطق اتصال مجدد خودکار که با تغییرات شبکه سازگار می‌شود."
                     )
                 }
             }
             item {
                 SectionCard {
-                    SectionTitle("Contact")
+                    SectionTitle("ارتباط با ما")
                     IosActionRow(
                         iconBg = IosActiveBlue.copy(alpha = 0.16f),
-                        title = "Telegram",
-                        subtitle = "@farshad_pm_org",
+                        title = "تلگرام",
+                        subtitle = "https://t.me/Feri_pm_tunnel",
                         onClick = { uriHandler.openUri(DeveloperTelegramUrl) }
-                    )
-                }
-            }
-            item {
-                SectionCard {
-                    SectionTitle("Open Source Credits")
-                    InfoRow(
-                        title = "Built on AetherST",
-                        description = "This app is based on the AetherST client, an open-source project by immaghzbad, redistributed with attribution as required by its license."
-                    )
-                    AppDivider()
-                    IosActionRow(
-                        iconBg = IosActiveBlue.copy(alpha = 0.16f),
-                        title = "AetherST Source",
-                        subtitle = "github.com/immaghzbad/AetherST",
-                        onClick = { uriHandler.openUri(AetherSourceRepositoryUrl) }
-                    )
-                    AppDivider()
-                    IosActionRow(
-                        iconBg = IosActiveGreen.copy(alpha = 0.16f),
-                        title = "Aether Core",
-                        subtitle = "Engine source & protocol (CluvexStudio)",
-                        onClick = { uriHandler.openUri(AetherCoreRepositoryUrl) }
-                    )
-                    AppDivider()
-                    IosActionRow(
-                        iconBg = IosPurple.copy(alpha = 0.16f),
-                        title = "HEV Stack Source",
-                        subtitle = "Native C TUN-to-SOCKS bridge",
-                        onClick = { uriHandler.openUri(HevRepositoryUrl) }
                     )
                 }
             }
@@ -156,7 +123,7 @@ private fun AboutHero(appVersion: String) {
         )
         Spacer(Modifier.height(6.dp))
         Text(
-            text = "Secure Tunneling Client",
+            text = "کلاینت تونل‌زنی امن",
             style = MaterialTheme.typography.bodyMedium,
             color = colors.textSecondary,
             fontSize = 14.sp,
@@ -167,8 +134,8 @@ private fun AboutHero(appVersion: String) {
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            VersionChip(label = "APP", value = appVersion)
-            VersionChip(label = "AETHER", value = "1.7.0")
+            VersionChip(label = "برنامه", value = appVersion)
+            VersionChip(label = "هسته", value = "1.7.0")
             VersionChip(label = "HEV", value = "2.17.1")
         }
     }
@@ -253,7 +220,7 @@ private fun AboutFooter() {
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
-                text = "Built with ",
+                text = "ساخته شده با ",
                 color = colors.textSecondary,
                 fontSize = 13.sp,
                 fontWeight = FontWeight.Medium
@@ -265,7 +232,7 @@ private fun AboutFooter() {
                 modifier = Modifier.size(14.dp)
             )
             Text(
-                text = " by Feri PM",
+                text = " توسط Feri PM",
                 color = colors.textSecondary,
                 fontSize = 13.sp,
                 fontWeight = FontWeight.Medium
@@ -273,7 +240,7 @@ private fun AboutFooter() {
         }
         Spacer(Modifier.height(8.dp))
         Text(
-            text = "Feri PM Tunnel is an independent client built on the open-source AetherST project. The Aether core is developed by CluvexStudio and distributed under its own open-source license.",
+            text = "Feri PM Tunnel یک کلاینت مستقل است که بر روی پروژه منبع‌باز AetherST ساخته شده است. هسته Aether توسط CluvexStudio توسعه داده شده و تحت مجوز منبع‌باز خود توزیع می‌شود.",
             style = MaterialTheme.typography.bodySmall,
             color = colors.textSecondary.copy(alpha = 0.7f),
             textAlign = TextAlign.Center,
