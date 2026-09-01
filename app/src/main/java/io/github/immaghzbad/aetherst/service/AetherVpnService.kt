@@ -73,7 +73,7 @@ class AetherVpnService : VpnService() {
             context.startForegroundService(intent)
             true
         }.getOrElse {
-            LogRepository.e("[VpnService] Start failed: ${it.localizedMessage}")
+            LogRepository.e("[VpnService] شروع ناموفق: ${it.localizedMessage}")
             false
         }
 
@@ -82,7 +82,7 @@ class AetherVpnService : VpnService() {
             context.startService(intent)
             true
         }.getOrElse {
-            LogRepository.e("[VpnService] Stop failed: ${it.localizedMessage}")
+            LogRepository.e("[VpnService] توقف ناموفق: ${it.localizedMessage}")
             false
         }
 
@@ -98,7 +98,7 @@ class AetherVpnService : VpnService() {
         createNotificationChannel()
         
         val pm = getSystemService(POWER_SERVICE) as PowerManager
-        wakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "AetherST:VpnWakeLock")
+        wakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "FeriPmTunnel:VpnWakeLock")
 
         scope.launch {
             ConnectionController.status.collect { status ->
@@ -127,7 +127,7 @@ class AetherVpnService : VpnService() {
             }
             else -> {
                 if (!isUserInitiatedStop) {
-                    LogRepository.i("[VpnService] System-initiated start (always-on / restart) -> starting tunnel")
+                    LogRepository.i("[VpnService] شروع توسط سیستم (همیشه روشن / راه‌اندازی مجدد) -> شروع تونل")
                     isUserInitiatedStop = false
                     showInitialNotification()
                     startAttempt(commandCounter.incrementAndGet())
@@ -139,15 +139,13 @@ class AetherVpnService : VpnService() {
 
     override fun onRevoke() {
         isUserInitiatedStop = false
-        LogRepository.w("[VpnService] VPN revoked by system or other app")
+        LogRepository.w("[VpnService] VPN توسط سیستم یا برنامه دیگر لغو شد")
         val config = AetherConfigRepository.getInstance(getSettings(PlatformContext(this))).config.value
         
         scope.launch {
             val attemptId = activeAttemptId.getAndSet(0)
             startupJob?.cancelAndJoin()
             stopStatsJob()
-            
-            
             
             stateMutex.withLock {
                 hevEngine?.requestStop()
@@ -161,7 +159,7 @@ class AetherVpnService : VpnService() {
             if (config.connectionMode != ConnectionMode.PROXY_ONLY) {
                 getController().stop()
             } else {
-                LogRepository.i("[VpnService] Revoked but keeping core alive for Proxy Mode")
+                LogRepository.i("[VpnService] لغو شد اما هسته برای حالت پروکسی فعال باقی می‌ماند")
             }
             
             stopForeground(STOP_FOREGROUND_REMOVE)
@@ -202,12 +200,12 @@ class AetherVpnService : VpnService() {
                 }
                 activeTunnelEngine = effectiveEngine
 
-                if (!establishVpnTun(attemptId, effectiveEngine)) throw IllegalStateException("TUN establishment failed")
+                if (!establishVpnTun(attemptId, effectiveEngine)) throw IllegalStateException("راه‌اندازی TUN ناموفق")
                 ensureCurrentAttempt(attemptId)
-                val descriptor = vpnInterface ?: throw IllegalStateException("TUN descriptor unavailable")
+                val descriptor = vpnInterface ?: throw IllegalStateException("TUN در دسترس نیست")
 
                 if (effectiveEngine == TunnelEngine.HEV_TUN2SOCKS) {
-                    if (!HevTun2SocksNative.isAvailable) throw IllegalStateException("HEV Native library not available")
+                    if (!HevTun2SocksNative.isAvailable) throw IllegalStateException("کتابخانه بومی HEV در دسترس نیست")
 
                     hevEngine = HevTun2SocksEngine()
 
@@ -219,8 +217,8 @@ class AetherVpnService : VpnService() {
                         mapdnsCacheSize = config.hevMapdnsCacheSize
                     )
                     LogRepository.i(
-                        "[VpnService] HEV settings: log=${hevSettings.logLevel} connectTimeout=${hevSettings.connectTimeoutMs}ms " +
-                                "rwTimeout=${hevSettings.readWriteTimeoutMs}ms maxSessions=${if (hevSettings.maxSessionCount == 0) "unlimited" else hevSettings.maxSessionCount.toString()} mapdnsCache=${hevSettings.mapdnsCacheSize} udp=${config.hevUdpMode}"
+                        "[VpnService] تنظیمات HEV: log=${hevSettings.logLevel} connectTimeout=${hevSettings.connectTimeoutMs}ms " +
+                                "rwTimeout=${hevSettings.readWriteTimeoutMs}ms maxSessions=${if (hevSettings.maxSessionCount == 0) "نامحدود" else hevSettings.maxSessionCount.toString()} mapdnsCache=${hevSettings.mapdnsCacheSize} udp=${config.hevUdpMode}"
                     )
 
                     val ok = hevEngine?.start(
@@ -232,7 +230,7 @@ class AetherVpnService : VpnService() {
                         settings = hevSettings,
                         udpMode = config.hevUdpMode
                     ) == true
-                    if (!ok) throw IllegalStateException("HEV engine failed to start")
+                    if (!ok) throw IllegalStateException("موتور HEV شروع نشد")
                 } else {
                     socksBridge = SocksTunBridge(
                         vpnService = this@AetherVpnService,
@@ -247,7 +245,7 @@ class AetherVpnService : VpnService() {
 
                 getController().start()
                 if (ConnectionController.status.value != ConnectionStatus.RUNNING) {
-                    throw IllegalStateException("Core failed to start")
+                    throw IllegalStateException("هسته شروع نشد")
                 }
                 ensureCurrentAttempt(attemptId)
 
@@ -255,26 +253,26 @@ class AetherVpnService : VpnService() {
                 runCatching {
                     val domainCode = probeCoreSocks5(config.socksHost, socksPort, domainTarget = "www.cloudflare.com", ipLiteralTarget = null)
                     val ipCode = probeCoreSocks5(config.socksHost, socksPort, domainTarget = null, ipLiteralTarget = "1.1.1.1")
-                    LogRepository.i("[VpnService] Core proxy probe: domain-reply=$domainCode ip-literal-reply=$ipCode (0x00=granted)")
+                    LogRepository.i("[VpnService] بررسی پروکسی هسته: domain-reply=$domainCode ip-literal-reply=$ipCode (0x00=مجاز)")
                 }.onFailure {
-                    LogRepository.e("[VpnService] Core proxy probe failed: ${it.localizedMessage}")
+                    LogRepository.e("[VpnService] بررسی پروکسی هسته ناموفق: ${it.localizedMessage}")
                 }
 
-                LogRepository.i("[VpnService] VPN tunnel active")
+                LogRepository.i("[VpnService] تونل VPN فعال شد")
                 wasEverRunning = true
                 startStatsJob()
             } catch (cancellation: CancellationException) {
                 throw cancellation
             } catch (throwable: Throwable) {
                 if (activeAttemptId.get() == attemptId && commandCounter.get() == commandId) {
-                    rollback(attemptId, throwable.localizedMessage ?: "Startup failed")
+                    rollback(attemptId, throwable.localizedMessage ?: "شروع ناموفق")
                 }
             }
         }
     }
 
     private fun ensureCurrentAttempt(attemptId: Long) {
-        if (activeAttemptId.get() != attemptId) throw IllegalStateException("Connection attempt invalidated")
+        if (activeAttemptId.get() != attemptId) throw IllegalStateException("تلاش اتصال باطل شد")
     }
 
     private fun establishVpnTun(attemptId: Long, engine: TunnelEngine): Boolean = runCatching {
@@ -284,7 +282,7 @@ class AetherVpnService : VpnService() {
             .addAddress("fd00::1", 120)
             .addRoute("0.0.0.0", 0)
             .setMtu(1280)
-            .setSession("AetherST Tunnel")
+            .setSession("تونل Feri Pm")
             .setConfigureIntent(PendingIntent.getActivity(this, 0, Intent(this, MainActivity::class.java), pendingFlags))
         runCatching {
             val bypassIps = mutableSetOf<String>()
@@ -338,10 +336,10 @@ class AetherVpnService : VpnService() {
                             builder.addAllowedApplication(pkg)
                             added++
                         } catch (_: PackageManager.NameNotFoundException) {
-                            LogRepository.w("[Tun] Ignoring uninstalled package: $pkg")
+                            LogRepository.w("[Tun] نادیده گرفتن بسته نصب‌نشده: $pkg")
                         }
                     }
-                LogRepository.i("[Tun] Bypass-default: $added apps tunneled, rest bypass (allowed mode)")
+                LogRepository.i("[Tun] حالت عبور پیش‌فرض: $added برنامه تونل می‌شوند، بقیه عبور می‌کنند")
             } else {
                 builder.addDisallowedApplication(packageName)
                 try {
@@ -356,23 +354,23 @@ class AetherVpnService : VpnService() {
                             disallowed++
                         } catch (_: PackageManager.NameNotFoundException) {}
                     }
-                    LogRepository.i("[Tun] Bypass-default: 0 tunneled, $disallowed apps bypassed (all bypass)")
+                    LogRepository.i("[Tun] حالت عبور پیش‌فرض: 0 تونل شده، $disallowed برنامه عبور می‌کنند")
                 } catch (e: Exception) {
-                    LogRepository.w("[Tun] Failed to enumerate apps for all-bypass: ${e.message}")
+                    LogRepository.w("[Tun] شمارش برنامه‌ها برای حالت عبور کامل ناموفق: ${e.message}")
                 }
             }
         }
 
         vpnInterface = builder.establish() ?: return false
-        LogRepository.i("[Tun] [attempt=$attemptId] Established")
+        LogRepository.i("[Tun] [تلاش=$attemptId] راه‌اندازی شد")
         true
     }.getOrElse {
-        LogRepository.e("[Tun] [attempt=$attemptId] Failed: ${it.localizedMessage}")
+        LogRepository.e("[Tun] [تلاش=$attemptId] ناموفق: ${it.localizedMessage}")
         false
     }
 
     private suspend fun rollback(attemptId: Long, reason: String) {
-        LogRepository.e("[VpnService] Rollback: $reason")
+        LogRepository.e("[VpnService] بازگشت: $reason")
         stopStatsJob()
         val status = ConnectionController.status.value
         val pauseOnly = !isUserInitiatedStop &&
@@ -394,7 +392,7 @@ class AetherVpnService : VpnService() {
 
             cleanupResources(attemptId)
             runCatching { getController().stop() }.onFailure {
-                LogRepository.e("[VpnService] Controller stop failed: ${it.localizedMessage}")
+                LogRepository.e("[VpnService] توقف کنترلر ناموفق: ${it.localizedMessage}")
             }
 
             if (commandCounter.get() == commandId) {
@@ -410,7 +408,7 @@ class AetherVpnService : VpnService() {
                 (status == ConnectionStatus.RECONNECTING || status == ConnectionStatus.DATAPLANE_VALIDATED || status == ConnectionStatus.SOCKS_READY)
         stateMutex.withLock {
             if (pauseOnly) {
-                LogRepository.i("[VpnService] Reconnect in progress; pausing TUN instead of tearing down")
+                LogRepository.i("[VpnService] اتصال مجدد در حال انجام است؛ توقف موقت TUN به جای تخریب")
                 stopStatsJob()
                 hevEngine?.pause()
             } else {
@@ -433,9 +431,9 @@ class AetherVpnService : VpnService() {
                 stopStatsJob()
                 if (PsiphonController.isConnected()) {
                     hevEngine?.pause()
-                    LogRepository.i("[VpnService] RECONNECTING: TUN paused, interface kept open")
+                    LogRepository.i("[VpnService] اتصال مجدد: TUN متوقف شد، رابط باز نگه داشته شد")
                 } else {
-                    LogRepository.e("[VpnService] RECONNECTING but Psiphon upstream down; tearing down TUN")
+                    LogRepository.e("[VpnService] اتصال مجدد اما سایفون قطع است؛ تخریب TUN")
                     val attemptId = activeAttemptId.get()
                     stateMutex.withLock {
                         hevEngine?.requestStop()
@@ -466,7 +464,7 @@ class AetherVpnService : VpnService() {
         vpnInterface?.let {
             runCatching { it.close() }
             vpnInterface = null
-            LogRepository.i("[Tun] [attempt=$attemptId] Closed")
+            LogRepository.i("[Tun] [تلاش=$attemptId] بسته شد")
         }
     }
 
@@ -489,12 +487,12 @@ class AetherVpnService : VpnService() {
         if (activeTunnelEngine == TunnelEngine.HEV_TUN2SOCKS) {
             hevEngine?.stats?.value?.let {
                 getController().setTraffic(it.txBytes, it.rxBytes)
-                logPeriodicTraffic("[VpnService] TUN stats (HEV): txBytes=${it.txBytes} rxBytes=${it.rxBytes} txPackets=${it.txPackets} rxPackets=${it.rxPackets}")
+                logPeriodicTraffic("[VpnService] آمار TUN (HEV): ارسال=${it.txBytes} دریافت=${it.rxBytes} بسته ارسال=${it.txPackets} بسته دریافت=${it.rxPackets}")
             }
         } else {
             socksBridge?.getStats()?.let {
                 getController().setTraffic(it.txBytes, it.rxBytes)
-                logPeriodicTraffic("[VpnService] TUN stats (Bridge): txBytes=${it.txBytes} rxBytes=${it.rxBytes}")
+                logPeriodicTraffic("[VpnService] آمار TUN (پل): ارسال=${it.txBytes} دریافت=${it.rxBytes}")
             }
         }
     }
@@ -571,7 +569,7 @@ class AetherVpnService : VpnService() {
     }
 
     private fun showInitialNotification() {
-        val notification = buildNotification("Connecting...")
+        val notification = buildNotification("در حال اتصال...")
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
             startForeground(NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE)
         } else {
@@ -583,11 +581,11 @@ class AetherVpnService : VpnService() {
         val status = ConnectionController.status.value
         if (status == ConnectionStatus.STOPPED) return
         val text = when (status) {
-            ConnectionStatus.RUNNING, ConnectionStatus.TUN_ACTIVE -> "VPN connected"
-            ConnectionStatus.STARTING, ConnectionStatus.VALIDATING, ConnectionStatus.DATAPLANE_VALIDATED, ConnectionStatus.SOCKS_READY -> "Connecting..."
-            ConnectionStatus.RECONNECTING -> "Reconnecting..."
-            ConnectionStatus.STOPPING -> "Disconnecting..."
-            ConnectionStatus.ERROR, ConnectionStatus.FAILED -> "Connection error"
+            ConnectionStatus.RUNNING, ConnectionStatus.TUN_ACTIVE -> "VPN متصل است"
+            ConnectionStatus.STARTING, ConnectionStatus.VALIDATING, ConnectionStatus.DATAPLANE_VALIDATED, ConnectionStatus.SOCKS_READY -> "در حال اتصال..."
+            ConnectionStatus.RECONNECTING -> "اتصال مجدد..."
+            ConnectionStatus.STOPPING -> "در حال قطع..."
+            ConnectionStatus.ERROR, ConnectionStatus.FAILED -> "خطا در اتصال"
         }
         val manager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
         manager.notify(NOTIFICATION_ID, buildNotification(text))
@@ -599,12 +597,12 @@ class AetherVpnService : VpnService() {
         val stopIntent = PendingIntent.getService(this, 1, Intent(this, AetherVpnService::class.java).apply { action = ACTION_STOP }, flags)
 
         return NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle("AetherST Tunnel")
+            .setContentTitle("تونل Feri Pm")
             .setContentText(statusText)
             .setSmallIcon(R.drawable.ic_stat_aether)
             .setOngoing(true)
             .setContentIntent(contentIntent)
-            .addAction(android.R.drawable.ic_menu_close_clear_cancel, "Disconnect", stopIntent)
+            .addAction(android.R.drawable.ic_menu_close_clear_cancel, "قطع", stopIntent)
             .setOnlyAlertOnce(true)
             .setSilent(true)
             .setCategory(NotificationCompat.CATEGORY_SERVICE)
@@ -623,16 +621,16 @@ class AetherVpnService : VpnService() {
             )
 
             val notification = NotificationCompat.Builder(this, ALERT_CHANNEL_ID)
-                .setContentTitle("⚠️ VPN Disconnected")
-                .setContentText("Connection lost unexpectedly. Tap to reconnect.")
+                .setContentTitle("⚠️ VPN قطع شد")
+                .setContentText("ارتباط به طور غیرمنتظره قطع شد. برای اتصال مجدد ضربه بزنید.")
                 .setStyle(
                     NotificationCompat.BigTextStyle()
-                        .bigText("AetherST Tunnel was disconnected unexpectedly.\nReason: $reason\n\nTap 'Reconnect' to restore your secure connection.")
+                        .bigText("تونل Feri Pm به طور غیرمنتظره قطع شد.\nدلیل: $reason\n\nبرای بازگرداندن اتصال امن خود، روی «اتصال مجدد» ضربه بزنید.")
                 )
                 .setSmallIcon(R.drawable.ic_stat_aether)
                 .setAutoCancel(true)
                 .setContentIntent(contentIntent)
-                .addAction(android.R.drawable.ic_popup_sync, "Reconnect", reconnectIntent)
+                .addAction(android.R.drawable.ic_popup_sync, "اتصال مجدد", reconnectIntent)
                 .setCategory(NotificationCompat.CATEGORY_MESSAGE)
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
                 .setColor(0xFFFF3B30.toInt())
@@ -640,21 +638,21 @@ class AetherVpnService : VpnService() {
 
             val manager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
             manager.notify(ALERT_NOTIFICATION_ID, notification)
-            LogRepository.i("[VpnService] Disconnection alert notification sent")
+            LogRepository.i("[VpnService] اعلان قطع ارسال شد")
         } catch (e: Exception) {
-            LogRepository.e("[VpnService] Failed to send disconnection alert: ${e.message}")
+            LogRepository.e("[VpnService] ارسال اعلان قطع ناموفق: ${e.message}")
         }
     }
 
     private fun createNotificationChannel() {
-        val statusChannel = NotificationChannel(CHANNEL_ID, "AetherST Tunnel", NotificationManager.IMPORTANCE_DEFAULT).apply {
+        val statusChannel = NotificationChannel(CHANNEL_ID, "وضعیت تونل Feri Pm", NotificationManager.IMPORTANCE_DEFAULT).apply {
             setSound(null, null)
             enableVibration(false)
             enableLights(false)
             setShowBadge(false)
         }
-        val alertChannel = NotificationChannel(ALERT_CHANNEL_ID, "AetherST Alerts", NotificationManager.IMPORTANCE_HIGH).apply {
-            description = "Notifications for unexpected disconnections"
+        val alertChannel = NotificationChannel(ALERT_CHANNEL_ID, "هشدارهای Feri Pm", NotificationManager.IMPORTANCE_HIGH).apply {
+            description = "اعلان‌های قطع غیرمنتظره اتصال"
             enableVibration(true)
             enableLights(true)
             setShowBadge(true)
