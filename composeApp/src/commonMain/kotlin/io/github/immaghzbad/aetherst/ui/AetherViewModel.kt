@@ -64,6 +64,7 @@ class AetherViewModel(platformContext: PlatformContext) : ViewModel() {
     private val _installedApps = MutableStateFlow<List<AppInfo>>(emptyList())
     val installedApps: StateFlow<List<AppInfo>> = _installedApps.asStateFlow()
 
+    // 🔇 بروزرسانی کامل غیرفعال شد - هیچوقت مقدار نمی‌گیره
     private val _updateInfo = MutableStateFlow<UpdateInfo?>(null)
     val updateInfo: StateFlow<UpdateInfo?> = _updateInfo.asStateFlow()
 
@@ -94,13 +95,14 @@ class AetherViewModel(platformContext: PlatformContext) : ViewModel() {
     init {
         LogRepository.initialize(getSettings(platformContext))
         io.github.immaghzbad.aetherst.shared.data.SpeedTestRepository.initialize(getSettings(platformContext))
-        LogRepository.i("Initializing AetherST Multiplatform UI...", "AetherSystem")
+        LogRepository.i("راه‌اندازی رابط کاربری Feri Pm Tunnel...", "FeriSystem")
         ConnectionController.getInstance(platformContext)
         observeConnectionStatus()
         checkBatteryOptimizationStatus()
         checkLastCrash()
         loadInstalledApps()
-        if (isDesktop) checkForUpdates()
+        // 🔇 بروزرسانی غیرفعال شد - کاربران از طریق کانال تلگرام مطلع می‌شن
+        // if (isDesktop) checkForUpdates()
     }
 
     private fun checkLastCrash() {
@@ -146,20 +148,20 @@ class AetherViewModel(platformContext: PlatformContext) : ViewModel() {
                 }
             }
         } catch (exception: Exception) {
-            LogRepository.e("[UI] Connection toggle failed: ${exception.message}")
+            LogRepository.e("[UI] تغییر وضعیت اتصال ناموفق: ${exception.message}")
             ConnectionController.markStatus(ConnectionStatus.ERROR)
         }
     }
 
     fun forceStop() {
-        LogRepository.w("[UI] Force stop requested by user (recovering from stuck state)", "AetherSystem")
+        LogRepository.w("[UI] توقف اجباری درخواست کاربر (بازیابی از وضعیت گیرکرده)", "FeriSystem")
         ConnectionController.markStatus(ConnectionStatus.STOPPED)
         viewModelScope.launch {
             try {
                 val mode = config.value.connectionMode
                 if (mode == ConnectionMode.TUNNEL) vpnController.stopVpn() else vpnController.stopProxy()
             } catch (e: Exception) {
-                LogRepository.e("[UI] Force stop backend teardown failed: ${e.message}")
+                LogRepository.e("[UI] تخریب سرویس در توقف اجباری ناموفق: ${e.message}")
             }
         }
     }
@@ -244,7 +246,7 @@ class AetherViewModel(platformContext: PlatformContext) : ViewModel() {
         if (current.routingRules.any { it.pattern == pattern }) return
 
         val newList = current.routingRules + RoutingRule(pattern, mode)
-        LogRepository.i("Routing rule added: $pattern ($mode)")
+        LogRepository.i("قانون مسیریابی اضافه شد: $pattern ($mode)")
         updateConfig(current.copy(routingRules = newList))
         restartConnection()
     }
@@ -254,7 +256,7 @@ class AetherViewModel(platformContext: PlatformContext) : ViewModel() {
         val newList = current.routingRules.filter { it.pattern != pattern }
         if (newList.size == current.routingRules.size) return
 
-        LogRepository.i("Routing rule removed: $pattern")
+        LogRepository.i("قانون مسیریابی حذف شد: $pattern")
         updateConfig(current.copy(routingRules = newList))
         restartConnection()
     }
@@ -266,7 +268,7 @@ class AetherViewModel(platformContext: PlatformContext) : ViewModel() {
         }
         if (newList == current.routingRules) return
 
-        LogRepository.i("Routing rule updated: $pattern -> $mode")
+        LogRepository.i("قانون مسیریابی بروزرسانی شد: $pattern -> $mode")
         updateConfig(current.copy(routingRules = newList))
         restartConnection()
     }
@@ -274,7 +276,7 @@ class AetherViewModel(platformContext: PlatformContext) : ViewModel() {
     fun clearAllRoutingRules() {
         val current = config.value
         if (current.routingRules.isEmpty()) return
-        LogRepository.i("All routing rules cleared")
+        LogRepository.i("همه قوانین مسیریابی پاک شدند")
         updateConfig(current.copy(routingRules = emptyList()))
         restartConnection()
     }
@@ -289,7 +291,7 @@ class AetherViewModel(platformContext: PlatformContext) : ViewModel() {
         _isOptimizingMtu.value = true
         
         viewModelScope.launch {
-            showToast("Starting precision MTU discovery...")
+            showToast("شروع کشف دقیق MTU...")
             
             var probeResult: Int? = null
             var dfIgnored = false
@@ -304,7 +306,7 @@ class AetherViewModel(platformContext: PlatformContext) : ViewModel() {
                     }
 
                     val localMtu = systemUtils.getInterfaceMtu()
-                    LogRepository.i("Step 1: Local interface reports MTU: $localMtu", "MTUProbe")
+                    LogRepository.i("مرحله 1: MTU گزارش‌شده توسط رابط محلی: $localMtu", "MTUProbe")
 
                     fun testMtu(totalSize: Int): Boolean {
                         val payloadSize = totalSize - 28
@@ -316,15 +318,15 @@ class AetherViewModel(platformContext: PlatformContext) : ViewModel() {
                         return false
                     }
 
-                    LogRepository.i("Step 2: Validating network DF constraint...", "MTUProbe")
+                    LogRepository.i("مرحله 2: بررسی محدودیت DF شبکه...", "MTUProbe")
                     if (testMtu(2000)) {
-                        LogRepository.w("WARNING: Network is ignoring DF bit. Results may be inaccurate.", "MTUProbe")
+                        LogRepository.w("اخطار: شبکه بیت DF را نادیده می‌گیرد. نتایج ممکن است دقیق نباشند.", "MTUProbe")
                         dfIgnored = true
                         probeResult = 1280 + overhead
                         return@withContext
                     }
 
-                    LogRepository.i("Step 3: Probing path MTU via binary search...", "MTUProbe")
+                    LogRepository.i("مرحله 3: کشف MTU مسیر از طریق جستجوی دودویی...", "MTUProbe")
                     var low = 1200
                     var high = localMtu.coerceAtMost(1500)
                     var bestPathMtu = 1200
@@ -334,18 +336,18 @@ class AetherViewModel(platformContext: PlatformContext) : ViewModel() {
                         if (testMtu(mid)) {
                             bestPathMtu = mid
                             low = mid + 1
-                            LogRepository.d("Probe success at $mid bytes", "MTUProbe")
+                            LogRepository.d("موفقیت در $mid بایت", "MTUProbe")
                         } else {
                             high = mid - 1
-                            LogRepository.d("Probe failed at $mid bytes", "MTUProbe")
+                            LogRepository.d("شکست در $mid بایت", "MTUProbe")
                         }
                         delay(50.milliseconds)
                     }
 
-                    LogRepository.i("Final Discovered Path MTU: $bestPathMtu", "MTUProbe")
+                    LogRepository.i("MTU نهایی کشف‌شده: $bestPathMtu", "MTUProbe")
                     probeResult = (bestPathMtu - overhead).coerceIn(1100, 1460)
                 } catch (e: Exception) {
-                    LogRepository.e("MTU Optimization failed: ${e.message}", "MTUProbe")
+                    LogRepository.e("بهینه‌سازی MTU ناموفق: ${e.message}", "MTUProbe")
                 }
             }
 
@@ -354,49 +356,20 @@ class AetherViewModel(platformContext: PlatformContext) : ViewModel() {
             probeResult?.let { finalResult ->
                 val current = config.value
                 val message = when {
-                    dfIgnored -> "DF bit ignored by ISP. Used safe MTU: $finalResult"
-                    finalResult >= 1420 -> "High-speed path detected. Applied MTU: $finalResult"
-                    else -> "Optimal MTU for your path: $finalResult"
+                    dfIgnored -> "بیت DF توسط ISP نادیده گرفته شد. MTU ایمن استفاده شد: $finalResult"
+                    finalResult >= 1420 -> "مسیر با سرعت بالا تشخیص داده شد. MTU اعمال‌شده: $finalResult"
+                    else -> "MTU بهینه برای مسیر شما: $finalResult"
                 }
                 showToast(message)
                 updateConfig(current.copy(mtu = finalResult))
             } ?: run {
-                showToast("MTU probe failed, using safe default", true)
+                showToast("کشف MTU ناموفق، استفاده از مقدار پیش‌فرض ایمن", true)
                 updateConfig(config.value.copy(mtu = 1280))
             }
         }
     }
 
-    private fun checkForUpdates() {
-        viewModelScope.launch {
-            try {
-                val info = withContext(Dispatchers.Default) {
-                    val request = Request.Builder()
-                        .url("https://raw.githubusercontent.com/immaghzbad/AetherST/refs/heads/main/updatewin.json")
-                        .build()
-
-                    io.github.immaghzbad.aetherst.shared.core.NetworkClient.instance.newCall(request).execute().use { response ->
-                        if (response.isSuccessful) {
-                            val jsonStr = response.body?.string() ?: return@withContext null
-                            val element = Json.parseToJsonElement(jsonStr).jsonObject
-                            UpdateInfo(
-                                version = element["version"]?.jsonPrimitive?.content ?: "",
-                                versionCode = element["version_code"]?.jsonPrimitive?.content?.toIntOrNull() ?: 1,
-                                isBeta = element["is_beta"]?.jsonPrimitive?.content?.toBooleanStrictOrNull() ?: false,
-                                changelog = element["changelog"]?.jsonPrimitive?.content ?: "",
-                                releaseUrl = element["release_url"]?.jsonPrimitive?.content ?: ""
-                            )
-                        } else null
-                    }
-                }
-                if (info != null && info.version != appVersion) {
-                    _updateInfo.value = info
-                }
-            } catch (e: Exception) {
-                LogRepository.w("Update check failed: ${e.message}")
-            }
-        }
-    }
+    // 🔇 تابع بروزرسانی کاملاً حذف شد - دیگه هیچوقت اجرا نمیشه
 
     fun clearCrashLog() {
         _crashLog.value = null
@@ -441,7 +414,7 @@ class AetherViewModel(platformContext: PlatformContext) : ViewModel() {
         if (needsRestart) {
             restartConnection()
         }
-        showToast("Auto-Detect configuration applied!")
+        showToast("تنظیمات تشخیص خودکار اعمال شد!")
     }
 
     private var toastJob: Job? = null
@@ -569,7 +542,7 @@ class AetherViewModel(platformContext: PlatformContext) : ViewModel() {
     
     fun copyToClipboard(text: String) {
         systemUtils.copyToClipboard(text)
-        showToast("Copied to clipboard")
+        showToast("در کلیپ‌بورد کپی شد")
     }
 
     fun copyLogs() {
@@ -579,7 +552,7 @@ class AetherViewModel(platformContext: PlatformContext) : ViewModel() {
 
     fun shareLogs() {
         val allLogs = logs.value.joinToString("\n") { "[${it.timestamp}] [${it.level.name}] [${it.tag}] ${it.message}" }
-        systemUtils.shareFile("AetherST_Logs.txt", allLogs)
+        systemUtils.shareFile("FeriPmTunnel_Logs.txt", allLogs)
     }
 
     fun cleanRoutingPattern(input: String): String {
@@ -618,11 +591,11 @@ class AetherViewModel(platformContext: PlatformContext) : ViewModel() {
     
     fun exportFullBackup() {
         val json = repository.getFullConfigJson()
-        systemUtils.exportFile("AetherST_Backup.astf", json) { success ->
+        systemUtils.exportFile("FeriPmTunnel_Backup.astf", json) { success ->
             if (success) {
-                showToast("Backup exported successfully", false)
+                showToast("پشتیبان با موفقیت خروجی گرفت", false)
             } else {
-                showToast("Failed to export backup", true)
+                showToast("خروجی پشتیبان ناموفق", true)
             }
         }
     }
@@ -631,10 +604,10 @@ class AetherViewModel(platformContext: PlatformContext) : ViewModel() {
         systemUtils.importFile { content ->
             if (content != null) {
                 if (repository.restoreFullConfig(content)) {
-                    showToast("Configuration restored", false)
+                    showToast("تنظیمات بازیابی شد", false)
                     restartConnection()
                 } else {
-                    showToast("Invalid backup file", true)
+                    showToast("فایل پشتیبان نامعتبر", true)
                 }
             }
         }
@@ -643,15 +616,15 @@ class AetherViewModel(platformContext: PlatformContext) : ViewModel() {
     fun exportRoutingRules() {
         try {
             val json = Json.encodeToString(config.value.routingRules)
-            systemUtils.exportFile("AetherST_Rules.astf", json) { success ->
+            systemUtils.exportFile("FeriPmTunnel_Rules.astf", json) { success ->
                 if (success) {
-                    showToast("Routing rules exported", false)
+                    showToast("قوانین مسیریابی خروجی گرفت", false)
                 } else {
-                    showToast("Failed to export rules", true)
+                    showToast("خروجی قوانین ناموفق", true)
                 }
             }
         } catch (e: Exception) {
-            showToast("Export error: ${e.message}", true)
+            showToast("خطا در خروجی: ${e.message}", true)
         }
     }
 
@@ -661,12 +634,12 @@ class AetherViewModel(platformContext: PlatformContext) : ViewModel() {
                 try {
                     val rules = Json.decodeFromString<List<RoutingRule>>(content)
                     if (rules.isEmpty()) {
-                        showToast("No rules found in file", true)
+                        showToast("هیچ قانونی در فایل یافت نشد", true)
                         return@importFile
                     }
                     _importConflictRules.value = rules
                 } catch (_: Exception) {
-                    showToast("Invalid rules file", true)
+                    showToast("فایل قوانین نامعتبر", true)
                 }
             }
         }
@@ -675,7 +648,7 @@ class AetherViewModel(platformContext: PlatformContext) : ViewModel() {
     fun importInternalRoutingRules(assetName: String) {
         val content = systemUtils.readInternalAsset(assetName)
         if (content == null) {
-            showToast("Failed to load internal rules", true)
+            showToast("بارگذاری قوانین داخلی ناموفق", true)
             return
         }
 
@@ -701,13 +674,13 @@ class AetherViewModel(platformContext: PlatformContext) : ViewModel() {
             }
 
             if (rules.isEmpty()) {
-                showToast("No rules found in asset", true)
+                showToast("هیچ قانونی در فایل داخلی یافت نشد", true)
                 return
             }
             _importConflictRules.value = rules
         } catch (e: Exception) {
-            showToast("Failed to parse internal rules", true)
-            LogRepository.e("Internal import error: ${e.message}")
+            showToast("تحلیل قوانین داخلی ناموفق", true)
+            LogRepository.e("خطا در واردات داخلی: ${e.message}")
         }
     }
 }
