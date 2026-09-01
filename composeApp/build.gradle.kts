@@ -2,10 +2,10 @@ import com.android.build.api.dsl.LibraryExtension
 
 plugins {
     alias(libs.plugins.kotlin.multiplatform)
-    alias(libs.plugins.android.library) apply false
+    alias(libs.plugins.android.library)  // ← apply false رو حذف کن
     alias(libs.plugins.jetbrains.compose)
-    alias(libs.plugins.kotlin.compose)
-    id("org.jetbrains.kotlin.plugin.serialization") version "2.1.0"
+    // alias(libs.plugins.kotlin.compose)  // ← این رو حذف کن (دیگه نیازی نیست)
+    alias(libs.plugins.kotlin.serialization)  // ← از libs استفاده کن
 }
 
 val isAndroidDisabled = providers.gradleProperty("skipAndroid").getOrElse("false") == "true"
@@ -18,6 +18,7 @@ kotlin {
     compilerOptions {
         freeCompilerArgs.add("-Xexpect-actual-classes")
     }
+    
     if (!isAndroidDisabled) {
         androidTarget {
             compilerOptions {
@@ -32,31 +33,51 @@ kotlin {
         all {
             languageSettings.optIn("kotlin.ExperimentalMultiplatform")
         }
+        
         commonMain.dependencies {
+            // Compose (با نسخه‌های جدید)
             implementation(compose.runtime)
             implementation(compose.foundation)
             implementation(compose.material3)
             implementation(compose.ui)
-            implementation(compose.materialIconsExtended)
+            // implementation(compose.materialIconsExtended)  // ← حذف کن (قدیمی)
             implementation(compose.components.resources)
             implementation(compose.components.uiToolingPreview)
+            
+            // Lifecycle & Navigation
             implementation(libs.androidx.lifecycle.viewmodel.compose)
             implementation(libs.androidx.lifecycle.runtime.compose)
             implementation(libs.androidx.navigation.compose)
+            
+            // Kotlin
             implementation(libs.kotlinx.coroutines.core)
+            implementation(libs.kotlinx.serialization.json)
+            
+            // Network
             implementation(libs.okhttp)
             implementation(libs.moshi.kotlin)
-            implementation(libs.kotlinx.serialization.json)
         }
+        
         if (!isAndroidDisabled) {
             androidMain.dependencies {
+                // AndroidX
                 implementation(libs.androidx.core.ktx)
                 implementation(libs.androidx.activity.compose)
                 implementation(libs.kotlinx.coroutines.android)
                 implementation(libs.androidx.datastore.preferences)
                 implementation(libs.androidsvg)
+                
+                // Firebase (این رو اضافه کن)
+                implementation(platform("com.google.firebase:firebase-bom:33.7.0"))
+                implementation("com.google.firebase:firebase-firestore-ktx")
+                implementation("com.google.firebase:firebase-auth-ktx")
+                
+                // Compose Icons (جایگزین materialIconsExtended)
+                implementation(libs.androidx.compose.material.icons.core)
+                implementation(libs.androidx.compose.material.icons.extended)
             }
         }
+        
         getByName("desktopMain").dependencies {
             implementation(compose.desktop.currentOs)
             implementation(libs.kotlinx.coroutines.swing)
@@ -75,6 +96,11 @@ if (!isAndroidDisabled) {
             sourceCompatibility = JavaVersion.VERSION_11
             targetCompatibility = JavaVersion.VERSION_11
         }
+        
+        // این رو اضافه کن برای Firebase
+        buildFeatures {
+            buildConfig = true
+        }
     }
 }
 
@@ -82,7 +108,10 @@ compose.desktop {
     application {
         mainClass = "io.github.immaghzbad.aetherst.MainKt"
         nativeDistributions {
-            targetFormats(org.jetbrains.compose.desktop.application.dsl.TargetFormat.Msi, org.jetbrains.compose.desktop.application.dsl.TargetFormat.Exe)
+            targetFormats(
+                org.jetbrains.compose.desktop.application.dsl.TargetFormat.Msi,
+                org.jetbrains.compose.desktop.application.dsl.TargetFormat.Exe
+            )
             packageName = "AetherST-Tunnel"
             packageVersion = "1.1.0"
             vendor = "ImMaghzBad"
