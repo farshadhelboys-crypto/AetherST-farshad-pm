@@ -2,10 +2,10 @@ import com.android.build.api.dsl.LibraryExtension
 
 plugins {
     alias(libs.plugins.kotlin.multiplatform)
-    alias(libs.plugins.android.library)  // ← apply false رو حذف کن
+    alias(libs.plugins.android.library)
     alias(libs.plugins.jetbrains.compose)
-    // alias(libs.plugins.kotlin.compose)  // ← این رو حذف کن (دیگه نیازی نیست)
-    alias(libs.plugins.kotlin.serialization)  // ← از libs استفاده کن
+    // alias(libs.plugins.kotlin.compose)  // ← حذف کن
+    alias(libs.plugins.kotlin.serialization)
 }
 
 val isAndroidDisabled = providers.gradleProperty("skipAndroid").getOrElse("false") == "true"
@@ -35,44 +35,36 @@ kotlin {
         }
         
         commonMain.dependencies {
-            // Compose (با نسخه‌های جدید)
             implementation(compose.runtime)
             implementation(compose.foundation)
             implementation(compose.material3)
             implementation(compose.ui)
-            // implementation(compose.materialIconsExtended)  // ← حذف کن (قدیمی)
             implementation(compose.components.resources)
             implementation(compose.components.uiToolingPreview)
             
-            // Lifecycle & Navigation
             implementation(libs.androidx.lifecycle.viewmodel.compose)
             implementation(libs.androidx.lifecycle.runtime.compose)
             implementation(libs.androidx.navigation.compose)
-            
-            // Kotlin
             implementation(libs.kotlinx.coroutines.core)
             implementation(libs.kotlinx.serialization.json)
-            
-            // Network
             implementation(libs.okhttp)
             implementation(libs.moshi.kotlin)
         }
         
         if (!isAndroidDisabled) {
             androidMain.dependencies {
-                // AndroidX
                 implementation(libs.androidx.core.ktx)
                 implementation(libs.androidx.activity.compose)
                 implementation(libs.kotlinx.coroutines.android)
                 implementation(libs.androidx.datastore.preferences)
                 implementation(libs.androidsvg)
                 
-                // Firebase (این رو اضافه کن)
+                // Firebase
                 implementation(platform("com.google.firebase:firebase-bom:33.7.0"))
                 implementation("com.google.firebase:firebase-firestore-ktx")
                 implementation("com.google.firebase:firebase-auth-ktx")
                 
-                // Compose Icons (جایگزین materialIconsExtended)
+                // Compose Icons
                 implementation(libs.androidx.compose.material.icons.core)
                 implementation(libs.androidx.compose.material.icons.extended)
             }
@@ -97,7 +89,6 @@ if (!isAndroidDisabled) {
             targetCompatibility = JavaVersion.VERSION_11
         }
         
-        // این رو اضافه کن برای Firebase
         buildFeatures {
             buildConfig = true
         }
