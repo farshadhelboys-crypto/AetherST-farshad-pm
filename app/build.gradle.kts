@@ -1,10 +1,9 @@
 plugins {
     alias(libs.plugins.android.application)
-    // alias(libs.plugins.kotlin.android)  // ← این رو حذف کن (دیگه نیازی نیست)
     alias(libs.plugins.google.devtools.ksp)
     alias(libs.plugins.roborazzi)
     alias(libs.plugins.kotlin.serialization)
-    id("com.google.gms.google-services") version "4.4.2"
+    alias(libs.plugins.google.services)
 }
 
 android {
@@ -93,6 +92,14 @@ android {
     packaging {
         jniLibs {
             useLegacyPackaging = true
+        }
+    }
+
+    // برای رفع خطای KSP
+    sourceSets {
+        getByName("main") {
+            java.srcDirs("src/main/java", "build/generated/ksp/debug/kotlin", "build/generated/ksp/debug/java")
+            kotlin.srcDirs("src/main/kotlin", "build/generated/ksp/debug/kotlin", "build/generated/ksp/debug/java")
         }
     }
 }
