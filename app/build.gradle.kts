@@ -1,11 +1,10 @@
 plugins {
     alias(libs.plugins.android.application)
-    alias(libs.plugins.kotlin.android)  // این یکی کافیه
-    // alias(libs.plugins.kotlin.compose)  // این رو حذف کن - دیگه نیازی نیست
+    // alias(libs.plugins.kotlin.android)  // ← این رو حذف کن (دیگه نیازی نیست)
     alias(libs.plugins.google.devtools.ksp)
     alias(libs.plugins.roborazzi)
-    alias(libs.plugins.kotlin.serialization)  // این رو جایگزین خط ۸ کن
-    id("com.google.gms.google-services") version "4.4.2"  // ورژن رو اضافه کن
+    alias(libs.plugins.kotlin.serialization)
+    id("com.google.gms.google-services") version "4.4.2"
 }
 
 android {
@@ -105,7 +104,7 @@ dependencies {
     // Firebase
     implementation(platform("com.google.firebase:firebase-bom:33.7.0"))
     implementation("com.google.firebase:firebase-firestore-ktx")
-    implementation("com.google.firebase:firebase-auth-ktx")  // اضافه کن اگه احراز هویت داری
+    implementation("com.google.firebase:firebase-auth-ktx")
     
     // Compose
     implementation(platform(libs.androidx.compose.bom))
