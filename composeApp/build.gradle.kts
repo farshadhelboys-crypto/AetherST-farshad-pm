@@ -2,30 +2,26 @@ import com.android.build.api.dsl.LibraryExtension
 
 plugins {
     alias(libs.plugins.kotlin.multiplatform)
-    // alias(libs.plugins.android.library)  // ← حذف شد
+    alias(libs.plugins.android.kotlin.multiplatform.library)  // ← پلاگین جدید مستقیم
     alias(libs.plugins.jetbrains.compose)
     alias(libs.plugins.kotlin.serialization)
 }
 
 val isAndroidDisabled = providers.gradleProperty("skipAndroid").getOrElse("false") == "true"
 
-if (!isAndroidDisabled) {
-    apply(plugin = "com.android.kotlin.multiplatform.library")  // ← این پلاگین تارگت android رو میسازه
-}
-
 kotlin {
     compilerOptions {
         freeCompilerArgs.add("-Xexpect-actual-classes")
     }
     
-    // این بخش رو کاملاً حذف کن:
-    // if (!isAndroidDisabled) {
-    //     androidTarget {  // ← این رو حذف کن، چون پلاگین قبلاً ساخته
-    //         compilerOptions {
-    //             jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11)
-    //         }
-    //     }
-    // }
+    // androidTarget رو برمیگردونیم ولی با روش جدید
+    if (!isAndroidDisabled) {
+        androidTarget {
+            compilerOptions {
+                jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11)
+            }
+        }
+    }
 
     jvm("desktop")
 
@@ -59,7 +55,7 @@ kotlin {
                 implementation(libs.androidx.datastore.preferences)
                 implementation(libs.androidsvg)
                 
-                // Firebase - از BOM بدون platform استفاده کن
+                // Firebase
                 implementation("com.google.firebase:firebase-bom:33.7.0")
                 implementation("com.google.firebase:firebase-firestore-ktx")
                 implementation("com.google.firebase:firebase-auth-ktx")
@@ -77,21 +73,18 @@ kotlin {
     }
 }
 
-if (!isAndroidDisabled) {
-    extensions.configure<com.android.build.api.dsl.LibraryExtension>("android") {
-        namespace = "io.github.immaghzbad.aetherst.shared"
-        compileSdk = 36
-        defaultConfig {
-            minSdk = 26
-        }
-        compileOptions {
-            sourceCompatibility = JavaVersion.VERSION_11
-            targetCompatibility = JavaVersion.VERSION_11
-        }
-        
-        buildFeatures {
-            buildConfig = true
-        }
+android {
+    namespace = "io.github.immaghzbad.aetherst.shared"
+    compileSdk = 36
+    defaultConfig {
+        minSdk = 26
+    }
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
+    }
+    buildFeatures {
+        buildConfig = true
     }
 }
 
