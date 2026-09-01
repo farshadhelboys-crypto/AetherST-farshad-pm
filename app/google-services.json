@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1015066636510",
+    "project_id": "feri-pm-tunnel",
+    "storage_bucket": "feri-pm-tunnel.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1015066636510:android:8452dbacda26cab4d3d24f",
+        "android_client_info": {
+          "package_name": "io.github.immaghzbad.aetherst"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCfKQYMhNDMU0Zxzi7GSdSL5jnG4hQtzO0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
