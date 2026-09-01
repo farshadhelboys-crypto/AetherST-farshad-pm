@@ -2,7 +2,7 @@ import com.android.build.api.dsl.LibraryExtension
 
 plugins {
     alias(libs.plugins.kotlin.multiplatform)
-    alias(libs.plugins.android.library)
+    // alias(libs.plugins.android.library)  // ← حذف شد
     alias(libs.plugins.jetbrains.compose)
     alias(libs.plugins.kotlin.serialization)
 }
@@ -10,7 +10,7 @@ plugins {
 val isAndroidDisabled = providers.gradleProperty("skipAndroid").getOrElse("false") == "true"
 
 if (!isAndroidDisabled) {
-    apply(plugin = "com.android.library")
+    apply(plugin = "com.android.kotlin.multiplatform.library")  // ← پلاگین جدید
 }
 
 kotlin {
@@ -77,7 +77,7 @@ kotlin {
 }
 
 if (!isAndroidDisabled) {
-    extensions.configure<LibraryExtension>("android") {
+    extensions.configure<com.android.build.api.dsl.LibraryExtension>("android") {
         namespace = "io.github.immaghzbad.aetherst.shared"
         compileSdk = 36
         defaultConfig {
