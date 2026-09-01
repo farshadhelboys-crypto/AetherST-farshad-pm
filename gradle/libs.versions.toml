@@ -102,3 +102,4 @@ google-devtools-ksp = { id = "com.google.devtools.ksp", version.ref = "googleDev
 google-services = { id = "com.google.gms.google-services", version.ref = "googleServices" }
 roborazzi = { id = "io.github.takahirom.roborazzi", version.ref = "roborazzi" }
 jetbrains-compose = { id = "org.jetbrains.compose", version.ref = "jetbrainsCompose" }
+compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
