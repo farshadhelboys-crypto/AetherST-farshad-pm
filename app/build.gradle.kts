@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.roborazzi)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.google.services)
+    alias(libs.plugins.compose.compiler) 
 }
 
 android {
