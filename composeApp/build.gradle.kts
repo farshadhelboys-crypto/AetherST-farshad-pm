@@ -10,7 +10,7 @@ plugins {
 val isAndroidDisabled = providers.gradleProperty("skipAndroid").getOrElse("false") == "true"
 
 if (!isAndroidDisabled) {
-    apply(plugin = "com.android.kotlin.multiplatform.library")  // ← پلاگین جدید
+    apply(plugin = "com.android.kotlin.multiplatform.library")  // ← این پلاگین تارگت android رو میسازه
 }
 
 kotlin {
@@ -18,13 +18,14 @@ kotlin {
         freeCompilerArgs.add("-Xexpect-actual-classes")
     }
     
-    if (!isAndroidDisabled) {
-        androidTarget {
-            compilerOptions {
-                jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11)
-            }
-        }
-    }
+    // این بخش رو کاملاً حذف کن:
+    // if (!isAndroidDisabled) {
+    //     androidTarget {  // ← این رو حذف کن، چون پلاگین قبلاً ساخته
+    //         compilerOptions {
+    //             jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11)
+    //         }
+    //     }
+    // }
 
     jvm("desktop")
 
@@ -58,8 +59,8 @@ kotlin {
                 implementation(libs.androidx.datastore.preferences)
                 implementation(libs.androidsvg)
                 
-                // Firebase
-                implementation(platform("com.google.firebase:firebase-bom:33.7.0"))
+                // Firebase - از BOM بدون platform استفاده کن
+                implementation("com.google.firebase:firebase-bom:33.7.0")
                 implementation("com.google.firebase:firebase-firestore-ktx")
                 implementation("com.google.firebase:firebase-auth-ktx")
                 
