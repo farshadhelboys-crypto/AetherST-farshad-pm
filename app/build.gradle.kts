@@ -4,7 +4,7 @@ plugins {
     alias(libs.plugins.roborazzi)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.google.services)
-    alias(libs.plugins.compose.compiler) 
+    id("org.jetbrains.kotlin.plugin.compose") version "2.0.21"  // ← مستقیم اضافه شد
 }
 
 android {
@@ -96,13 +96,18 @@ android {
         }
     }
 
-    // برای رفع خطای KSP
+    // منبع‌ها برای KSP
     sourceSets {
         getByName("main") {
             java.srcDirs("src/main/java", "build/generated/ksp/debug/kotlin", "build/generated/ksp/debug/java")
             kotlin.srcDirs("src/main/kotlin", "build/generated/ksp/debug/kotlin", "build/generated/ksp/debug/java")
         }
     }
+}
+
+// تنظیمات Compose Compiler (اختیاری)
+composeCompiler {
+    reportsDestination = layout.buildDirectory.dir("compose_compiler")
 }
 
 dependencies {
