@@ -2,7 +2,7 @@ import com.android.build.api.dsl.LibraryExtension
 
 plugins {
     alias(libs.plugins.kotlin.multiplatform)
-    alias(libs.plugins.android.kotlin.multiplatform.library)  // ← پلاگین جدید مستقیم
+    id("com.android.kotlin.multiplatform.library") version "9.0.0"  // ← این خط رو عوض کن
     alias(libs.plugins.jetbrains.compose)
     alias(libs.plugins.kotlin.serialization)
 }
@@ -14,7 +14,6 @@ kotlin {
         freeCompilerArgs.add("-Xexpect-actual-classes")
     }
     
-    // androidTarget رو برمیگردونیم ولی با روش جدید
     if (!isAndroidDisabled) {
         androidTarget {
             compilerOptions {
