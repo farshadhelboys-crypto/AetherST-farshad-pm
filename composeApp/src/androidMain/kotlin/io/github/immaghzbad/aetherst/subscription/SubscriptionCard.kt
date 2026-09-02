@@ -1,5 +1,6 @@
 package io.github.immaghzbad.aetherst.subscription
 
+import android.provider.Settings
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -10,6 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -24,9 +26,11 @@ fun SubscriptionCard(viewModel: SubscriptionViewModel = viewModel()) {
     val info by viewModel.subscriptionInfo.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val message by viewModel.activationMessage.collectAsState()
+    val context = LocalContext.current
 
     var showActivateDialog by remember { mutableStateOf(false) }
     var now by remember { mutableStateOf(System.currentTimeMillis()) }
+    var showDeviceId by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         while (true) {
@@ -57,7 +61,7 @@ fun SubscriptionCard(viewModel: SubscriptionViewModel = viewModel()) {
             } else {
                 val currentInfo = info
                 val remainingMillis = (currentInfo?.expiresAtMillis ?: 0L) - now
-                val isActive = remainingMillis > 0
+                val isActive = currentInfo?.type == "paid" && remainingMillis > 0
 
                 Column {
                     Row(
@@ -67,13 +71,16 @@ fun SubscriptionCard(viewModel: SubscriptionViewModel = viewModel()) {
                     ) {
                         Text(
                             text = when (currentInfo?.type) {
-                                "trial" -> "FREE TRIAL"
                                 "paid" -> "SUBSCRIPTION"
-                                else -> "SUBSCRIPTION"
+                                "none" -> "NO ACTIVE SUBSCRIPTION"
+                                else -> "NO ACTIVE SUBSCRIPTION"
                             },
                             style = MaterialTheme.typography.labelMedium,
                             fontWeight = FontWeight.Bold,
-                            color = AppPalette.textSecondary,
+                            color = when (currentInfo?.type) {
+                                "paid" -> AppPalette.statusConnected
+                                else -> AppPalette.statusError
+                            },
                             letterSpacing = 1.sp
                         )
                         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -123,16 +130,19 @@ fun SubscriptionCard(viewModel: SubscriptionViewModel = viewModel()) {
                         )
                     } else {
                         Text(
-                            text = "Your subscription has expired.",
+                            text = "No active subscription. Please enter a valid code.",
                             style = MaterialTheme.typography.bodyMedium,
-                            color = AppPalette.textSecondary
+                            color = AppPalette.statusError
                         )
                     }
 
                     Spacer(Modifier.height(12.dp))
 
                     Button(
-                        onClick = { showActivateDialog = true },
+                        onClick = {
+                            showActivateDialog = true
+                            showDeviceId = true
+                        },
                         modifier = Modifier.fillMaxWidth(),
                         colors = ButtonDefaults.buttonColors(containerColor = AppPalette.accent),
                         shape = RoundedCornerShape(12.dp)
@@ -149,14 +159,22 @@ fun SubscriptionCard(viewModel: SubscriptionViewModel = viewModel()) {
     }
 
     if (showActivateDialog) {
+        val deviceId = Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID) ?: "unknown"
         ActivateCodeDialog(
-            onDismiss = { showActivateDialog = false },
-            onActivate = { code, telegramId ->
-                viewModel.activateCode(code, telegramId)
+            onDismiss = {
+                showActivateDialog = false
+                showDeviceId = false
+            },
+            onActivate = { code ->
+                viewModel.activateCode(code, "handled_by_github")
             },
             message = message,
             onMessageShown = { viewModel.clearMessage() },
-            onSuccess = { showActivateDialog = false }
+            onSuccess = {
+                showActivateDialog = false
+                showDeviceId = false
+            },
+            deviceId = if (showDeviceId) deviceId else null
         )
     }
 }
@@ -164,13 +182,13 @@ fun SubscriptionCard(viewModel: SubscriptionViewModel = viewModel()) {
 @Composable
 private fun ActivateCodeDialog(
     onDismiss: () -> Unit,
-    onActivate: (String, String) -> Unit,
+    onActivate: (String) -> Unit,
     message: String?,
     onMessageShown: () -> Unit,
-    onSuccess: () -> Unit
+    onSuccess: () -> Unit,
+    deviceId: String? = null
 ) {
     var code by remember { mutableStateOf("") }
-    var telegramId by remember { mutableStateOf("") }
 
     LaunchedEffect(message) {
         if (message == "Activated successfully!") {
@@ -196,6 +214,17 @@ private fun ActivateCodeDialog(
                     fontSize = 18.sp
                 )
                 Spacer(Modifier.height(16.dp))
+                
+                if (deviceId != null) {
+                    Text(
+                        text = "Device ID: $deviceId",
+                        color = Color.White.copy(alpha = 0.6f),
+                        fontSize = 12.sp,
+                        textAlign = TextAlign.Center
+                    )
+                    Spacer(Modifier.height(8.dp))
+                }
+                
                 OutlinedTextField(
                     value = code,
                     onValueChange = { code = it.uppercase() },
@@ -203,22 +232,15 @@ private fun ActivateCodeDialog(
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
-                Spacer(Modifier.height(12.dp))
-                OutlinedTextField(
-                    value = telegramId,
-                    onValueChange = { telegramId = it },
-                    label = { Text("Telegram ID (e.g. @username)") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
-                )
+                
                 if (message != null && message != "Activated successfully!") {
                     Spacer(Modifier.height(8.dp))
                     Text(message, color = AppPalette.statusError, fontSize = 12.sp, textAlign = TextAlign.Center)
                 }
                 Spacer(Modifier.height(20.dp))
                 Button(
-                    onClick = { onActivate(code, telegramId) },
-                    enabled = code.isNotBlank() && telegramId.isNotBlank(),
+                    onClick = { onActivate(code) },
+                    enabled = code.isNotBlank(),
                     modifier = Modifier.fillMaxWidth(),
                     colors = ButtonDefaults.buttonColors(containerColor = AppPalette.accent)
                 ) {
