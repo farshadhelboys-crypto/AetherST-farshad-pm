@@ -1,8 +1,31 @@
 package io.github.immaghzbad.aetherst.shared.ui.screens
 
 import android.widget.Toast
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.foundation.gestures.detectVerticalDragGestures
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -12,6 +35,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -89,9 +113,7 @@ import io.github.immaghzbad.aetherst.shared.model.ConnectionMode
 import io.github.immaghzbad.aetherst.shared.model.ConnectionStatus
 import io.github.immaghzbad.aetherst.shared.model.SessionTraffic
 import io.github.immaghzbad.aetherst.shared.ui.components.CountryFlag
-import io.github.immaghzbad.aetherst.shared.ui.components.IosConfigChip
 import io.github.immaghzbad.aetherst.shared.ui.components.IosPickerRow
-import io.github.immaghzbad.aetherst.shared.ui.components.TrafficValue
 import io.github.immaghzbad.aetherst.shared.ui.theme.AppPalette
 import io.github.immaghzbad.aetherst.shared.util.CountryNames
 import io.github.immaghzbad.aetherst.subscription.PlatformSubscriptionCard
@@ -105,6 +127,71 @@ private val IosActiveGreen = AppPalette.statusConnected
 private val IosActiveBlue = AppPalette.accent
 private val IosScanningAmber = AppPalette.statusScanning
 private val IosErrorRed = AppPalette.statusError
+
+// ============================================
+// کامپوننت‌های اضافی که داخل commonMain تعریف شدن
+// ============================================
+
+@Composable
+fun IosConfigChip(label: String, value: String, scaleFactor: Float = 1f) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelSmall,
+            color = IosSecondaryLabel,
+            fontSize = (8 * scaleFactor).sp,
+            fontWeight = FontWeight.Bold
+        )
+        Text(
+            text = value,
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = FontWeight.Bold,
+            color = Color.White,
+            fontSize = (10 * scaleFactor).sp
+        )
+    }
+}
+
+@Composable
+fun TrafficValue(
+    label: String,
+    value: String,
+    color: Color,
+    alignment: Alignment.Horizontal,
+    modifier: Modifier = Modifier,
+    speed: Double = 0.0,
+    scaleFactor: Float = 1f
+) {
+    Column(modifier = modifier, horizontalAlignment = alignment) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelSmall,
+            fontWeight = FontWeight.Bold,
+            color = IosSecondaryLabel,
+            fontSize = (8 * scaleFactor).sp
+        )
+        Text(
+            text = value,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            color = color,
+            fontSize = (12 * scaleFactor).sp
+        )
+        if (speed > 0) {
+            Text(
+                text = formatSpeedValue(speed),
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.SemiBold,
+                color = color.copy(alpha = 0.7f),
+                fontSize = (8 * scaleFactor).sp
+            )
+        }
+    }
+}
+
+// ============================================
+// تابع اصلی DashboardScreen
+// ============================================
 
 @Composable
 fun DashboardScreen(
@@ -177,7 +264,7 @@ fun DashboardScreen(
                 modifier = Modifier.padding(top = if (isDesktop) 12.dp else 36.dp),
                 verticalArrangement = Arrangement.spacedBy((14 * scaleFactor).dp)
             ) {
-                // Header
+                // ========== Header ==========
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -253,7 +340,7 @@ fun DashboardScreen(
                     }
                 }
 
-                // Status Hero Card
+                // ========== Status Hero Card ==========
                 IosStatusHeroCard(
                     connectionStatus = connectionStatus,
                     elapsedSeconds = elapsedSeconds,
@@ -268,12 +355,12 @@ fun DashboardScreen(
                     scaleFactor = scaleFactor
                 )
 
-                // Subscription Card
+                // ========== Subscription Card ==========
                 if (!isDesktop) {
                     PlatformSubscriptionCard()
                 }
 
-                // Error Card
+                // ========== Error Card ==========
                 if (!isVeryCompactHeight && connectionStatus == ConnectionStatus.ERROR) {
                     Card(
                         modifier = Modifier
@@ -299,14 +386,14 @@ fun DashboardScreen(
                 }
             }
 
-            // Bottom Section
+            // ========== Bottom Section ==========
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(bottom = 4.dp),
                 verticalArrangement = Arrangement.spacedBy((12 * scaleFactor).dp)
             ) {
-                // Connect Button
+                // ========== Connect Button ==========
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -314,7 +401,7 @@ fun DashboardScreen(
                     contentAlignment = Alignment.Center
                 ) {
                     val handleToggle: () -> Boolean = {
-                        // ✅ چک کردن اشتراک قبل از اتصال
+                        // چک کردن اشتراک قبل از اتصال
                         if (connectionStatus == ConnectionStatus.STOPPED) {
                             val info = subscriptionViewModel?.subscriptionInfo?.value
                             if (info == null || !info.isActive) {
@@ -376,7 +463,7 @@ fun DashboardScreen(
                     }
                 }
 
-                // Settings Cards
+                // ========== Settings Cards ==========
                 if (!isVeryCompactHeight) {
                     if (!isDesktop) {
                         Card(
@@ -399,21 +486,11 @@ fun DashboardScreen(
                                                 .background(AppPalette.accentVariant),
                                             contentAlignment = Alignment.Center
                                         ) {
-                                            Icon(
-                                                Icons.Default.Shield,
-                                                null,
-                                                tint = Color.White,
-                                                modifier = Modifier.size(16.dp)
-                                            )
+                                            Icon(Icons.Default.Shield, null, tint = Color.White, modifier = Modifier.size(16.dp))
                                         }
                                         Spacer(modifier = Modifier.width(10.dp))
                                         Column(modifier = Modifier.weight(1f)) {
-                                            Text(
-                                                "زنجیره سایفون",
-                                                fontWeight = FontWeight.Bold,
-                                                color = Color.White,
-                                                fontSize = (13 * scaleFactor).sp
-                                            )
+                                            Text("زنجیره سایفون", fontWeight = FontWeight.Bold, color = Color.White, fontSize = (13 * scaleFactor).sp)
                                             Text(
                                                 if (psiphonAllowed) "مسیریابی از طریق سایفون برای آی‌پی غیرایرانی" else "فقط با پروتکل MASQUE در دسترس است",
                                                 color = IosSecondaryLabel,
@@ -442,11 +519,7 @@ fun DashboardScreen(
                                     )
                                 }
                                 if (psiphonOn) {
-                                    HorizontalDivider(
-                                        color = Color.White.copy(alpha = 0.1f),
-                                        thickness = 0.5.dp,
-                                        modifier = Modifier.padding(start = 50.dp)
-                                    )
+                                    HorizontalDivider(color = Color.White.copy(alpha = 0.1f), thickness = 0.5.dp, modifier = Modifier.padding(start = 50.dp))
                                     val availableRegions by PsiphonEgressRegistry.availableRegions.collectAsStateWithLifecycle()
                                     val selectedRegion = config.psiphonEgressRegion.trim().uppercase()
                                     val regionCodes = buildList {
@@ -488,8 +561,8 @@ fun DashboardScreen(
             }
         }
 
-        // Proxy Overlay
-        val offsetY = remember { androidx.compose.animation.core.Animatable(0f) }
+        // ========== Proxy Overlay ==========
+        val offsetY = remember { Animatable(0f) }
         val scope = rememberCoroutineScope()
 
         LaunchedEffect(showProxyOverlay) {
@@ -498,10 +571,10 @@ fun DashboardScreen(
             }
         }
 
-        androidx.compose.animation.AnimatedVisibility(
+        AnimatedVisibility(
             visible = config.connectionMode == ConnectionMode.PROXY_ONLY && connectionStatus == ConnectionStatus.RUNNING && showProxyOverlay,
-            enter = androidx.compose.animation.slideInVertically { -it } + androidx.compose.animation.fadeIn(),
-            exit = androidx.compose.animation.slideOutVertically { -it } + androidx.compose.animation.fadeOut(),
+            enter = slideInVertically { -it } + fadeIn(),
+            exit = slideOutVertically { -it } + fadeOut(),
             modifier = Modifier
                 .align(Alignment.TopCenter)
                 .padding(top = 36.dp)
@@ -535,7 +608,7 @@ fun DashboardScreen(
             )
         }
 
-        // Dialogs
+        // ========== Dialogs ==========
         if (showAdminRequiredDialog) {
             AdminRequiredDialog(
                 onRelaunch = {
@@ -567,6 +640,10 @@ fun DashboardScreen(
 }
 
 private const val TelegramChannelUrl = "https://t.me/farshad_pm_org"
+
+// ============================================
+// Support Dialog
+// ============================================
 
 @Composable
 private fun SupportDialog(
@@ -645,6 +722,10 @@ private fun SupportDialog(
     }
 }
 
+// ============================================
+// Admin Required Dialog
+// ============================================
+
 @Composable
 fun AdminRequiredDialog(
     onRelaunch: () -> Unit,
@@ -660,7 +741,7 @@ fun AdminRequiredDialog(
                 .fillMaxSize()
                 .background(Color.Black.copy(alpha = 0.6f))
                 .clickable(
-                    interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
+                    interactionSource = remember { MutableInteractionSource() },
                     indication = null,
                     onClick = onDismiss
                 )
@@ -765,6 +846,10 @@ fun AdminRequiredDialog(
         }
     }
 }
+
+// ============================================
+// Proxy Overlay Pill
+// ============================================
 
 @Composable
 fun ProxyOverlayPill(
@@ -875,6 +960,10 @@ private fun ProxyCopyRow(
         )
     }
 }
+
+// ============================================
+// IosStatusHeroCard
+// ============================================
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -1178,6 +1267,10 @@ fun IosStatusHeroCard(
     }
 }
 
+// ============================================
+// IosPowerButton
+// ============================================
+
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun IosPowerButton(
@@ -1188,13 +1281,13 @@ fun IosPowerButton(
 ) {
     val isConnected = connectionStatus == ConnectionStatus.RUNNING
     val isWorking = connectionStatus == ConnectionStatus.STARTING ||
-            connectionStatus == ConnectionStatus.VALIDATING ||
-            connectionStatus == ConnectionStatus.RECONNECTING ||
-            connectionStatus == ConnectionStatus.STOPPING
+                    connectionStatus == ConnectionStatus.VALIDATING ||
+                    connectionStatus == ConnectionStatus.RECONNECTING ||
+                    connectionStatus == ConnectionStatus.STOPPING
     val isError = connectionStatus == ConnectionStatus.ERROR
     val canToggle = true
 
-    val interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
+    val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
     val scope = rememberCoroutineScope()
 
@@ -1334,6 +1427,10 @@ fun IosPowerButton(
     }
 }
 
+// ============================================
+// CapsuleConnectButton
+// ============================================
+
 @Composable
 fun CapsuleConnectButton(
     connectionStatus: ConnectionStatus,
@@ -1386,6 +1483,10 @@ fun CapsuleConnectButton(
     }
 }
 
+// ============================================
+// WindowsSwipeSwitch
+// ============================================
+
 @Composable
 fun WindowsSwipeSwitch(
     connectionStatus: ConnectionStatus,
@@ -1406,7 +1507,7 @@ fun WindowsSwipeSwitch(
     val isError = connectionStatus == ConnectionStatus.ERROR
     val canSwipe = true
     val scope = rememberCoroutineScope()
-    val offsetX = remember { androidx.compose.animation.core.Animatable(0f) }
+    val offsetX = remember { Animatable(0f) }
     var isDragging by remember { mutableStateOf(false) }
     val trackColor by animateColorAsState(
         targetValue = when {
@@ -1621,6 +1722,10 @@ fun WindowsSwipeSwitch(
     }
 }
 
+// ============================================
+// IosConnectionModeSegmentedControl
+// ============================================
+
 @Composable
 fun IosConnectionModeSegmentedControl(
     selectedMode: ConnectionMode,
@@ -1706,6 +1811,10 @@ fun IosConnectionModeSegmentedControl(
     }
 }
 
+// ============================================
+// IosProtocolSegmentedControl
+// ============================================
+
 @Composable
 fun IosProtocolSegmentedControl(
     selectedProtocol: AetherProtocol,
@@ -1788,6 +1897,10 @@ fun IosProtocolSegmentedControl(
         }
     }
 }
+
+// ============================================
+// توابع کمکی
+// ============================================
 
 private fun formatTime(seconds: Long): String {
     val h = seconds / 3600
