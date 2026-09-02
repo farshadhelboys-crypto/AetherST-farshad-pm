@@ -1,35 +1,8 @@
 package io.github.immaghzbad.aetherst.shared.ui.screens
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import io.github.immaghzbad.aetherst.shared.ui.theme.AppPalette
-import io.github.immaghzbad.aetherst.shared.ui.components.*
-import io.github.immaghzbad.aetherst.subscription.PlatformSubscriptionCard
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.spring
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.ExperimentalFoundationApi
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.gestures.detectHorizontalDragGestures
-import androidx.compose.foundation.gestures.detectVerticalDragGestures
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -39,7 +12,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -92,6 +64,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
@@ -101,6 +74,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.immaghzbad.aetherst.platform.PlatformContext
 import io.github.immaghzbad.aetherst.platform.getSettings
 import io.github.immaghzbad.aetherst.platform.getSystemUtils
@@ -115,7 +89,13 @@ import io.github.immaghzbad.aetherst.shared.model.ConnectionMode
 import io.github.immaghzbad.aetherst.shared.model.ConnectionStatus
 import io.github.immaghzbad.aetherst.shared.model.SessionTraffic
 import io.github.immaghzbad.aetherst.shared.ui.components.CountryFlag
+import io.github.immaghzbad.aetherst.shared.ui.components.IosConfigChip
+import io.github.immaghzbad.aetherst.shared.ui.components.IosPickerRow
+import io.github.immaghzbad.aetherst.shared.ui.components.TrafficValue
+import io.github.immaghzbad.aetherst.shared.ui.theme.AppPalette
 import io.github.immaghzbad.aetherst.shared.util.CountryNames
+import io.github.immaghzbad.aetherst.subscription.PlatformSubscriptionCard
+import io.github.immaghzbad.aetherst.subscription.SubscriptionViewModel
 import kotlinx.coroutines.launch
 
 private val IosCardBg = AppPalette.surfaceRaised
@@ -145,8 +125,10 @@ fun DashboardScreen(
     onCopy: (String) -> Unit = {},
     onOpenSettingsToZeroTrust: () -> Unit = {},
     bottomContentPadding: Dp = 0.dp,
-    platformContext: PlatformContext? = null
+    platformContext: PlatformContext? = null,
+    subscriptionViewModel: SubscriptionViewModel? = null
 ) {
+    val context = LocalContext.current
     var showProxyOverlay by remember { mutableStateOf(true) }
     var showAdminRequiredDialog by remember { mutableStateOf(false) }
     var showSupportDialog by remember { mutableStateOf(false) }
@@ -179,6 +161,7 @@ fun DashboardScreen(
         val isCompactHeight = screenHeight < 640.dp
         val isVeryCompactHeight = screenHeight < 580.dp
         val horizontalPadding = if (screenWidth < 360.dp) 12.dp else 16.dp
+        val isWindows = remember { try { System.getProperty("os.name")?.lowercase()?.contains("win") == true } catch (_: Throwable) { false } }
 
         Column(
             modifier = Modifier
@@ -194,6 +177,7 @@ fun DashboardScreen(
                 modifier = Modifier.padding(top = if (isDesktop) 12.dp else 36.dp),
                 verticalArrangement = Arrangement.spacedBy((14 * scaleFactor).dp)
             ) {
+                // Header
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -269,6 +253,7 @@ fun DashboardScreen(
                     }
                 }
 
+                // Status Hero Card
                 IosStatusHeroCard(
                     connectionStatus = connectionStatus,
                     elapsedSeconds = elapsedSeconds,
@@ -282,10 +267,13 @@ fun DashboardScreen(
                     hideConfigChips = isCompactHeight,
                     scaleFactor = scaleFactor
                 )
+
+                // Subscription Card
                 if (!isDesktop) {
                     PlatformSubscriptionCard()
                 }
-                
+
+                // Error Card
                 if (!isVeryCompactHeight && connectionStatus == ConnectionStatus.ERROR) {
                     Card(
                         modifier = Modifier
@@ -311,21 +299,34 @@ fun DashboardScreen(
                 }
             }
 
+            // Bottom Section
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(bottom = 4.dp),
                 verticalArrangement = Arrangement.spacedBy((12 * scaleFactor).dp)
             ) {
+                // Connect Button
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(vertical = 4.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    val isWindows = remember { try { System.getProperty("os.name")?.lowercase()?.contains("win") == true } catch (_: Throwable) { false } }
-                    val isAndroid = remember { !isDesktop }
                     val handleToggle: () -> Boolean = {
+                        // ✅ چک کردن اشتراک قبل از اتصال
+                        if (connectionStatus == ConnectionStatus.STOPPED) {
+                            val info = subscriptionViewModel?.subscriptionInfo?.value
+                            if (info == null || !info.isActive) {
+                                Toast.makeText(
+                                    context,
+                                    "اشتراک شما فعال نیست! لطفاً کد فعال‌سازی را وارد کنید.",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                                return@let false
+                            }
+                        }
+
                         if (connectionStatus == ConnectionStatus.STOPPING) {
                             onForceStop()
                             true
@@ -345,6 +346,7 @@ fun DashboardScreen(
                             true
                         }
                     }
+
                     if (config.connectButtonStyle == "capsule") {
                         CapsuleConnectButton(
                             connectionStatus = connectionStatus,
@@ -353,7 +355,7 @@ fun DashboardScreen(
                             modifier = Modifier.fillMaxWidth(),
                             scaleFactor = scaleFactor
                         )
-                    } else if ((isDesktop && isWindows) || isAndroid) {
+                    } else if ((isDesktop && isWindows) || !isDesktop) {
                         WindowsSwipeSwitch(
                             connectionStatus = connectionStatus,
                             onToggle = handleToggle,
@@ -374,6 +376,7 @@ fun DashboardScreen(
                     }
                 }
 
+                // Settings Cards
                 if (!isVeryCompactHeight) {
                     if (!isDesktop) {
                         Card(
@@ -384,30 +387,66 @@ fun DashboardScreen(
                             val psiphonAllowed = config.protocol == AetherProtocol.MASQUE
                             val psiphonOn = config.psiphonEnabled && psiphonAllowed
                             Column {
-                            Row(
-                                modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
-                                    Box(modifier = Modifier.size(28.dp).clip(RoundedCornerShape(8.dp)).background(AppPalette.accentVariant), contentAlignment = Alignment.Center) {
-                                        Icon(Icons.Default.Shield, null, tint = Color.White, modifier = Modifier.size(16.dp))
+                                Row(
+                                    modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
+                                        Box(
+                                            modifier = Modifier.size(28.dp)
+                                                .clip(RoundedCornerShape(8.dp))
+                                                .background(AppPalette.accentVariant),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Icon(
+                                                Icons.Default.Shield,
+                                                null,
+                                                tint = Color.White,
+                                                modifier = Modifier.size(16.dp)
+                                            )
+                                        }
+                                        Spacer(modifier = Modifier.width(10.dp))
+                                        Column(modifier = Modifier.weight(1f)) {
+                                            Text(
+                                                "زنجیره سایفون",
+                                                fontWeight = FontWeight.Bold,
+                                                color = Color.White,
+                                                fontSize = (13 * scaleFactor).sp
+                                            )
+                                            Text(
+                                                if (psiphonAllowed) "مسیریابی از طریق سایفون برای آی‌پی غیرایرانی" else "فقط با پروتکل MASQUE در دسترس است",
+                                                color = IosSecondaryLabel,
+                                                fontSize = (10 * scaleFactor).sp
+                                            )
+                                        }
                                     }
-                                    Spacer(modifier = Modifier.width(10.dp))
-                                    Column(modifier = Modifier.weight(1f)) {
-                                        Text("زنجیره سایفون", fontWeight = FontWeight.Bold, color = Color.White, fontSize = (13 * scaleFactor).sp)
-                                        Text(if (psiphonAllowed) "مسیریابی از طریق سایفون برای آی‌پی غیرایرانی" else "فقط با پروتکل MASQUE در دسترس است", color = IosSecondaryLabel, fontSize = (10 * scaleFactor).sp)
-                                    }
+                                    Switch(
+                                        checked = config.psiphonEnabled && psiphonAllowed,
+                                        onCheckedChange = { onTogglePsiphon(it) },
+                                        enabled = psiphonAllowed && (connectionStatus == ConnectionStatus.STOPPED || connectionStatus == ConnectionStatus.ERROR),
+                                        colors = SwitchDefaults.colors(
+                                            checkedThumbColor = Color.White,
+                                            checkedTrackColor = IosActiveGreen,
+                                            checkedBorderColor = Color.Transparent,
+                                            uncheckedThumbColor = Color.White,
+                                            uncheckedTrackColor = AppPalette.inactiveTrack,
+                                            uncheckedBorderColor = Color.Transparent,
+                                            disabledCheckedTrackColor = IosActiveGreen.copy(alpha = 0.4f),
+                                            disabledCheckedThumbColor = Color.White.copy(alpha = 0.9f),
+                                            disabledCheckedBorderColor = Color.Transparent,
+                                            disabledUncheckedTrackColor = AppPalette.inactiveTrack.copy(alpha = 0.6f),
+                                            disabledUncheckedThumbColor = Color.White.copy(alpha = 0.7f),
+                                            disabledUncheckedBorderColor = Color.Transparent
+                                        )
+                                    )
                                 }
-                                Switch(
-                                    checked = config.psiphonEnabled && psiphonAllowed,
-                                    onCheckedChange = { onTogglePsiphon(it) },
-                                    enabled = psiphonAllowed && (connectionStatus == ConnectionStatus.STOPPED || connectionStatus == ConnectionStatus.ERROR),
-                                    colors = SwitchDefaults.colors(checkedThumbColor = Color.White, checkedTrackColor = IosActiveGreen, checkedBorderColor = Color.Transparent, uncheckedThumbColor = Color.White, uncheckedTrackColor = AppPalette.inactiveTrack, uncheckedBorderColor = Color.Transparent, disabledCheckedTrackColor = IosActiveGreen.copy(alpha = 0.4f), disabledCheckedThumbColor = Color.White.copy(alpha = 0.9f), disabledCheckedBorderColor = Color.Transparent,                                     disabledUncheckedTrackColor = AppPalette.inactiveTrack.copy(alpha = 0.6f), disabledUncheckedThumbColor = Color.White.copy(alpha = 0.7f), disabledUncheckedBorderColor = Color.Transparent)
-                                )
-                            }
                                 if (psiphonOn) {
-                                    HorizontalDivider(color = Color.White.copy(alpha = 0.1f), thickness = 0.5.dp, modifier = Modifier.padding(start = 50.dp))
+                                    HorizontalDivider(
+                                        color = Color.White.copy(alpha = 0.1f),
+                                        thickness = 0.5.dp,
+                                        modifier = Modifier.padding(start = 50.dp)
+                                    )
                                     val availableRegions by PsiphonEgressRegistry.availableRegions.collectAsStateWithLifecycle()
                                     val selectedRegion = config.psiphonEgressRegion.trim().uppercase()
                                     val regionCodes = buildList {
@@ -428,6 +467,7 @@ fun DashboardScreen(
                             }
                         }
                     }
+
                     if (isDesktop && isWindows) {
                         IosConnectionModeSegmentedControl(
                             selectedMode = config.connectionMode,
@@ -436,6 +476,7 @@ fun DashboardScreen(
                             scaleFactor = scaleFactor
                         )
                     }
+
                     IosProtocolSegmentedControl(
                         selectedProtocol = config.protocol,
                         onProtocolSelected = onUpdateProtocol,
@@ -447,7 +488,8 @@ fun DashboardScreen(
             }
         }
 
-        val offsetY = remember { Animatable(0f) }
+        // Proxy Overlay
+        val offsetY = remember { androidx.compose.animation.core.Animatable(0f) }
         val scope = rememberCoroutineScope()
 
         LaunchedEffect(showProxyOverlay) {
@@ -456,10 +498,10 @@ fun DashboardScreen(
             }
         }
 
-        AnimatedVisibility(
+        androidx.compose.animation.AnimatedVisibility(
             visible = config.connectionMode == ConnectionMode.PROXY_ONLY && connectionStatus == ConnectionStatus.RUNNING && showProxyOverlay,
-            enter = slideInVertically { -it } + fadeIn(),
-            exit = slideOutVertically { -it } + fadeOut(),
+            enter = androidx.compose.animation.slideInVertically { -it } + androidx.compose.animation.fadeIn(),
+            exit = androidx.compose.animation.slideOutVertically { -it } + androidx.compose.animation.fadeOut(),
             modifier = Modifier
                 .align(Alignment.TopCenter)
                 .padding(top = 36.dp)
@@ -493,6 +535,7 @@ fun DashboardScreen(
             )
         }
 
+        // Dialogs
         if (showAdminRequiredDialog) {
             AdminRequiredDialog(
                 onRelaunch = {
@@ -617,7 +660,7 @@ fun AdminRequiredDialog(
                 .fillMaxSize()
                 .background(Color.Black.copy(alpha = 0.6f))
                 .clickable(
-                    interactionSource = remember { MutableInteractionSource() },
+                    interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
                     indication = null,
                     onClick = onDismiss
                 )
@@ -652,9 +695,9 @@ fun AdminRequiredDialog(
                             modifier = Modifier.size((32 * scaleFactor).dp)
                         )
                     }
-                    
+
                     Spacer(modifier = Modifier.height((20 * scaleFactor).dp))
-                    
+
                     Text(
                         text = "نیاز به دسترسی مدیر",
                         style = MaterialTheme.typography.headlineSmall,
@@ -663,9 +706,9 @@ fun AdminRequiredDialog(
                         fontSize = (20 * scaleFactor).sp,
                         textAlign = TextAlign.Center
                     )
-                    
+
                     Spacer(modifier = Modifier.height((12 * scaleFactor).dp))
-                    
+
                     Text(
                         text = "حالت TUN برای ایجاد رابط شبکه مجازی به دسترسی مدیر نیاز دارد. لطفاً برنامه را به عنوان مدیر اجرا کنید.",
                         style = MaterialTheme.typography.bodyMedium,
@@ -674,9 +717,9 @@ fun AdminRequiredDialog(
                         textAlign = TextAlign.Center,
                         lineHeight = 20.sp
                     )
-                    
+
                     Spacer(modifier = Modifier.height((32 * scaleFactor).dp))
-                    
+
                     Column(
                         verticalArrangement = Arrangement.spacedBy((12 * scaleFactor).dp)
                     ) {
@@ -701,7 +744,7 @@ fun AdminRequiredDialog(
                                 )
                             }
                         }
-                        
+
                         TextButton(
                             onClick = onDismiss,
                             modifier = Modifier
@@ -758,7 +801,7 @@ fun ProxyOverlayPill(
             ) {
                 Icon(Icons.Default.Dns, null, tint = IosActiveBlue, modifier = Modifier.size(20.dp))
             }
-            
+
             Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 ProxyCopyRow(
                     label = "SOCKS5",
@@ -893,23 +936,23 @@ fun IosStatusHeroCard(
                                 .background(statusColor)
                         )
                         Spacer(modifier = Modifier.width((5 * scaleFactor).dp))
-                                Text(
-                                    text = when (connectionStatus) {
-                                        ConnectionStatus.RUNNING, ConnectionStatus.TUN_ACTIVE -> if (config.connectionMode == ConnectionMode.TUNNEL) "محافظت شده و متصل" else "پروکسی فعال"
-                                        ConnectionStatus.STARTING -> "در حال اتصال به بهترین سرور..."
-                                        ConnectionStatus.VALIDATING, ConnectionStatus.DATAPLANE_VALIDATED -> "برقراری ارتباط..."
-                                        ConnectionStatus.SOCKS_READY -> "در حال اتصال..."
-                                        ConnectionStatus.RECONNECTING -> "تلاش مجدد..."
-            ConnectionStatus.STOPPING -> "برای توقف اجباری بکشید"
-                                        ConnectionStatus.ERROR, ConnectionStatus.FAILED -> "خطا در اتصال یا اینترنت"
-                                        ConnectionStatus.STOPPED -> "آماده اتصال"
-                                    },
-                                    style = MaterialTheme.typography.labelSmall,
-                                    fontWeight = FontWeight.Bold,
-                                    letterSpacing = 0.8.sp,
-                                    color = statusColor,
-                                    fontSize = (8.5 * scaleFactor).sp
-                                )
+                        Text(
+                            text = when (connectionStatus) {
+                                ConnectionStatus.RUNNING, ConnectionStatus.TUN_ACTIVE -> if (config.connectionMode == ConnectionMode.TUNNEL) "محافظت شده و متصل" else "پروکسی فعال"
+                                ConnectionStatus.STARTING -> "در حال اتصال به بهترین سرور..."
+                                ConnectionStatus.VALIDATING, ConnectionStatus.DATAPLANE_VALIDATED -> "برقراری ارتباط..."
+                                ConnectionStatus.SOCKS_READY -> "در حال اتصال..."
+                                ConnectionStatus.RECONNECTING -> "تلاش مجدد..."
+                                ConnectionStatus.STOPPING -> "برای توقف اجباری بکشید"
+                                ConnectionStatus.ERROR, ConnectionStatus.FAILED -> "خطا در اتصال یا اینترنت"
+                                ConnectionStatus.STOPPED -> "آماده اتصال"
+                            },
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 0.8.sp,
+                            color = statusColor,
+                            fontSize = (8.5 * scaleFactor).sp
+                        )
                     }
 
                     Surface(
@@ -1079,21 +1122,21 @@ fun IosStatusHeroCard(
                                     color = Color.White,
                                     fontSize = (11 * scaleFactor).sp
                                 )
-                            Text(
-                                text = when {
-                                    ipInfo.ip.isNotEmpty() -> ipInfo.ip
-                                    ipInfo.isLoading -> "دریافت آی‌پی موقعیت شما..."
-                                    ipInfo.error != null -> "آی‌پی یافت نشد"
-                                    else -> "نمایش آی‌پی عمومی"
-                                },
-                                style = MaterialTheme.typography.bodySmall,
-                                color = when {
-                                    ipInfo.error != null -> IosErrorRed
-                                    ipInfo.isLoading -> IosScanningAmber
-                                    else -> IosSecondaryLabel
-                                },
-                                fontSize = (9 * scaleFactor).sp
-                            )
+                                Text(
+                                    text = when {
+                                        ipInfo.ip.isNotEmpty() -> ipInfo.ip
+                                        ipInfo.isLoading -> "دریافت آی‌پی موقعیت شما..."
+                                        ipInfo.error != null -> "آی‌پی یافت نشد"
+                                        else -> "نمایش آی‌پی عمومی"
+                                    },
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = when {
+                                        ipInfo.error != null -> IosErrorRed
+                                        ipInfo.isLoading -> IosScanningAmber
+                                        else -> IosSecondaryLabel
+                                    },
+                                    fontSize = (9 * scaleFactor).sp
+                                )
                             }
                         }
 
@@ -1135,43 +1178,6 @@ fun IosStatusHeroCard(
     }
 }
 
-@Composable
-private fun TrafficValue(label: String, value: String, color: Color, alignment: Alignment.Horizontal, modifier: Modifier = Modifier, speed: Double = 0.0, scaleFactor: Float = 1f) {
-    Column(modifier = modifier, horizontalAlignment = alignment) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelSmall,
-            fontWeight = FontWeight.Bold,
-            color = IosSecondaryLabel,
-            fontSize = (8 * scaleFactor).sp
-        )
-        Text(
-            text = value,
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold,
-            color = color,
-            fontSize = (12 * scaleFactor).sp
-        )
-        if (speed > 0) {
-            Text(
-                text = formatSpeedValue(speed),
-                style = MaterialTheme.typography.labelSmall,
-                fontWeight = FontWeight.SemiBold,
-                color = color.copy(alpha = 0.7f),
-                fontSize = (8 * scaleFactor).sp
-            )
-        }
-    }
-}
-
-@Composable
-fun IosConfigChip(label: String, value: String, scaleFactor: Float = 1f) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(text = label, style = MaterialTheme.typography.labelSmall, color = IosSecondaryLabel, fontSize = (8 * scaleFactor).sp, fontWeight = FontWeight.Bold)
-        Text(text = value, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, color = Color.White, fontSize = (10 * scaleFactor).sp)
-    }
-}
-
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun IosPowerButton(
@@ -1182,13 +1188,13 @@ fun IosPowerButton(
 ) {
     val isConnected = connectionStatus == ConnectionStatus.RUNNING
     val isWorking = connectionStatus == ConnectionStatus.STARTING ||
-                    connectionStatus == ConnectionStatus.VALIDATING ||
-                    connectionStatus == ConnectionStatus.RECONNECTING ||
-                    connectionStatus == ConnectionStatus.STOPPING
+            connectionStatus == ConnectionStatus.VALIDATING ||
+            connectionStatus == ConnectionStatus.RECONNECTING ||
+            connectionStatus == ConnectionStatus.STOPPING
     val isError = connectionStatus == ConnectionStatus.ERROR
     val canToggle = true
 
-    val interactionSource = remember { MutableInteractionSource() }
+    val interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
     val scope = rememberCoroutineScope()
 
@@ -1400,7 +1406,7 @@ fun WindowsSwipeSwitch(
     val isError = connectionStatus == ConnectionStatus.ERROR
     val canSwipe = true
     val scope = rememberCoroutineScope()
-    val offsetX = remember { Animatable(0f) }
+    val offsetX = remember { androidx.compose.animation.core.Animatable(0f) }
     var isDragging by remember { mutableStateOf(false) }
     val trackColor by animateColorAsState(
         targetValue = when {
@@ -1508,81 +1514,81 @@ fun WindowsSwipeSwitch(
                 .clip(CircleShape)
                 .background(Color.White)
                 .pointerInput(isConnected, isWorking, canSwipe, maxDrag) {
-                        if (!canSwipe) return@pointerInput
-                        detectHorizontalDragGestures(
-                            onDragStart = { isDragging = true },
-                            onDragEnd = {
-                                isDragging = false
-                                scope.launch {
-                                    val threshold = if (isWorking) maxDrag * 0.25f else maxDrag * 0.5f
-                                    val shouldTrigger = if (isWorking) {
-                                        if (!isConnected) offsetX.value > threshold else offsetX.value < maxDrag - threshold
-                                    } else {
-                                        if (!isConnected) offsetX.value > threshold else offsetX.value < threshold
-                                    }
-                                    if (shouldTrigger) {
-                                        val success = if (connectionStatus == ConnectionStatus.STOPPING) {
-                                            onRecover()
-                                            true
-                                        } else onToggle()
-                                        if (success) {
-                                            if (isWorking) {
-                                                offsetX.animateTo(0f, spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow))
-                                            } else {
-                                                offsetX.animateTo(
-                                                    if (!isConnected) maxDrag else 0f,
-                                                    spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow)
-                                                )
-                                            }
+                    if (!canSwipe) return@pointerInput
+                    detectHorizontalDragGestures(
+                        onDragStart = { isDragging = true },
+                        onDragEnd = {
+                            isDragging = false
+                            scope.launch {
+                                val threshold = if (isWorking) maxDrag * 0.25f else maxDrag * 0.5f
+                                val shouldTrigger = if (isWorking) {
+                                    if (!isConnected) offsetX.value > threshold else offsetX.value < maxDrag - threshold
+                                } else {
+                                    if (!isConnected) offsetX.value > threshold else offsetX.value < threshold
+                                }
+                                if (shouldTrigger) {
+                                    val success = if (connectionStatus == ConnectionStatus.STOPPING) {
+                                        onRecover()
+                                        true
+                                    } else onToggle()
+                                    if (success) {
+                                        if (isWorking) {
+                                            offsetX.animateTo(0f, spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow))
                                         } else {
                                             offsetX.animateTo(
-                                                if (isConnected) maxDrag else 0f,
+                                                if (!isConnected) maxDrag else 0f,
                                                 spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow)
                                             )
                                         }
                                     } else {
                                         offsetX.animateTo(
                                             if (isConnected) maxDrag else 0f,
-                                            animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow)
+                                            spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow)
                                         )
                                     }
-                                }
-                            },
-                            onDragCancel = {
-                                isDragging = false
-                                scope.launch {
+                                } else {
                                     offsetX.animateTo(
                                         if (isConnected) maxDrag else 0f,
-                                        spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow)
+                                        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow)
                                     )
                                 }
-                            },
-                            onHorizontalDrag = { change, dragAmount ->
-                                change.consume()
-                                scope.launch {
-                                    val next = (offsetX.value + dragAmount).coerceIn(0f, maxDrag)
-                                    offsetX.snapTo(next)
-                                }
                             }
-                        )
-                    },
-                contentAlignment = Alignment.Center
-            ) {
-                if (isWorking && !isDragging) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(22.dp),
-                        color = effectiveTrackColor,
-                        strokeWidth = 2.5.dp
+                        },
+                        onDragCancel = {
+                            isDragging = false
+                            scope.launch {
+                                offsetX.animateTo(
+                                    if (isConnected) maxDrag else 0f,
+                                    spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow)
+                                )
+                            }
+                        },
+                        onHorizontalDrag = { change, dragAmount ->
+                            change.consume()
+                            scope.launch {
+                                val next = (offsetX.value + dragAmount).coerceIn(0f, maxDrag)
+                                offsetX.snapTo(next)
+                            }
+                        }
                     )
-                } else {
-                    Icon(
-                        imageVector = if (isConnected || isWorking) Icons.AutoMirrored.Filled.ArrowBack else Icons.AutoMirrored.Filled.ArrowForward,
-                        contentDescription = null,
-                        tint = IosActiveBlue,
-                        modifier = Modifier.size(24.dp)
-                    )
-                }
+                },
+            contentAlignment = Alignment.Center
+        ) {
+            if (isWorking && !isDragging) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(22.dp),
+                    color = effectiveTrackColor,
+                    strokeWidth = 2.5.dp
+                )
+            } else {
+                Icon(
+                    imageVector = if (isConnected || isWorking) Icons.AutoMirrored.Filled.ArrowBack else Icons.AutoMirrored.Filled.ArrowForward,
+                    contentDescription = null,
+                    tint = IosActiveBlue,
+                    modifier = Modifier.size(24.dp)
+                )
             }
+        }
         if (!isWorking && !isConnected) {
             val connectFraction = if (maxDrag > 0f) (offsetX.value / maxDrag).coerceIn(0f, 1f) else 0f
             val rightAlpha = if (isDragging) (1f - connectFraction).coerceIn(0f, 1f) else 1f
@@ -1709,85 +1715,84 @@ fun IosProtocolSegmentedControl(
     scaleFactor: Float = 1f
 ) {
     Surface(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(28.dp),
-            color = IosCardBg,
-            shadowElevation = 8.dp,
-            tonalElevation = 0.dp
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(28.dp),
+        color = IosCardBg,
+        shadowElevation = 8.dp,
+        tonalElevation = 0.dp
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(IosCardBg)
+                .padding(4.dp),
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(IosCardBg)
-                    .padding(4.dp),
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                AetherProtocol.entries.forEach { proto ->
-                    val selected = proto == selectedProtocol
-                    val itemEnabled = enabled && (allowedProtocols == null || proto in allowedProtocols)
-                    val bg by animateColorAsState(
-                        targetValue = if (selected) IosActiveBlue else Color.Transparent,
-                        animationSpec = tween(250), label = "protoBg"
-                    )
-                    val textColor by animateColorAsState(
-                        targetValue = if (selected) Color.White else IosSecondaryLabel,
-                        animationSpec = tween(250), label = "protoText"
-                    )
-                    val label = if (proto == AetherProtocol.ZERO_TRUST) "اعتماد صفر" else proto.displayName.split(" ")[0].uppercase()
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .height((36 * scaleFactor).dp)
-                            .clip(RoundedCornerShape(50))
-                            .background(bg)
-                            .shadow(
-                                elevation = if (selected) 10.dp else 0.dp,
-                                shape = RoundedCornerShape(50),
-                                spotColor = IosActiveBlue.copy(alpha = 0.4f),
-                                ambientColor = IosActiveBlue.copy(alpha = 0.3f)
-                            )
-                            .clip(RoundedCornerShape(50))
-                            .clickable(enabled = itemEnabled) { onProtocolSelected(proto) }
-                            .graphicsLayer { alpha = if (itemEnabled || selected) 1f else 0.45f }
-                            .testTag("protocol_${proto.rawValue}"),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        if (selected) {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .background(
-                                        Brush.verticalGradient(
-                                            listOf(
-                                                Color.White.copy(alpha = 0.22f),
-                                                Color.White.copy(alpha = 0.06f),
-                                                Color.Transparent
-                                            )
+            AetherProtocol.entries.forEach { proto ->
+                val selected = proto == selectedProtocol
+                val itemEnabled = enabled && (allowedProtocols == null || proto in allowedProtocols)
+                val bg by animateColorAsState(
+                    targetValue = if (selected) IosActiveBlue else Color.Transparent,
+                    animationSpec = tween(250), label = "protoBg"
+                )
+                val textColor by animateColorAsState(
+                    targetValue = if (selected) Color.White else IosSecondaryLabel,
+                    animationSpec = tween(250), label = "protoText"
+                )
+                val label = if (proto == AetherProtocol.ZERO_TRUST) "اعتماد صفر" else proto.displayName.split(" ")[0].uppercase()
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .height((36 * scaleFactor).dp)
+                        .clip(RoundedCornerShape(50))
+                        .background(bg)
+                        .shadow(
+                            elevation = if (selected) 10.dp else 0.dp,
+                            shape = RoundedCornerShape(50),
+                            spotColor = IosActiveBlue.copy(alpha = 0.4f),
+                            ambientColor = IosActiveBlue.copy(alpha = 0.3f)
+                        )
+                        .clip(RoundedCornerShape(50))
+                        .clickable(enabled = itemEnabled) { onProtocolSelected(proto) }
+                        .graphicsLayer { alpha = if (itemEnabled || selected) 1f else 0.45f }
+                        .testTag("protocol_${proto.rawValue}"),
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (selected) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(
+                                    Brush.verticalGradient(
+                                        listOf(
+                                            Color.White.copy(alpha = 0.22f),
+                                            Color.White.copy(alpha = 0.06f),
+                                            Color.Transparent
                                         )
                                     )
-                            )
-                        }
-                        Text(
-                            text = label,
-                            style = MaterialTheme.typography.labelMedium,
-                            fontWeight = if (selected) FontWeight.ExtraBold else FontWeight.SemiBold,
-                            color = textColor,
-                            fontSize = (10 * scaleFactor).sp,
-                            letterSpacing = 0.3.sp,
-                            maxLines = 1
+                                )
                         )
                     }
+                    Text(
+                        text = label,
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = if (selected) FontWeight.ExtraBold else FontWeight.SemiBold,
+                        color = textColor,
+                        fontSize = (10 * scaleFactor).sp,
+                        letterSpacing = 0.3.sp,
+                        maxLines = 1
+                    )
                 }
             }
         }
+    }
 }
 
 private fun formatTime(seconds: Long): String {
     val h = seconds / 3600
     val m = (seconds % 3600) / 60
     val s = seconds % 60
-    
     fun pad(n: Long) = if (n < 10) "0$n" else n.toString()
     return "${pad(h)}:${pad(m)}:${pad(s)}"
 }
@@ -1801,8 +1806,6 @@ private fun formatTrafficBytes(bytes: Long): String {
         value /= 1024.0
         unitIndex += 1
     }
-    
-    
     val roundedValue = (value * 100).toLong() / 100.0
     return if (unitIndex == 0) {
         "$safeBytes ${units[unitIndex]}"
