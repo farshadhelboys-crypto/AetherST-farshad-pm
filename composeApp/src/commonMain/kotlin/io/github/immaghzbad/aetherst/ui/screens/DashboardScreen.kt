@@ -1,8 +1,6 @@
 package io.github.immaghzbad.aetherst.shared.ui.screens
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import io.github.immaghzbad.aetherst.shared.ui.theme.AppPalette
-import io.github.immaghzbad.aetherst.shared.ui.components.*
 
+import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Animatable
@@ -88,6 +86,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -104,7 +103,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.platform.testTag
@@ -117,6 +116,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.immaghzbad.aetherst.platform.PlatformContext
 import io.github.immaghzbad.aetherst.platform.getSettings
 import io.github.immaghzbad.aetherst.platform.getSystemUtils
@@ -125,16 +125,20 @@ import io.github.immaghzbad.aetherst.platform.isWindows
 import io.github.immaghzbad.aetherst.shared.data.IpInfo
 import io.github.immaghzbad.aetherst.shared.data.PingState
 import io.github.immaghzbad.aetherst.shared.data.PsiphonEgressRegistry
+import io.github.immaghzbad.aetherst.shared.i18n.LocalAppStrings
+import io.github.immaghzbad.aetherst.shared.i18n.StringsFa
 import io.github.immaghzbad.aetherst.shared.model.AetherConfig
 import io.github.immaghzbad.aetherst.shared.model.AetherProtocol
 import io.github.immaghzbad.aetherst.shared.model.ConnectionMode
-import io.github.immaghzbad.aetherst.shared.model.PsiphonChainMode
 import io.github.immaghzbad.aetherst.shared.model.ConnectionStatus
+import io.github.immaghzbad.aetherst.shared.model.PsiphonChainMode
 import io.github.immaghzbad.aetherst.shared.model.SessionTraffic
 import io.github.immaghzbad.aetherst.shared.ui.components.CountryFlag
-import io.github.immaghzbad.aetherst.shared.i18n.LocalAppStrings
-import io.github.immaghzbad.aetherst.shared.i18n.StringsFa
+import io.github.immaghzbad.aetherst.shared.ui.components.IosPickerRow
+import io.github.immaghzbad.aetherst.shared.ui.theme.AppPalette
 import io.github.immaghzbad.aetherst.shared.util.CountryNames
+import io.github.immaghzbad.aetherst.subscription.PlatformSubscriptionCard
+import io.github.immaghzbad.aetherst.subscription.SubscriptionInfo
 import kotlinx.coroutines.launch
 
 private val IosCardBg = AppPalette.surfaceRaised
@@ -165,8 +169,10 @@ fun DashboardScreen(
     onOpenSettingsToZeroTrust: () -> Unit = {},
     bottomContentPadding: Dp = 0.dp,
     platformContext: PlatformContext? = null,
-    onSwipeDragging: (Boolean) -> Unit = {}
+    onSwipeDragging: (Boolean) -> Unit = {},
+    subscriptionInfo: SubscriptionInfo? = null  // ← پارامتر جدید برای اشتراک
 ) {
+    val context = LocalContext.current
     var showProxyOverlay by remember { mutableStateOf(true) }
     var showAdminRequiredDialog by remember { mutableStateOf(false) }
     var showSupportDialog by remember { mutableStateOf(false) }
@@ -221,6 +227,7 @@ fun DashboardScreen(
                 modifier = Modifier.padding(top = if (isDesktop) 8.dp else 36.dp),
                 verticalArrangement = Arrangement.spacedBy(if (isDesktop) (10 * scaleFactor).dp else (14 * scaleFactor).dp)
             ) {
+                // ========== Header ==========
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -296,6 +303,7 @@ fun DashboardScreen(
                     }
                 }
 
+                // ========== Status Hero Card ==========
                 IosStatusHeroCard(
                     connectionStatus = connectionStatus,
                     elapsedSeconds = elapsedSeconds,
@@ -310,6 +318,7 @@ fun DashboardScreen(
                     scaleFactor = scaleFactor
                 )
 
+                // ========== Windows Proxy Ports ==========
                 if (isWindows && (connectionStatus == ConnectionStatus.RUNNING || connectionStatus == ConnectionStatus.TUN_ACTIVE)) {
                     WindowsProxyPortsCard(
                         config = config,
@@ -318,6 +327,12 @@ fun DashboardScreen(
                     )
                 }
 
+                // ========== Subscription Card ==========
+                if (!isDesktop) {
+                    PlatformSubscriptionCard()
+                }
+
+                // ========== Error / Reconnecting Card ==========
                 if (!isVeryCompactHeight && (connectionStatus == ConnectionStatus.ERROR || connectionStatus == ConnectionStatus.RECONNECTING)) {
                     val isReconnecting = connectionStatus == ConnectionStatus.RECONNECTING
                     val bg = if (isReconnecting) IosScanningAmber.copy(alpha = 0.12f) else IosErrorRed.copy(alpha = 0.1f)
@@ -354,12 +369,14 @@ fun DashboardScreen(
                 }
             }
 
+            // ========== Bottom Section ==========
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(bottom = 4.dp),
                 verticalArrangement = Arrangement.spacedBy((12 * scaleFactor).dp)
             ) {
+                // ========== Connect Button ==========
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -369,6 +386,18 @@ fun DashboardScreen(
                     val isWindows = remember { try { System.getProperty("os.name")?.lowercase()?.contains("win") == true } catch (_: Throwable) { false } }
                     val isAndroid = remember { !isDesktop }
                     val handleToggle: () -> Boolean = {
+                        // ✅ چک کردن اشتراک قبل از اتصال
+                        if (connectionStatus == ConnectionStatus.STOPPED) {
+                            if (subscriptionInfo == null || !subscriptionInfo.isActive) {
+                                Toast.makeText(
+                                    context,
+                                    "اشتراک شما فعال نیست! لطفاً کد فعال‌سازی را وارد کنید.",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                                return@let false
+                            }
+                        }
+
                         if (connectionStatus == ConnectionStatus.STOPPING) {
                             onForceStop()
                             true
@@ -388,6 +417,7 @@ fun DashboardScreen(
                             true
                         }
                     }
+
                     if (config.connectButtonStyle == "capsule") {
                         CapsuleConnectButton(
                             connectionStatus = connectionStatus,
@@ -418,6 +448,7 @@ fun DashboardScreen(
                     }
                 }
 
+                // ========== Settings Cards ==========
                 if (!isVeryCompactHeight) {
                     if (!isDesktop) {
                         val psiphonAllowed = config.protocol != AetherProtocol.ZERO_TRUST
@@ -428,28 +459,28 @@ fun DashboardScreen(
                             colors = CardDefaults.cardColors(containerColor = IosCardBg)
                         ) {
                             Column {
-                            Row(
-                                modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
-                                    Box(modifier = Modifier.size(28.dp).clip(RoundedCornerShape(8.dp)).background(AppPalette.accentVariant), contentAlignment = Alignment.Center) {
-                                        Icon(Icons.Default.Shield, null, tint = Color.White, modifier = Modifier.size(16.dp))
+                                Row(
+                                    modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
+                                        Box(modifier = Modifier.size(28.dp).clip(RoundedCornerShape(8.dp)).background(AppPalette.accentVariant), contentAlignment = Alignment.Center) {
+                                            Icon(Icons.Default.Shield, null, tint = Color.White, modifier = Modifier.size(16.dp))
+                                        }
+                                        Spacer(modifier = Modifier.width(10.dp))
+                                        Column(modifier = Modifier.weight(1f)) {
+                                            Text(strings.PSIPHON_CHAIN, fontWeight = FontWeight.Bold, color = Color.White, fontSize = (13 * scaleFactor).sp)
+                                            Text(if (!psiphonAllowed) strings.PSIPHON_NOT_AVAILABLE_ZT else if (config.psiphonEnabled) when (config.protocol) { AetherProtocol.MASQUE -> strings.PSIPHON_OVER_MASQUE ; AetherProtocol.WG -> strings.PSIPHON_OVER_WG ; AetherProtocol.GOOL -> strings.PSIPHON_OVER_GOOL ; AetherProtocol.ZERO_TRUST -> strings.PSIPHON_ROUTE_VIA } else strings.PSIPHON_ROUTE_VIA, color = IosSecondaryLabel, fontSize = (10 * scaleFactor).sp)
+                                        }
                                     }
-                                    Spacer(modifier = Modifier.width(10.dp))
-                                    Column(modifier = Modifier.weight(1f)) {
-                                        Text(strings.PSIPHON_CHAIN, fontWeight = FontWeight.Bold, color = Color.White, fontSize = (13 * scaleFactor).sp)
-                                        Text(if (!psiphonAllowed) strings.PSIPHON_NOT_AVAILABLE_ZT else if (config.psiphonEnabled) when (config.protocol) { AetherProtocol.MASQUE -> strings.PSIPHON_OVER_MASQUE ; AetherProtocol.WG -> strings.PSIPHON_OVER_WG ; AetherProtocol.GOOL -> strings.PSIPHON_OVER_GOOL ; AetherProtocol.ZERO_TRUST -> strings.PSIPHON_ROUTE_VIA } else strings.PSIPHON_ROUTE_VIA, color = IosSecondaryLabel, fontSize = (10 * scaleFactor).sp)
-                                    }
+                                    Switch(
+                                        checked = config.psiphonEnabled && psiphonAllowed,
+                                        onCheckedChange = { onTogglePsiphon(it) },
+                                        enabled = psiphonAllowed && (connectionStatus == ConnectionStatus.STOPPED || connectionStatus == ConnectionStatus.ERROR),
+                                        colors = SwitchDefaults.colors(checkedThumbColor = Color.White, checkedTrackColor = IosActiveGreen, checkedBorderColor = Color.Transparent, uncheckedThumbColor = Color.White, uncheckedTrackColor = AppPalette.inactiveTrack, uncheckedBorderColor = Color.Transparent, disabledCheckedTrackColor = IosActiveGreen.copy(alpha = 0.4f), disabledCheckedThumbColor = Color.White.copy(alpha = 0.9f), disabledCheckedBorderColor = Color.Transparent,                                     disabledUncheckedTrackColor = AppPalette.inactiveTrack.copy(alpha = 0.6f), disabledUncheckedThumbColor = Color.White.copy(alpha = 0.7f), disabledUncheckedBorderColor = Color.Transparent)
+                                    )
                                 }
-                                Switch(
-                                    checked = config.psiphonEnabled && psiphonAllowed,
-                                    onCheckedChange = { onTogglePsiphon(it) },
-                                    enabled = psiphonAllowed && (connectionStatus == ConnectionStatus.STOPPED || connectionStatus == ConnectionStatus.ERROR),
-                                    colors = SwitchDefaults.colors(checkedThumbColor = Color.White, checkedTrackColor = IosActiveGreen, checkedBorderColor = Color.Transparent, uncheckedThumbColor = Color.White, uncheckedTrackColor = AppPalette.inactiveTrack, uncheckedBorderColor = Color.Transparent, disabledCheckedTrackColor = IosActiveGreen.copy(alpha = 0.4f), disabledCheckedThumbColor = Color.White.copy(alpha = 0.9f), disabledCheckedBorderColor = Color.Transparent,                                     disabledUncheckedTrackColor = AppPalette.inactiveTrack.copy(alpha = 0.6f), disabledUncheckedThumbColor = Color.White.copy(alpha = 0.7f), disabledUncheckedBorderColor = Color.Transparent)
-                                )
-                            }
                                 if (psiphonOn) {
                                     HorizontalDivider(color = Color.White.copy(alpha = 0.1f), thickness = 0.5.dp, modifier = Modifier.padding(start = 50.dp))
                                     Row(
@@ -489,6 +520,7 @@ fun DashboardScreen(
             }
         }
 
+        // ========== Proxy Overlay ==========
         val offsetY = remember { Animatable(0f) }
         val scope = rememberCoroutineScope()
 
@@ -537,6 +569,7 @@ fun DashboardScreen(
             )
         }
 
+        // ========== Dialogs ==========
         if (showAdminRequiredDialog) {
             AdminRequiredDialog(
                 onRelaunch = {
@@ -577,6 +610,10 @@ fun DashboardScreen(
 
 private const val TelegramChannelUrl = "https://t.me/PowerSigma"
 
+// ============================================
+// Support Dialog
+// ============================================
+
 @Composable
 private fun SupportDialog(
     autoShow: Boolean,
@@ -592,87 +629,91 @@ private fun SupportDialog(
         val strings = LocalAppStrings.current
         val isRtl = strings is StringsFa
         CompositionLocalProvider(LocalLayoutDirection provides if (isRtl) LayoutDirection.Rtl else LayoutDirection.Ltr) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 24.dp)
-        ) {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(20.dp),
-                colors = CardDefaults.cardColors(containerColor = IosCardBg),
-                border = BorderStroke(1.dp, Color.White.copy(alpha = 0.1f))
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp)
             ) {
-                Column(
-                    modifier = Modifier.padding((20 * scaleFactor).dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(20.dp),
+                    colors = CardDefaults.cardColors(containerColor = IosCardBg),
+                    border = BorderStroke(1.dp, Color.White.copy(alpha = 0.1f))
                 ) {
-                    Text(
-                        strings.SUPPORT_AETHERST,
-                        modifier = Modifier.fillMaxWidth(),
-                        color = Color.White,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = (18 * scaleFactor).sp,
-                        textAlign = TextAlign.Center,
-                        style = androidx.compose.material3.LocalTextStyle.current.copy(
-                            textDirection = if (isRtl) TextDirection.Rtl else TextDirection.Ltr
-                        )
-                    )
-                    Spacer(modifier = Modifier.height((10 * scaleFactor).dp))
-                    Text(
-                        strings.SUPPORT_DIALOG_DESC,
-                        modifier = Modifier.fillMaxWidth(),
-                        color = Color.White.copy(alpha = 0.8f),
-                        fontSize = (13 * scaleFactor).sp,
-                        lineHeight = (18 * scaleFactor).sp,
-                        textAlign = TextAlign.Center,
-                        style = androidx.compose.material3.LocalTextStyle.current.copy(
-                            textDirection = if (isRtl) TextDirection.Rtl else TextDirection.Ltr
-                        )
-                    )
-                    Spacer(modifier = Modifier.height((20 * scaleFactor).dp))
-                    Button(
-                        onClick = onJoin,
-                        modifier = Modifier.fillMaxWidth().height((48 * scaleFactor).dp),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = IosActiveBlue, contentColor = Color.White)
+                    Column(
+                        modifier = Modifier.padding((20 * scaleFactor).dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Icon(Icons.AutoMirrored.Filled.Send, null, modifier = Modifier.size(18.dp))
-                        Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            strings.JOIN_TELEGRAM,
+                            strings.SUPPORT_AETHERST,
+                            modifier = Modifier.fillMaxWidth(),
+                            color = Color.White,
                             fontWeight = FontWeight.Bold,
-                            fontSize = (14 * scaleFactor).sp,
-                            maxLines = 1,
-                            softWrap = false,
+                            fontSize = (18 * scaleFactor).sp,
                             textAlign = TextAlign.Center,
                             style = androidx.compose.material3.LocalTextStyle.current.copy(
                                 textDirection = if (isRtl) TextDirection.Rtl else TextDirection.Ltr
                             )
                         )
-                    }
-                    Spacer(modifier = Modifier.height((8 * scaleFactor).dp))
-                    TextButton(
-                        onClick = { if (autoShow) onSkip() else onCancel() },
-                        modifier = Modifier.fillMaxWidth().height((42 * scaleFactor).dp)
-                    ) {
+                        Spacer(modifier = Modifier.height((10 * scaleFactor).dp))
                         Text(
-                            if (autoShow) strings.SKIP else strings.CANCEL,
-                            color = IosSecondaryLabel,
-                            fontWeight = FontWeight.Bold,
+                            strings.SUPPORT_DIALOG_DESC,
+                            modifier = Modifier.fillMaxWidth(),
+                            color = Color.White.copy(alpha = 0.8f),
                             fontSize = (13 * scaleFactor).sp,
+                            lineHeight = (18 * scaleFactor).sp,
                             textAlign = TextAlign.Center,
                             style = androidx.compose.material3.LocalTextStyle.current.copy(
                                 textDirection = if (isRtl) TextDirection.Rtl else TextDirection.Ltr
                             )
                         )
+                        Spacer(modifier = Modifier.height((20 * scaleFactor).dp))
+                        Button(
+                            onClick = onJoin,
+                            modifier = Modifier.fillMaxWidth().height((48 * scaleFactor).dp),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = IosActiveBlue, contentColor = Color.White)
+                        ) {
+                            Icon(Icons.AutoMirrored.Filled.Send, null, modifier = Modifier.size(18.dp))
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                strings.JOIN_TELEGRAM,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = (14 * scaleFactor).sp,
+                                maxLines = 1,
+                                softWrap = false,
+                                textAlign = TextAlign.Center,
+                                style = androidx.compose.material3.LocalTextStyle.current.copy(
+                                    textDirection = if (isRtl) TextDirection.Rtl else TextDirection.Ltr
+                                )
+                            )
+                        }
+                        Spacer(modifier = Modifier.height((8 * scaleFactor).dp))
+                        TextButton(
+                            onClick = { if (autoShow) onSkip() else onCancel() },
+                            modifier = Modifier.fillMaxWidth().height((42 * scaleFactor).dp)
+                        ) {
+                            Text(
+                                if (autoShow) strings.SKIP else strings.CANCEL,
+                                color = IosSecondaryLabel,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = (13 * scaleFactor).sp,
+                                textAlign = TextAlign.Center,
+                                style = androidx.compose.material3.LocalTextStyle.current.copy(
+                                    textDirection = if (isRtl) TextDirection.Rtl else TextDirection.Ltr
+                                )
+                            )
+                        }
                     }
                 }
             }
         }
-        }
     }
 }
+
+// ============================================
+// Admin Required Dialog
+// ============================================
 
 @Composable
 fun AdminRequiredDialog(
@@ -795,6 +836,10 @@ fun AdminRequiredDialog(
         }
     }
 }
+
+// ============================================
+// Proxy Overlay Pill
+// ============================================
 
 @Composable
 fun ProxyOverlayPill(
@@ -919,6 +964,10 @@ private fun ProxyCopyRow(
     }
 }
 
+// ============================================
+// Windows Proxy Ports Card
+// ============================================
+
 @Composable
 fun WindowsProxyPortsCard(
     config: AetherConfig,
@@ -958,6 +1007,10 @@ fun WindowsProxyPortsCard(
         }
     }
 }
+
+// ============================================
+// IosStatusHeroCard
+// ============================================
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -1021,23 +1074,23 @@ fun IosStatusHeroCard(
                                 .background(statusColor)
                         )
                         Spacer(modifier = Modifier.width((5 * scaleFactor).dp))
-                                Text(
-                                    text = when (connectionStatus) {
-                                        ConnectionStatus.RUNNING, ConnectionStatus.TUN_ACTIVE -> if (config.connectionMode == ConnectionMode.TUNNEL) strings.STATUS_PROTECTED_CONNECTED else strings.STATUS_PROXY_ACTIVE
-                                        ConnectionStatus.STARTING -> strings.STATUS_FINDING_SERVERS
-                                        ConnectionStatus.VALIDATING, ConnectionStatus.DATAPLANE_VALIDATED -> strings.STATUS_ESTABLISHING_LINK
-                                        ConnectionStatus.SOCKS_READY -> strings.STATUS_CONNECTING
-                                        ConnectionStatus.RECONNECTING -> strings.STATUS_RECONNECTING
-            ConnectionStatus.STOPPING -> strings.STATUS_SWIPE_FORCE_STOP
-                                        ConnectionStatus.ERROR, ConnectionStatus.FAILED -> strings.STATUS_CONNECTION_ERROR
-                                        ConnectionStatus.STOPPED -> strings.STATUS_READY_TO_CONNECT
-                                    },
-                                    style = MaterialTheme.typography.labelSmall,
-                                    fontWeight = FontWeight.Bold,
-                                    letterSpacing = 0.8.sp,
-                                    color = statusColor,
-                                    fontSize = (8.5 * scaleFactor).sp
-                                )
+                        Text(
+                            text = when (connectionStatus) {
+                                ConnectionStatus.RUNNING, ConnectionStatus.TUN_ACTIVE -> if (config.connectionMode == ConnectionMode.TUNNEL) strings.STATUS_PROTECTED_CONNECTED else strings.STATUS_PROXY_ACTIVE
+                                ConnectionStatus.STARTING -> strings.STATUS_FINDING_SERVERS
+                                ConnectionStatus.VALIDATING, ConnectionStatus.DATAPLANE_VALIDATED -> strings.STATUS_ESTABLISHING_LINK
+                                ConnectionStatus.SOCKS_READY -> strings.STATUS_CONNECTING
+                                ConnectionStatus.RECONNECTING -> strings.STATUS_RECONNECTING
+                                ConnectionStatus.STOPPING -> strings.STATUS_SWIPE_FORCE_STOP
+                                ConnectionStatus.ERROR, ConnectionStatus.FAILED -> strings.STATUS_CONNECTION_ERROR
+                                ConnectionStatus.STOPPED -> strings.STATUS_READY_TO_CONNECT
+                            },
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 0.8.sp,
+                            color = statusColor,
+                            fontSize = (8.5 * scaleFactor).sp
+                        )
                     }
 
                     Surface(
@@ -1112,7 +1165,7 @@ fun IosStatusHeroCard(
                                 color = if (pingState.error != null) IosErrorRed else IosActiveBlue,
                                 fontSize = (12 * scaleFactor).sp
                             )
-                        }
+                        )
                     } else {
                         Text(
                             text = if (connectionStatus == ConnectionStatus.RECONNECTING) strings.DASHBOARD_RETRY else strings.DASHBOARD_NO_UPLINK,
@@ -1128,124 +1181,124 @@ fun IosStatusHeroCard(
                 Spacer(modifier = Modifier.height((8 * scaleFactor).dp))
 
                 CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
-                if (connectionStatus == ConnectionStatus.RUNNING) {
-                    Row(
+                    if (connectionStatus == ConnectionStatus.RUNNING) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(IosGroupBg)
+                                .padding(horizontal = 8.dp, vertical = 6.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            TrafficValue(
+                                label = "UPLOAD",
+                                value = formatTrafficBytes(sessionTraffic.uploadedBytes),
+                                speed = sessionTraffic.uploadSpeedBps,
+                                color = IosActiveBlue,
+                                alignment = Alignment.Start,
+                                modifier = Modifier.weight(1f),
+                                scaleFactor = scaleFactor
+                            )
+                            TrafficValue(
+                                label = "DOWNLOAD",
+                                value = formatTrafficBytes(sessionTraffic.downloadedBytes),
+                                speed = sessionTraffic.downloadSpeedBps,
+                                color = IosActiveGreen,
+                                alignment = Alignment.End,
+                                modifier = Modifier.weight(1f),
+                                scaleFactor = scaleFactor
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height((8 * scaleFactor).dp))
+
+                    Surface(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(8.dp))
-                            .background(IosGroupBg)
-                            .padding(horizontal = 8.dp, vertical = 6.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        TrafficValue(
-                            label = "UPLOAD",
-                            value = formatTrafficBytes(sessionTraffic.uploadedBytes),
-                            speed = sessionTraffic.uploadSpeedBps,
-                            color = IosActiveBlue,
-                            alignment = Alignment.Start,
-                            modifier = Modifier.weight(1f),
-                            scaleFactor = scaleFactor
-                        )
-                        TrafficValue(
-                            label = "DOWNLOAD",
-                            value = formatTrafficBytes(sessionTraffic.downloadedBytes),
-                            speed = sessionTraffic.downloadSpeedBps,
-                            color = IosActiveGreen,
-                            alignment = Alignment.End,
-                            modifier = Modifier.weight(1f),
-                            scaleFactor = scaleFactor
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.height((8 * scaleFactor).dp))
-
-                Surface(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(8.dp))
-                        .combinedClickable(
-                            onClick = { onRefreshIpInfo() },
-                            onLongClick = {
-                                if (ipInfo.ip.isNotEmpty()) {
-                                    onCopy(ipInfo.ip)
+                            .combinedClickable(
+                                onClick = { onRefreshIpInfo() },
+                                onLongClick = {
+                                    if (ipInfo.ip.isNotEmpty()) {
+                                        onCopy(ipInfo.ip)
+                                    }
                                 }
-                            }
-                        ),
-                    color = IosGroupBg
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
+                            ),
+                        color = IosGroupBg
                     ) {
                         Row(
-                            modifier = Modifier.weight(1f),
-                            verticalAlignment = Alignment.CenterVertically
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            if (ipInfo.countryCode.isNotEmpty()) {
-                                CountryFlag(
-                                    countryCode = ipInfo.countryCode,
-                                    size = (20 * scaleFactor).dp
+                            Row(
+                                modifier = Modifier.weight(1f),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                if (ipInfo.countryCode.isNotEmpty()) {
+                                    CountryFlag(
+                                        countryCode = ipInfo.countryCode,
+                                        size = (20 * scaleFactor).dp
+                                    )
+                                } else {
+                                    Text(
+                                        text = "🌐",
+                                        fontSize = (16 * scaleFactor).sp
+                                    )
+                                }
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Column {
+                                    Text(
+                                        text = when {
+                                            ipInfo.country.isNotEmpty() -> if (ipInfo.countryCode.isNotEmpty()) "${ipInfo.country} (${ipInfo.countryCode})" else ipInfo.country
+                                            ipInfo.isLoading -> strings.DASHBOARD_IP_WAIT
+                                            ipInfo.error != null -> strings.DASHBOARD_IP_ERROR
+                                            else -> strings.DASHBOARD_IP_UNKNOWN
+                                        },
+                                        style = MaterialTheme.typography.labelLarge.copy(
+                                            textDirection = if (ipInfo.country.isNotEmpty()) TextDirection.Ltr else if (isRtl) TextDirection.Rtl else TextDirection.Ltr
+                                        ),
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color.White,
+                                        fontSize = (11 * scaleFactor).sp
+                                    )
+                                    Text(
+                                        text = when {
+                                            ipInfo.ip.isNotEmpty() -> ipInfo.ip
+                                            ipInfo.isLoading -> strings.DASHBOARD_IP_LOCATING
+                                            ipInfo.error != null -> strings.DASHBOARD_IP_NOT_FOUND
+                                            else -> strings.DASHBOARD_IP_SHOW
+                                        },
+                                        style = MaterialTheme.typography.bodySmall.copy(
+                                            textDirection = if (ipInfo.ip.isNotEmpty()) TextDirection.Ltr else if (isRtl) TextDirection.Rtl else TextDirection.Ltr
+                                        ),
+                                        color = when {
+                                            ipInfo.error != null -> IosErrorRed
+                                            ipInfo.isLoading -> IosScanningAmber
+                                            else -> IosSecondaryLabel
+                                        },
+                                        fontSize = (9 * scaleFactor).sp
+                                    )
+                                }
+                            }
+
+                            if (ipInfo.isLoading) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size((12 * scaleFactor).dp),
+                                    color = IosActiveBlue,
+                                    strokeWidth = 1.5.dp
                                 )
                             } else {
-                                Text(
-                                    text = "🌐",
-                                    fontSize = (16 * scaleFactor).sp
+                                Icon(
+                                    imageVector = Icons.Default.Refresh,
+                                    contentDescription = "Refresh",
+                                    tint = IosSecondaryLabel,
+                                    modifier = Modifier.size((12 * scaleFactor).dp)
                                 )
                             }
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Column {
-                                Text(
-                                    text = when {
-                                        ipInfo.country.isNotEmpty() -> if (ipInfo.countryCode.isNotEmpty()) "${ipInfo.country} (${ipInfo.countryCode})" else ipInfo.country
-                                        ipInfo.isLoading -> strings.DASHBOARD_IP_WAIT
-                                        ipInfo.error != null -> strings.DASHBOARD_IP_ERROR
-                                        else -> strings.DASHBOARD_IP_UNKNOWN
-                                    },
-                                    style = MaterialTheme.typography.labelLarge.copy(
-                                        textDirection = if (ipInfo.country.isNotEmpty()) TextDirection.Ltr else if (isRtl) TextDirection.Rtl else TextDirection.Ltr
-                                    ),
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color.White,
-                                    fontSize = (11 * scaleFactor).sp
-                                )
-                            Text(
-                                text = when {
-                                    ipInfo.ip.isNotEmpty() -> ipInfo.ip
-                                    ipInfo.isLoading -> strings.DASHBOARD_IP_LOCATING
-                                    ipInfo.error != null -> strings.DASHBOARD_IP_NOT_FOUND
-                                    else -> strings.DASHBOARD_IP_SHOW
-                                },
-                                style = MaterialTheme.typography.bodySmall.copy(
-                                    textDirection = if (ipInfo.ip.isNotEmpty()) TextDirection.Ltr else if (isRtl) TextDirection.Rtl else TextDirection.Ltr
-                                ),
-                                color = when {
-                                    ipInfo.error != null -> IosErrorRed
-                                    ipInfo.isLoading -> IosScanningAmber
-                                    else -> IosSecondaryLabel
-                                },
-                                fontSize = (9 * scaleFactor).sp
-                            )
-                            }
-                        }
-
-                        if (ipInfo.isLoading) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size((12 * scaleFactor).dp),
-                                color = IosActiveBlue,
-                                strokeWidth = 1.5.dp
-                            )
-                        } else {
-                            Icon(
-                                imageVector = Icons.Default.Refresh,
-                                contentDescription = "Refresh",
-                                tint = IosSecondaryLabel,
-                                modifier = Modifier.size((12 * scaleFactor).dp)
-                            )
                         }
                     }
-                }
                 }
 
                 if (!hideConfigChips) {
@@ -1269,8 +1322,20 @@ fun IosStatusHeroCard(
     }
 }
 
+// ============================================
+// کامپوننت‌های اضافی
+// ============================================
+
 @Composable
-private fun TrafficValue(label: String, value: String, color: Color, alignment: Alignment.Horizontal, modifier: Modifier = Modifier, speed: Double = 0.0, scaleFactor: Float = 1f) {
+private fun TrafficValue(
+    label: String,
+    value: String,
+    color: Color,
+    alignment: Alignment.Horizontal,
+    modifier: Modifier = Modifier,
+    speed: Double = 0.0,
+    scaleFactor: Float = 1f
+) {
     Column(modifier = modifier.heightIn(min = 38.dp), horizontalAlignment = alignment) {
         Text(
             text = label,
@@ -1510,7 +1575,7 @@ fun CapsuleConnectButton(
                 CircularProgressIndicator(modifier = Modifier.size((18 * sf).dp), color = Color.White, strokeWidth = 2.5.dp)
                 Spacer(modifier = Modifier.width((8 * sf).dp))
             }
-            androidx.compose.runtime.CompositionLocalProvider(androidx.compose.ui.platform.LocalLayoutDirection provides if (strings is StringsFa) androidx.compose.ui.unit.LayoutDirection.Rtl else androidx.compose.ui.unit.LayoutDirection.Ltr) {
+            CompositionLocalProvider(LocalLayoutDirection provides if (strings is StringsFa) LayoutDirection.Rtl else LayoutDirection.Ltr) {
                 Text(
                     text = label,
                     color = Color.White,
@@ -1590,83 +1655,83 @@ fun WindowsSwipeSwitch(
     )
     val sf = scaleFactor.coerceIn(0.7f, 1.1f)
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
-    BoxWithConstraints(
-        modifier = modifier
-            .widthIn(min = (280 * sf).dp, max = (360 * sf).dp)
-            .height((64 * sf).dp.coerceIn(52.dp, 72.dp))
-            .shadow(12.dp, RoundedCornerShape(36.dp), spotColor = trackColor.copy(alpha = 0.3f))
-            .clip(RoundedCornerShape(36.dp))
-            .background(Color.Transparent),
-        contentAlignment = Alignment.Center
-    ) {
-        val maxWidthPx = with(androidx.compose.ui.platform.LocalDensity.current) { maxWidth.toPx() }
-        val thumbSize = (48 * sf).dp.coerceIn(42.dp, 56.dp)
-        val thumbPx = with(androidx.compose.ui.platform.LocalDensity.current) { thumbSize.toPx() }
-        val horizontalPadding = (8 * sf).dp
-        val paddingPx = with(androidx.compose.ui.platform.LocalDensity.current) { horizontalPadding.toPx() }
-        val maxDrag = (maxWidthPx - thumbPx - paddingPx * 2).coerceAtLeast(0f)
-        val dragFraction = when {
-            !canSwipe || maxDrag == 0f -> 0f
-            isConnected -> (1f - offsetX.value / maxDrag).coerceIn(0f, 1f)
-            isWorking -> (offsetX.value / maxDrag).coerceIn(0f, 1f)
-            else -> 0f
-        }
-        val isDisconnectDrag = (isConnected || isWorking) && isDragging && dragFraction > 0.05f
-        val effectiveTrackColor = if (isDisconnectDrag) lerp(trackColor, IosErrorRed, dragFraction) else trackColor
-
-        LaunchedEffect(isConnected, isWorking, maxDrag) {
-            if (isDragging) return@LaunchedEffect
-            if (isWorking) {
-                offsetX.snapTo(if (isConnected) maxDrag else 0f)
-            } else {
-                offsetX.animateTo(
-                    targetValue = if (isConnected) maxDrag else 0f,
-                    animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMedium)
-                )
-            }
-        }
-        LaunchedEffect(onAdminCancelResetKey) {
-            if (!isConnected && !isWorking && offsetX.value != 0f && !isDragging) {
-                offsetX.animateTo(0f, spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow))
-            }
-        }
-
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
+        BoxWithConstraints(
+            modifier = modifier
+                .widthIn(min = (280 * sf).dp, max = (360 * sf).dp)
+                .height((64 * sf).dp.coerceIn(52.dp, 72.dp))
+                .shadow(12.dp, RoundedCornerShape(36.dp), spotColor = trackColor.copy(alpha = 0.3f))
                 .clip(RoundedCornerShape(36.dp))
-                .background(effectiveTrackColor.copy(alpha = if (isConnected || isDisconnectDrag) 1f else 0.95f)),
+                .background(Color.Transparent),
             contentAlignment = Alignment.Center
         ) {
-            androidx.compose.runtime.CompositionLocalProvider(androidx.compose.ui.platform.LocalLayoutDirection provides if (strings is StringsFa) androidx.compose.ui.unit.LayoutDirection.Rtl else androidx.compose.ui.unit.LayoutDirection.Ltr) {
-                Text(
-                    text = if (isDisconnectDrag) strings.RELEASE_TO_DISCONNECT else text,
-                    color = Color.White.copy(alpha = 0.95f),
-                    fontWeight = FontWeight.Bold,
-                    fontSize = ((if (strings is StringsFa) 10 else 11) * sf).coerceIn(9f, 12f).sp,
-                    letterSpacing = (if (strings is StringsFa) 0.15f else 0.6f * sf).sp,
-                    textAlign = TextAlign.Center,
-                    maxLines = 1,
-                    softWrap = false,
-                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-                    modifier = Modifier.padding(horizontal = ((if (strings is StringsFa) 50 else 56) * sf).dp)
-                )
+            val maxWidthPx = with(androidx.compose.ui.platform.LocalDensity.current) { maxWidth.toPx() }
+            val thumbSize = (48 * sf).dp.coerceIn(42.dp, 56.dp)
+            val thumbPx = with(androidx.compose.ui.platform.LocalDensity.current) { thumbSize.toPx() }
+            val horizontalPadding = (8 * sf).dp
+            val paddingPx = with(androidx.compose.ui.platform.LocalDensity.current) { horizontalPadding.toPx() }
+            val maxDrag = (maxWidthPx - thumbPx - paddingPx * 2).coerceAtLeast(0f)
+            val dragFraction = when {
+                !canSwipe || maxDrag == 0f -> 0f
+                isConnected -> (1f - offsetX.value / maxDrag).coerceIn(0f, 1f)
+                isWorking -> (offsetX.value / maxDrag).coerceIn(0f, 1f)
+                else -> 0f
             }
-        }
+            val isDisconnectDrag = (isConnected || isWorking) && isDragging && dragFraction > 0.05f
+            val effectiveTrackColor = if (isDisconnectDrag) lerp(trackColor, IosErrorRed, dragFraction) else trackColor
 
-        val hintOffset = if (!isDragging && !isWorking) {
-            if (!isConnected) hintShift else -hintShift
-        } else 0f
-        Box(
-            modifier = Modifier
-                .align(Alignment.CenterStart)
-                .padding(horizontal = horizontalPadding)
-                .offset { androidx.compose.ui.unit.IntOffset((offsetX.value + hintOffset).toInt(), 0) }
-                .size(thumbSize)
-                .shadow(8.dp, CircleShape, clip = false)
-                .clip(CircleShape)
-                .background(Color.White)
-                .pointerInput(canSwipe, maxDrag) {
+            LaunchedEffect(isConnected, isWorking, maxDrag) {
+                if (isDragging) return@LaunchedEffect
+                if (isWorking) {
+                    offsetX.snapTo(if (isConnected) maxDrag else 0f)
+                } else {
+                    offsetX.animateTo(
+                        targetValue = if (isConnected) maxDrag else 0f,
+                        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMedium)
+                    )
+                }
+            }
+            LaunchedEffect(onAdminCancelResetKey) {
+                if (!isConnected && !isWorking && offsetX.value != 0f && !isDragging) {
+                    offsetX.animateTo(0f, spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow))
+                }
+            }
+
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clip(RoundedCornerShape(36.dp))
+                    .background(effectiveTrackColor.copy(alpha = if (isConnected || isDisconnectDrag) 1f else 0.95f)),
+                contentAlignment = Alignment.Center
+            ) {
+                CompositionLocalProvider(LocalLayoutDirection provides if (strings is StringsFa) LayoutDirection.Rtl else LayoutDirection.Ltr) {
+                    Text(
+                        text = if (isDisconnectDrag) strings.RELEASE_TO_DISCONNECT else text,
+                        color = Color.White.copy(alpha = 0.95f),
+                        fontWeight = FontWeight.Bold,
+                        fontSize = ((if (strings is StringsFa) 10 else 11) * sf).coerceIn(9f, 12f).sp,
+                        letterSpacing = (if (strings is StringsFa) 0.15f else 0.6f * sf).sp,
+                        textAlign = TextAlign.Center,
+                        maxLines = 1,
+                        softWrap = false,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                        modifier = Modifier.padding(horizontal = ((if (strings is StringsFa) 50 else 56) * sf).dp)
+                    )
+                }
+            }
+
+            val hintOffset = if (!isDragging && !isWorking) {
+                if (!isConnected) hintShift else -hintShift
+            } else 0f
+            Box(
+                modifier = Modifier
+                    .align(Alignment.CenterStart)
+                    .padding(horizontal = horizontalPadding)
+                    .offset { androidx.compose.ui.unit.IntOffset((offsetX.value + hintOffset).toInt(), 0) }
+                    .size(thumbSize)
+                    .shadow(8.dp, CircleShape, clip = false)
+                    .clip(CircleShape)
+                    .background(Color.White)
+                    .pointerInput(canSwipe, maxDrag) {
                         if (!canSwipe) return@pointerInput
                         detectHorizontalDragGestures(
                             onDragStart = { isDragging = true; onDraggingChanged(true) },
@@ -1744,36 +1809,36 @@ fun WindowsSwipeSwitch(
                     )
                 }
             }
-        if (!isWorking && !isConnected) {
-            val connectFraction = if (maxDrag > 0f) (offsetX.value / maxDrag).coerceIn(0f, 1f) else 0f
-            val rightAlpha = if (isDragging) (1f - connectFraction).coerceIn(0f, 1f) else 1f
-            val rightShift = if (isDragging) connectFraction * 40f else hintShift * 0.6f
-            Row(
-                modifier = Modifier
-                    .align(Alignment.CenterEnd)
-                    .padding(end = 24.dp)
-                    .graphicsLayer { translationX = rightShift; alpha = rightAlpha },
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                repeat(3) { idx ->
-                    val alpha = 0.3f + ((dotPhase + idx * 0.33f) % 1f) * 0.7f
-                    Box(
-                        modifier = Modifier
-                            .padding(start = if (idx == 0) 0.dp else 3.dp)
-                            .size(6.dp)
-                            .clip(CircleShape)
-                            .background(Color.White.copy(alpha = alpha.coerceIn(0.3f, 1f)))
+            if (!isWorking && !isConnected) {
+                val connectFraction = if (maxDrag > 0f) (offsetX.value / maxDrag).coerceIn(0f, 1f) else 0f
+                val rightAlpha = if (isDragging) (1f - connectFraction).coerceIn(0f, 1f) else 1f
+                val rightShift = if (isDragging) connectFraction * 40f else hintShift * 0.6f
+                Row(
+                    modifier = Modifier
+                        .align(Alignment.CenterEnd)
+                        .padding(end = 24.dp)
+                        .graphicsLayer { translationX = rightShift; alpha = rightAlpha },
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    repeat(3) { idx ->
+                        val alpha = 0.3f + ((dotPhase + idx * 0.33f) % 1f) * 0.7f
+                        Box(
+                            modifier = Modifier
+                                .padding(start = if (idx == 0) 0.dp else 3.dp)
+                                .size(6.dp)
+                                .clip(CircleShape)
+                                .background(Color.White.copy(alpha = alpha.coerceIn(0.3f, 1f)))
+                        )
+                    }
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                        contentDescription = null,
+                        tint = Color.White.copy(alpha = 0.85f),
+                        modifier = Modifier.size(18.dp).padding(start = 4.dp)
                     )
                 }
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                    contentDescription = null,
-                    tint = Color.White.copy(alpha = 0.85f),
-                    modifier = Modifier.size(18.dp).padding(start = 4.dp)
-                )
             }
         }
-    }
     }
 }
 
@@ -1872,85 +1937,190 @@ fun IosProtocolSegmentedControl(
     scaleFactor: Float = 1f
 ) {
     Surface(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(28.dp),
-            color = IosCardBg,
-            shadowElevation = 8.dp,
-            tonalElevation = 0.dp
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(28.dp),
+        color = IosCardBg,
+        shadowElevation = 8.dp,
+        tonalElevation = 0.dp
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(IosCardBg)
+                .padding(4.dp),
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(IosCardBg)
-                    .padding(4.dp),
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                AetherProtocol.entries.forEach { proto ->
-                    val selected = proto == selectedProtocol
-                    val itemEnabled = enabled && (allowedProtocols == null || proto in allowedProtocols)
-                    val bg by animateColorAsState(
-                        targetValue = if (selected) IosActiveBlue else Color.Transparent,
-                        animationSpec = tween(250), label = "protoBg"
-                    )
-                    val textColor by animateColorAsState(
-                        targetValue = if (selected) Color.White else IosSecondaryLabel,
-                        animationSpec = tween(250), label = "protoText"
-                    )
-                    val label = if (proto == AetherProtocol.ZERO_TRUST) "Z-TRUST" else proto.displayName.split(" ")[0].uppercase()
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .height((36 * scaleFactor).dp)
-                            .clip(RoundedCornerShape(50))
-                            .background(bg)
-                            .shadow(
-                                elevation = if (selected) 10.dp else 0.dp,
-                                shape = RoundedCornerShape(50),
-                                spotColor = IosActiveBlue.copy(alpha = 0.4f),
-                                ambientColor = IosActiveBlue.copy(alpha = 0.3f)
-                            )
-                            .clip(RoundedCornerShape(50))
-                            .clickable(enabled = itemEnabled) { onProtocolSelected(proto) }
-                            .graphicsLayer { alpha = if (itemEnabled || selected) 1f else 0.45f }
-                            .testTag("protocol_${proto.rawValue}"),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        if (selected) {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .background(
-                                        Brush.verticalGradient(
-                                            listOf(
-                                                Color.White.copy(alpha = 0.22f),
-                                                Color.White.copy(alpha = 0.06f),
-                                                Color.Transparent
-                                            )
+            AetherProtocol.entries.forEach { proto ->
+                val selected = proto == selectedProtocol
+                val itemEnabled = enabled && (allowedProtocols == null || proto in allowedProtocols)
+                val bg by animateColorAsState(
+                    targetValue = if (selected) IosActiveBlue else Color.Transparent,
+                    animationSpec = tween(250), label = "protoBg"
+                )
+                val textColor by animateColorAsState(
+                    targetValue = if (selected) Color.White else IosSecondaryLabel,
+                    animationSpec = tween(250), label = "protoText"
+                )
+                val label = if (proto == AetherProtocol.ZERO_TRUST) "Z-TRUST" else proto.displayName.split(" ")[0].uppercase()
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .height((36 * scaleFactor).dp)
+                        .clip(RoundedCornerShape(50))
+                        .background(bg)
+                        .shadow(
+                            elevation = if (selected) 10.dp else 0.dp,
+                            shape = RoundedCornerShape(50),
+                            spotColor = IosActiveBlue.copy(alpha = 0.4f),
+                            ambientColor = IosActiveBlue.copy(alpha = 0.3f)
+                        )
+                        .clip(RoundedCornerShape(50))
+                        .clickable(enabled = itemEnabled) { onProtocolSelected(proto) }
+                        .graphicsLayer { alpha = if (itemEnabled || selected) 1f else 0.45f }
+                        .testTag("protocol_${proto.rawValue}"),
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (selected) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(
+                                    Brush.verticalGradient(
+                                        listOf(
+                                            Color.White.copy(alpha = 0.22f),
+                                            Color.White.copy(alpha = 0.06f),
+                                            Color.Transparent
                                         )
                                     )
-                            )
-                        }
-                        Text(
-                            text = label,
-                            style = MaterialTheme.typography.labelMedium,
-                            fontWeight = if (selected) FontWeight.ExtraBold else FontWeight.SemiBold,
-                            color = textColor,
-                            fontSize = (10 * scaleFactor).sp,
-                            letterSpacing = 0.3.sp,
-                            maxLines = 1
+                                )
                         )
+                    }
+                    Text(
+                        text = label,
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = if (selected) FontWeight.ExtraBold else FontWeight.SemiBold,
+                        color = textColor,
+                        fontSize = (10 * scaleFactor).sp,
+                        letterSpacing = 0.3.sp,
+                        maxLines = 1
+                    )
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun PsiphonOptionsSheet(
+    config: AetherConfig,
+    onUpdateConfig: (AetherConfig) -> Unit,
+    onDismiss: () -> Unit,
+    scaleFactor: Float
+) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val strings = LocalAppStrings.current
+    val isRtl = LocalLayoutDirection.current == LayoutDirection.Rtl
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        containerColor = IosCardBg,
+        contentColor = Color.White,
+        scrimColor = Color.Black.copy(alpha = 0.6f)
+    ) {
+        CompositionLocalProvider(LocalLayoutDirection provides if (isRtl) LayoutDirection.Rtl else LayoutDirection.Ltr) {
+            Column(
+                modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).navigationBarsPadding().padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Column(modifier = Modifier.padding(horizontal = 4.dp)) {
+                    Text(strings.PSIPHON_OPTIONS_TITLE, fontWeight = FontWeight.Bold, fontSize = (18 * scaleFactor).sp, color = Color.White)
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        when (config.protocol) {
+                            AetherProtocol.MASQUE -> strings.PSIPHON_OPTIONS_SUBTITLE_MASQUE
+                            else -> strings.PSIPHON_OPTIONS_SUBTITLE_WG
+                        },
+                        color = IosSecondaryLabel, fontSize = (12 * scaleFactor).sp
+                    )
+                }
+                Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = Color.Black)) { Column {
+                    val outerOptions = listOf("MASQUE", "WireGuard", "Gool")
+                    val outerValues = listOf("masque", "wg", "gool")
+                    val currentOuter = when (config.psiphonChainOuter) { "wg" -> "WireGuard"; "gool" -> "Gool"; else -> "MASQUE" }
+                    IosPickerRow(icon = Icons.Default.VpnLock, iconBg = AppPalette.statusConnected, title = strings.OUTER_PROTOCOL, value = currentOuter, options = outerOptions, onOptionSelected = { idx -> val outer = outerValues[idx]; val proto = when (outer) { "wg" -> AetherProtocol.WG; "gool" -> AetherProtocol.GOOL; else -> AetherProtocol.MASQUE }; onUpdateConfig(config.copy(psiphonChainOuter = outer, protocol = proto)) })
+                    Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp)) {
+                        Text(when (config.psiphonChainOuter) { "wg" -> strings.PSIPHON_SHEET_OUTER_DESC_WG ; "gool" -> strings.PSIPHON_SHEET_OUTER_DESC_GOOL ; else -> strings.PSIPHON_SHEET_OUTER_DESC_MASQUE }, color = IosSecondaryLabel, fontSize = (12 * scaleFactor).sp, lineHeight = (16 * scaleFactor).sp)
+                    }
+                    if (config.psiphonChainOuter == "masque") {
+                        AppDivider()
+                        val orderOptions = listOf("Psiphon first", "MASQUE first", "Auto")
+                        val orderValues = listOf("psiphon_first", "masque_first", "auto")
+                        val currentOrder = when (config.psiphonMasqueOrder) { "masque_first" -> "MASQUE first"; "auto" -> "Auto"; else -> "Psiphon first" }
+                        IosPickerRow(icon = Icons.Default.SwapHoriz, iconBg = Color(0xFF30B0C7), title = strings.MASQUE_ORDER, value = currentOrder, options = orderOptions, onOptionSelected = { idx -> onUpdateConfig(config.copy(psiphonMasqueOrder = orderValues[idx])) })
+                        Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp)) {
+                            Text(when (config.psiphonMasqueOrder) { "masque_first" -> strings.PSIPHON_SHEET_ORDER_DESC_MASQUE_FIRST ; "auto" -> strings.PSIPHON_SHEET_ORDER_DESC_AUTO ; else -> strings.PSIPHON_SHEET_ORDER_DESC_PSIPHON_FIRST }, color = IosSecondaryLabel, fontSize = (12 * scaleFactor).sp, lineHeight = (16 * scaleFactor).sp)
+                        }
+                    }
+                    val isWgFamily = config.protocol == AetherProtocol.WG || config.protocol == AetherProtocol.GOOL
+                    if (!isWgFamily) {
+                        AppDivider()
+                        val chainModes = listOf(PsiphonChainMode.AUTO, PsiphonChainMode.FALLBACK, PsiphonChainMode.ALWAYS)
+                        val chainLabels = mapOf(PsiphonChainMode.AUTO to "Auto", PsiphonChainMode.FALLBACK to "Fallback", PsiphonChainMode.ALWAYS to "Always")
+                        IosPickerRow(icon = Icons.Default.Sync, iconBg = AppPalette.accent, title = strings.PSIPHON_CHAIN_MODE, value = chainLabels[config.psiphonChainMode] ?: strings.CHAIN_MODE_AUTO, options = chainModes.map { chainLabels[it]!! }, onOptionSelected = { idx -> onUpdateConfig(config.copy(psiphonChainMode = chainModes[idx])) })
+                        Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp)) {
+                            val modeDesc = when (config.psiphonChainMode) {
+                                PsiphonChainMode.AUTO -> strings.PSIPHON_SHEET_CHAIN_DESC_AUTO
+                                PsiphonChainMode.FALLBACK -> strings.PSIPHON_SHEET_CHAIN_DESC_FALLBACK
+                                PsiphonChainMode.ALWAYS -> strings.PSIPHON_SHEET_CHAIN_DESC_ALWAYS
+                            }
+                            Text(modeDesc, color = IosSecondaryLabel, fontSize = (12 * scaleFactor).sp, lineHeight = (16 * scaleFactor).sp)
+                        }
+                    } else {
+                        Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp)) {
+                            Text(strings.PSIPHON_SHEET_WG_ALWAYS_VIA, color = IosSecondaryLabel, fontSize = (12 * scaleFactor).sp, lineHeight = (16 * scaleFactor).sp)
+                        }
+                    }
+                    AppDivider()
+                    val availableRegions by PsiphonEgressRegistry.availableRegions.collectAsStateWithLifecycle()
+                    val selectedRegion = config.psiphonEgressRegion.trim().uppercase()
+                    val regionCodes = buildList {
+                        add("")
+                        addAll(availableRegions)
+                        if (selectedRegion.isNotEmpty() && selectedRegion !in availableRegions) add(selectedRegion)
+                    }
+                    val regionOptions = regionCodes.map { CountryNames.label(it) }
+                    IosPickerRow(icon = Icons.Default.Public, iconBg = Color(0xFF30B0C7), title = strings.EXIT_COUNTRY, value = CountryNames.label(selectedRegion), options = regionOptions, onOptionSelected = { idx -> onUpdateConfig(config.copy(psiphonEgressRegion = regionCodes[idx])) })
+                    Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp)) {
+                        Text(strings.PSIPHON_SHEET_EXIT_AUTO, color = IosSecondaryLabel, fontSize = (12 * scaleFactor).sp, lineHeight = (16 * scaleFactor).sp)
+                    }
+                    if (isWgFamily) {
+                        Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)) {
+                            Text(strings.PSIPHON_SHEET_EGRESS_WARN_WG, color = Color(0xFFFFCC00), fontSize = (11 * scaleFactor).sp, lineHeight = (15 * scaleFactor).sp)
+                        }
+                    }
+                } }
+                Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = Color.Black)) {
+                    Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp)) {
+                        Text(strings.HOW_IT_WORKS, fontWeight = FontWeight.Bold, color = Color.White, fontSize = (14 * scaleFactor).sp)
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Text(when (config.psiphonChainOuter) { "wg" -> strings.PSIPHON_SHEET_HOW_WG ; "gool" -> strings.PSIPHON_SHEET_HOW_GOOL ; else -> strings.PSIPHON_SHEET_HOW_MASQUE }, color = IosSecondaryLabel, fontSize = (12 * scaleFactor).sp, lineHeight = (17 * scaleFactor).sp)
                     }
                 }
             }
         }
+    }
 }
+
+// ============================================
+// توابع کمکی
+// ============================================
 
 private fun formatTime(seconds: Long): String {
     val h = seconds / 3600
     val m = (seconds % 3600) / 60
     val s = seconds % 60
-    
     fun pad(n: Long) = if (n < 10) "0$n" else n.toString()
     return "${pad(h)}:${pad(m)}:${pad(s)}"
 }
@@ -1980,107 +2150,5 @@ private fun formatSpeedValue(bytesPerSec: Double): String {
         bytesPerSec >= 1024.0 * 1024.0 -> "${"%.1f".format(bytesPerSec / (1024.0 * 1024.0))} MB/s"
         bytesPerSec >= 1024.0 -> "${"%.0f".format(bytesPerSec / 1024.0)} KB/s"
         else -> "${"%.0f".format(bytesPerSec)} B/s"
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun PsiphonOptionsSheet(
-    config: AetherConfig,
-    onUpdateConfig: (AetherConfig) -> Unit,
-    onDismiss: () -> Unit,
-    scaleFactor: Float
-) {
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    val strings = LocalAppStrings.current
-    val isRtl = LocalLayoutDirection.current == LayoutDirection.Rtl
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        sheetState = sheetState,
-        containerColor = IosCardBg,
-        contentColor = Color.White,
-        scrimColor = Color.Black.copy(alpha = 0.6f)
-    ) {
-        CompositionLocalProvider(LocalLayoutDirection provides if (isRtl) LayoutDirection.Rtl else LayoutDirection.Ltr) {
-        Column(
-            modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).navigationBarsPadding().padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            Column(modifier = Modifier.padding(horizontal = 4.dp)) {
-                Text(strings.PSIPHON_OPTIONS_TITLE, fontWeight = FontWeight.Bold, fontSize = (18 * scaleFactor).sp, color = Color.White)
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    when (config.protocol) {
-                        AetherProtocol.MASQUE -> strings.PSIPHON_OPTIONS_SUBTITLE_MASQUE
-                        else -> strings.PSIPHON_OPTIONS_SUBTITLE_WG
-                    },
-                    color = IosSecondaryLabel, fontSize = (12 * scaleFactor).sp
-                )
-            }
-            Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = Color.Black)) { Column {
-                val outerOptions = listOf("MASQUE", "WireGuard", "Gool")
-                val outerValues = listOf("masque", "wg", "gool")
-                val currentOuter = when (config.psiphonChainOuter) { "wg" -> "WireGuard"; "gool" -> "Gool"; else -> "MASQUE" }
-                IosPickerRow(icon = Icons.Default.VpnLock, iconBg = AppPalette.statusConnected, title = strings.OUTER_PROTOCOL, value = currentOuter, options = outerOptions, onOptionSelected = { idx -> val outer = outerValues[idx]; val proto = when (outer) { "wg" -> AetherProtocol.WG; "gool" -> AetherProtocol.GOOL; else -> AetherProtocol.MASQUE }; onUpdateConfig(config.copy(psiphonChainOuter = outer, protocol = proto)) })
-                Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp)) {
-                    Text(when (config.psiphonChainOuter) { "wg" -> strings.PSIPHON_SHEET_OUTER_DESC_WG ; "gool" -> strings.PSIPHON_SHEET_OUTER_DESC_GOOL ; else -> strings.PSIPHON_SHEET_OUTER_DESC_MASQUE }, color = IosSecondaryLabel, fontSize = (12 * scaleFactor).sp, lineHeight = (16 * scaleFactor).sp)
-                }
-                if (config.psiphonChainOuter == "masque") {
-                    AppDivider()
-                    val orderOptions = listOf("Psiphon first", "MASQUE first", "Auto")
-                    val orderValues = listOf("psiphon_first", "masque_first", "auto")
-                    val currentOrder = when (config.psiphonMasqueOrder) { "masque_first" -> "MASQUE first"; "auto" -> "Auto"; else -> "Psiphon first" }
-                    IosPickerRow(icon = Icons.Default.SwapHoriz, iconBg = Color(0xFF30B0C7), title = strings.MASQUE_ORDER, value = currentOrder, options = orderOptions, onOptionSelected = { idx -> onUpdateConfig(config.copy(psiphonMasqueOrder = orderValues[idx])) })
-                    Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp)) {
-                        Text(when (config.psiphonMasqueOrder) { "masque_first" -> strings.PSIPHON_SHEET_ORDER_DESC_MASQUE_FIRST ; "auto" -> strings.PSIPHON_SHEET_ORDER_DESC_AUTO ; else -> strings.PSIPHON_SHEET_ORDER_DESC_PSIPHON_FIRST }, color = IosSecondaryLabel, fontSize = (12 * scaleFactor).sp, lineHeight = (16 * scaleFactor).sp)
-                    }
-                }
-                val isWgFamily = config.protocol == AetherProtocol.WG || config.protocol == AetherProtocol.GOOL
-                if (!isWgFamily) {
-                    AppDivider()
-                    val chainModes = listOf(PsiphonChainMode.AUTO, PsiphonChainMode.FALLBACK, PsiphonChainMode.ALWAYS)
-                    val chainLabels = mapOf(PsiphonChainMode.AUTO to "Auto", PsiphonChainMode.FALLBACK to "Fallback", PsiphonChainMode.ALWAYS to "Always")
-                    IosPickerRow(icon = Icons.Default.Sync, iconBg = AppPalette.accent, title = strings.PSIPHON_CHAIN_MODE, value = chainLabels[config.psiphonChainMode] ?: strings.CHAIN_MODE_AUTO, options = chainModes.map { chainLabels[it]!! }, onOptionSelected = { idx -> onUpdateConfig(config.copy(psiphonChainMode = chainModes[idx])) })
-                    Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp)) {
-                        val modeDesc = when (config.psiphonChainMode) {
-                            PsiphonChainMode.AUTO -> strings.PSIPHON_SHEET_CHAIN_DESC_AUTO
-                            PsiphonChainMode.FALLBACK -> strings.PSIPHON_SHEET_CHAIN_DESC_FALLBACK
-                            PsiphonChainMode.ALWAYS -> strings.PSIPHON_SHEET_CHAIN_DESC_ALWAYS
-                        }
-                        Text(modeDesc, color = IosSecondaryLabel, fontSize = (12 * scaleFactor).sp, lineHeight = (16 * scaleFactor).sp)
-                    }
-                } else {
-                    Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp)) {
-                        Text(strings.PSIPHON_SHEET_WG_ALWAYS_VIA, color = IosSecondaryLabel, fontSize = (12 * scaleFactor).sp, lineHeight = (16 * scaleFactor).sp)
-                    }
-                }
-                AppDivider()
-                val availableRegions by PsiphonEgressRegistry.availableRegions.collectAsStateWithLifecycle()
-                val selectedRegion = config.psiphonEgressRegion.trim().uppercase()
-                val regionCodes = buildList {
-                    add("")
-                    addAll(availableRegions)
-                    if (selectedRegion.isNotEmpty() && selectedRegion !in availableRegions) add(selectedRegion)
-                }
-                val regionOptions = regionCodes.map { CountryNames.label(it) }
-                IosPickerRow(icon = Icons.Default.Public, iconBg = Color(0xFF30B0C7), title = strings.EXIT_COUNTRY, value = CountryNames.label(selectedRegion), options = regionOptions, onOptionSelected = { idx -> onUpdateConfig(config.copy(psiphonEgressRegion = regionCodes[idx])) })
-                Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp)) {
-                    Text(strings.PSIPHON_SHEET_EXIT_AUTO, color = IosSecondaryLabel, fontSize = (12 * scaleFactor).sp, lineHeight = (16 * scaleFactor).sp)
-                }
-                if (isWgFamily) {
-                    Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)) {
-                        Text(strings.PSIPHON_SHEET_EGRESS_WARN_WG, color = Color(0xFFFFCC00), fontSize = (11 * scaleFactor).sp, lineHeight = (15 * scaleFactor).sp)
-                    }
-                }
-            } }
-            Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = Color.Black)) {
-                Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp)) {
-                    Text(strings.HOW_IT_WORKS, fontWeight = FontWeight.Bold, color = Color.White, fontSize = (14 * scaleFactor).sp)
-                    Spacer(modifier = Modifier.height(6.dp))
-                    Text(when (config.psiphonChainOuter) { "wg" -> strings.PSIPHON_SHEET_HOW_WG ; "gool" -> strings.PSIPHON_SHEET_HOW_GOOL ; else -> strings.PSIPHON_SHEET_HOW_MASQUE }, color = IosSecondaryLabel, fontSize = (12 * scaleFactor).sp, lineHeight = (17 * scaleFactor).sp)
-                }
-            }
-        }
-        }
     }
 }
