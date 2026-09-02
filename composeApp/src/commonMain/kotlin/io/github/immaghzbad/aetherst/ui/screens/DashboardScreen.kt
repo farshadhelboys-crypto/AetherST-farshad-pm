@@ -3,7 +3,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.immaghzbad.aetherst.shared.ui.theme.AppPalette
 import io.github.immaghzbad.aetherst.shared.ui.components.*
 
-import io.github.immaghzbad.aetherst.subscription.SubscriptionCard
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Animatable
@@ -283,9 +282,9 @@ fun DashboardScreen(
                     scaleFactor = scaleFactor
                 )
                 if (!isDesktop) {
-                    SubscriptionCard()
+                    PlatformSubscriptionCard()
                 }
-
+                
                 if (!isVeryCompactHeight && connectionStatus == ConnectionStatus.ERROR) {
                     Card(
                         modifier = Modifier
