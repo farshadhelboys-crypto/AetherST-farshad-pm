@@ -1,12 +1,12 @@
 plugins {
   alias(libs.plugins.android.application)
+  alias(libs.plugins.kotlin.android)
   alias(libs.plugins.kotlin.compose)
   alias(libs.plugins.google.devtools.ksp)
   alias(libs.plugins.roborazzi)
   id("org.jetbrains.kotlin.plugin.serialization") version "2.1.0"
   id("com.google.gms.google-services")
 }
-
 android {
   namespace = "io.github.immaghzbad.aetherst"
   compileSdk = 36
