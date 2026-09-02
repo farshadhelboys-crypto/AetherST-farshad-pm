@@ -10,12 +10,11 @@ import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.net.HttpURLConnection
 import java.net.URL
-import java.util.Date
 
 private const val TAG = "GitHubSubscriptionRepo"
 
 data class SubscriptionInfo(
-    val type: String,
+    val type: String,  // "paid" یا "none" یا "error"
     val expiresAtMillis: Long,
     val isActive: Boolean
 )
@@ -29,7 +28,7 @@ sealed class ActivationResult {
 
 class GitHubSubscriptionRepository(private val context: Context) {
 
-    // ⚠️ اینجا لینک گیت‌هاب رو بچسبون (جایگزین کن)
+    // ⚠️ لینک گیت‌هاب خودت رو اینجا بچسبون
     private val CODES_URL = "https://raw.githubusercontent.com/farshadhelboys-crypto/Feri_pm_tunnel_subscriptions/refs/heads/main/codes.json"
 
     private var cachedCodes: MutableList<CodeEntry>? = null
@@ -117,12 +116,12 @@ class GitHubSubscriptionRepository(private val context: Context) {
                 return SubscriptionInfo("paid", expiresAt, true)
             }
 
-            Log.d(TAG, "🆕 دستگاه جدید، Trial ۲۴ ساعته")
-            SubscriptionInfo("trial", System.currentTimeMillis() + 24 * 60 * 60 * 1000, true)
+            Log.d(TAG, "⛔ بدون اشتراک فعال")
+            SubscriptionInfo("none", 0L, false)
             
         } catch (e: Exception) {
             Log.e(TAG, "❌ خطا: ${e.message}")
-            SubscriptionInfo("trial", System.currentTimeMillis() + 24 * 60 * 60 * 1000, true)
+            SubscriptionInfo("error", 0L, false)
         }
     }
 
