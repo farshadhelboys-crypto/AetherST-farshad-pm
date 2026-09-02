@@ -9,7 +9,8 @@ import kotlinx.coroutines.launch
 
 class SubscriptionViewModel(application: Application) : AndroidViewModel(application) {
 
-    private val repository = SubscriptionRepository(application)
+    // استفاده از GitHubSubscriptionRepository به جای SubscriptionRepository
+    private val repository = GitHubSubscriptionRepository(application)
 
     private val _subscriptionInfo = MutableStateFlow<SubscriptionInfo?>(null)
     val subscriptionInfo: StateFlow<SubscriptionInfo?> = _subscriptionInfo
