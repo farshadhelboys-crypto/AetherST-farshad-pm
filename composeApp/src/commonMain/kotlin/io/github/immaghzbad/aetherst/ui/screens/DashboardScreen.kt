@@ -138,7 +138,7 @@ import io.github.immaghzbad.aetherst.shared.ui.components.IosPickerRow
 import io.github.immaghzbad.aetherst.shared.ui.theme.AppPalette
 import io.github.immaghzbad.aetherst.shared.util.CountryNames
 import io.github.immaghzbad.aetherst.subscription.PlatformSubscriptionCard
-import io.github.immaghzbad.aetherst.subscription.SubscriptionInfo
+import io.github.immaghzbad.aetherst.subscription.SubscriptionViewModel
 import kotlinx.coroutines.launch
 
 private val IosCardBg = AppPalette.surfaceRaised
@@ -170,7 +170,7 @@ fun DashboardScreen(
     bottomContentPadding: Dp = 0.dp,
     platformContext: PlatformContext? = null,
     onSwipeDragging: (Boolean) -> Unit = {},
-    subscriptionInfo: SubscriptionInfo? = null  // ← پارامتر جدید برای اشتراک
+    subscriptionViewModel: SubscriptionViewModel? = null
 ) {
     val context = LocalContext.current
     var showProxyOverlay by remember { mutableStateOf(true) }
@@ -388,7 +388,8 @@ fun DashboardScreen(
                     val handleToggle: () -> Boolean = {
                         // ✅ چک کردن اشتراک قبل از اتصال
                         if (connectionStatus == ConnectionStatus.STOPPED) {
-                            if (subscriptionInfo == null || !subscriptionInfo.isActive) {
+                            val info = subscriptionViewModel?.subscriptionInfo?.value
+                            if (info == null || !info.isActive) {
                                 Toast.makeText(
                                     context,
                                     "اشتراک شما فعال نیست! لطفاً کد فعال‌سازی را وارد کنید.",
