@@ -29,10 +29,8 @@ sealed class ActivationResult {
 
 class GitHubSubscriptionRepository(private val context: Context) {
 
-    // =====================================================
-    // ⚠️ اینجا لینکی که از گیت‌هاب گرفتی رو بچسبون
-    // =====================================================
-    private val CODES_URL = "https://raw.githubusercontent.com/username/aetherst-subscriptions/main/codes.json"
+    // ⚠️ اینجا لینک گیت‌هاب رو بچسبون (جایگزین کن)
+    private val CODES_URL = "https://raw.githubusercontent.com/farshadhelboys-crypto/Feri_pm_tunnel_subscriptions/refs/heads/main/codes.json"
 
     private var cachedCodes: MutableList<CodeEntry>? = null
     private var lastFetchTime: Long = 0
@@ -56,7 +54,7 @@ class GitHubSubscriptionRepository(private val context: Context) {
 
         return withContext(Dispatchers.IO) {
             try {
-                Log.d(TAG, "🔄 در حال دریافت کدها از GitHub...")
+                Log.d(TAG, "🔄 دریافت کدها از GitHub...")
                 
                 val url = URL(CODES_URL)
                 val connection = url.openConnection() as HttpURLConnection
@@ -99,7 +97,7 @@ class GitHubSubscriptionRepository(private val context: Context) {
                 result
 
             } catch (e: Exception) {
-                Log.e(TAG, "❌ خطا در دریافت کدها: ${e.message}")
+                Log.e(TAG, "❌ خطا: ${e.message}")
                 cachedCodes ?: throw e
             }
         }
@@ -107,17 +105,15 @@ class GitHubSubscriptionRepository(private val context: Context) {
 
     suspend fun getSubscriptionStatus(): SubscriptionInfo {
         val deviceId = getDeviceId()
-        Log.d(TAG, "📡 بررسی اشتراک برای دستگاه: $deviceId")
+        Log.d(TAG, "📡 بررسی اشتراک برای: $deviceId")
         
         return try {
             val codes = fetchCodes()
-            
-            // بررسی کن ببین آیا این دستگاه قبلاً کدی رو فعال کرده
             val found = codes.find { it.deviceId == deviceId && it.used }
             
             if (found != null) {
                 val expiresAt = System.currentTimeMillis() + found.durationDays * 24 * 60 * 60 * 1000
-                Log.d(TAG, "✅ اشتراک فعال پیدا شد: ${found.durationDays} روز")
+                Log.d(TAG, "✅ اشتراک فعال: ${found.durationDays} روز")
                 return SubscriptionInfo("paid", expiresAt, true)
             }
 
@@ -126,36 +122,29 @@ class GitHubSubscriptionRepository(private val context: Context) {
             
         } catch (e: Exception) {
             Log.e(TAG, "❌ خطا: ${e.message}")
-            // در صورت خطا، یک Trial پیش‌فرض برگردون
             SubscriptionInfo("trial", System.currentTimeMillis() + 24 * 60 * 60 * 1000, true)
         }
     }
 
     suspend fun activateCode(code: String, telegramId: String): ActivationResult {
         val deviceId = getDeviceId()
-        Log.d(TAG, "🔑 تلاش برای فعال‌سازی کد: $code")
+        Log.d(TAG, "🔑 فعال‌سازی کد: $code")
         
         return try {
             val codes = fetchCodes()
             val found = codes.find { it.code == code }
             
             if (found == null) {
-                Log.e(TAG, "❌ کد پیدا نشد: $code")
+                Log.e(TAG, "❌ کد پیدا نشد")
                 return ActivationResult.CodeNotFound
             }
 
             if (found.used) {
-                Log.e(TAG, "❌ کد قبلاً استفاده شده: $code")
+                Log.e(TAG, "❌ کد استفاده شده")
                 return ActivationResult.CodeAlreadyUsed
             }
 
-            // کد معتبر هست، ولی برای نوشتن توی گیت‌هاب باید دستی این کار رو انجام بدی
-            // فعلاً پیام موفقیت برمی‌گردونیم
             Log.d(TAG, "✅ کد معتبر: $code")
-            
-            // پیشنهاد: می‌تونی یه پیام به کاربر بدی که کد فعال شد و بهش بگی 
-            // که تایید نهایی با مدیر هست
-            
             ActivationResult.Success
             
         } catch (e: Exception) {
