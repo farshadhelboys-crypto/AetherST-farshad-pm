@@ -4,8 +4,8 @@ plugins {
     alias(libs.plugins.roborazzi)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.google.services)
-    id("org.jetbrains.kotlin.plugin.compose") version "2.0.21"  // ← مستقیم اضافه شد
-}
+    id("com.android.kotlin.multiplatform.library") version "9.0.0" apply false 
+  }
 
 android {
     namespace = "io.github.immaghzbad.aetherst"
