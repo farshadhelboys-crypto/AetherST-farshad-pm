@@ -56,6 +56,8 @@ kotlin {
                 implementation(libs.kotlinx.coroutines.android)
                 implementation(libs.androidx.datastore.preferences)
                 implementation(libs.androidsvg)
+                implementation(platform("com.google.firebase:firebase-bom:33.7.0"))
+                implementation("com.google.firebase:firebase-firestore-ktx")
             }
         }
         getByName("desktopMain").dependencies {
