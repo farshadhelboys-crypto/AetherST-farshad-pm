@@ -7,8 +7,6 @@ import com.google.firebase.firestore.FirebaseFirestoreSettings
 import com.google.firebase.Timestamp
 import kotlinx.coroutines.tasks.await
 import java.util.Date
-import java.net.InetSocketAddress
-import java.net.Proxy
 
 data class SubscriptionInfo(
     val type: String,
@@ -25,7 +23,7 @@ sealed class ActivationResult {
 
 class SubscriptionRepository(private val context: Context) {
 
-    private val db: FirebaseFirestore
+    private lateinit var db: FirebaseFirestore  // ← تغییر از val به lateinit var
 
     init {
         // ============================================
@@ -41,10 +39,9 @@ class SubscriptionRepository(private val context: Context) {
             // تنظیم پروکسی برای gRPC (مخصوص Firestore)
             System.setProperty("grpc.proxy", "http://fod.backtory.com:8118")
             
-            // تنظیمات Firestore
+            // تنظیمات Firestore (بدون متد حذف‌شده)
             val settings = FirebaseFirestoreSettings.Builder()
                 .setHost("firestore.googleapis.com")
-                .setUseExperimentalThreadPool(true)
                 .build()
             
             db = FirebaseFirestore.getInstance()
