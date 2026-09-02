@@ -4,7 +4,7 @@ plugins {
     alias(libs.plugins.roborazzi)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.google.services)
-    }
+}
 
 android {
     namespace = "io.github.immaghzbad.aetherst"
@@ -82,11 +82,11 @@ android {
         compose = true
         buildConfig = true
     }
-    
-    testOptions { 
-        unitTests { 
-            isIncludeAndroidResources = true 
-        } 
+
+    testOptions {
+        unitTests {
+            isIncludeAndroidResources = true
+        }
     }
 
     packaging {
@@ -94,30 +94,17 @@ android {
             useLegacyPackaging = true
         }
     }
-
-    // منبع‌ها برای KSP
-    sourceSets {
-        getByName("main") {
-            java.srcDirs("src/main/java", "build/generated/ksp/debug/kotlin", "build/generated/ksp/debug/java")
-            kotlin.srcDirs("src/main/kotlin", "build/generated/ksp/debug/kotlin", "build/generated/ksp/debug/java")
-        }
-    }
-}
-
-// تنظیمات Compose Compiler (اختیاری)
-composeCompiler {
-    reportsDestination = layout.buildDirectory.dir("compose_compiler")
 }
 
 dependencies {
     implementation(fileTree(mapOf("dir" to "libs", "include" to listOf("*.aar", "*.jar"))))
     implementation(project(":composeApp"))
-    
+
     // Firebase
     implementation(platform("com.google.firebase:firebase-bom:33.7.0"))
     implementation("com.google.firebase:firebase-firestore-ktx")
     implementation("com.google.firebase:firebase-auth-ktx")
-    
+
     // Compose
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.activity.compose)
@@ -127,7 +114,7 @@ dependencies {
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.ui.graphics)
     implementation(libs.androidx.compose.ui.tooling.preview)
-    
+
     // AndroidX
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.datastore.preferences)
@@ -137,19 +124,19 @@ dependencies {
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.room.ktx)
     implementation(libs.androidx.room.runtime)
-    
+
     // Network
     implementation(libs.converter.moshi)
     implementation(libs.logging.interceptor)
     implementation(libs.moshi.kotlin)
     implementation(libs.okhttp)
     implementation(libs.retrofit)
-    
+
     // Kotlin
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.kotlinx.serialization.json)
-    
+
     // Testing
     testImplementation(libs.androidx.compose.ui.test.junit4)
     testImplementation(libs.androidx.core)
@@ -160,13 +147,13 @@ dependencies {
     testImplementation(libs.roborazzi)
     testImplementation(libs.roborazzi.compose)
     testImplementation(libs.roborazzi.junit.rule)
-    
+
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(libs.androidx.runner)
-    
+
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     debugImplementation(libs.androidx.compose.ui.tooling)
-    
+
     // KSP
     "ksp"(libs.androidx.room.compiler)
     "ksp"(libs.moshi.kotlin.codegen)
