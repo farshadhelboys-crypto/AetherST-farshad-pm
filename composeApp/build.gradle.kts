@@ -2,7 +2,7 @@ import com.android.build.api.dsl.LibraryExtension
 
 plugins {
     alias(libs.plugins.kotlin.multiplatform)
-    id("com.android.kotlin.multiplatform.library") version "9.0.0"  // ← این خط رو عوض کن
+    id("com.android.kotlin.multiplatform.library")// ← این خط رو عوض کن
     alias(libs.plugins.jetbrains.compose)
     alias(libs.plugins.kotlin.serialization)
 }
