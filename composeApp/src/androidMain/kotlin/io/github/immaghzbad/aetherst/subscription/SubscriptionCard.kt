@@ -1,11 +1,8 @@
 package io.github.immaghzbad.aetherst.subscription
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -13,8 +10,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalClipboardManager
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -29,25 +24,14 @@ fun SubscriptionCard(viewModel: SubscriptionViewModel = viewModel()) {
     val info by viewModel.subscriptionInfo.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val message by viewModel.activationMessage.collectAsState()
-    val deviceId by viewModel.deviceId.collectAsState()
-    val showDeviceId by viewModel.showDeviceId.collectAsState()
 
     var showActivateDialog by remember { mutableStateOf(false) }
     var now by remember { mutableStateOf(System.currentTimeMillis()) }
-    var copySuccess by remember { mutableStateOf(false) }
-    val clipboardManager = LocalClipboardManager.current
 
     LaunchedEffect(Unit) {
         while (true) {
             delay(1000)
             now = System.currentTimeMillis()
-        }
-    }
-
-    LaunchedEffect(message) {
-        if (message == "Activated successfully!") {
-            delay(1500)
-            // بعد از فعال‌سازی موفق، دیالوگ بسته می‌شود
         }
     }
 
@@ -73,7 +57,7 @@ fun SubscriptionCard(viewModel: SubscriptionViewModel = viewModel()) {
             } else {
                 val currentInfo = info
                 val remainingMillis = (currentInfo?.expiresAtMillis ?: 0L) - now
-                val isActive = remainingMillis > 0 && currentInfo?.isActive == true
+                val isActive = remainingMillis > 0
 
                 Column {
                     Row(
@@ -145,54 +129,6 @@ fun SubscriptionCard(viewModel: SubscriptionViewModel = viewModel()) {
                         )
                     }
 
-                    // نمایش Device ID در صورت نیاز
-                    if (showDeviceId) {
-                        Spacer(Modifier.height(10.dp))
-                        Surface(
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(8.dp),
-                            color = AppPalette.divider.copy(alpha = 0.3f)
-                        ) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(10.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Column {
-                                    Text(
-                                        text = "Device ID",
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = AppPalette.textSecondary,
-                                        fontSize = 10.sp
-                                    )
-                                    Text(
-                                        text = deviceId.take(16) + "...",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = Color.White,
-                                        fontWeight = FontWeight.Medium,
-                                        fontSize = 12.sp
-                                    )
-                                }
-                                IconButton(
-                                    onClick = {
-                                        clipboardManager.setText(AnnotatedString(deviceId))
-                                        copySuccess = true
-                                    },
-                                    modifier = Modifier.size(32.dp)
-                                ) {
-                                    Icon(
-                                        Icons.Default.ContentCopy,
-                                        contentDescription = "Copy Device ID",
-                                        tint = if (copySuccess) AppPalette.statusConnected else AppPalette.textSecondary,
-                                        modifier = Modifier.size(18.dp)
-                                    )
-                                }
-                            }
-                        }
-                    }
-
                     Spacer(Modifier.height(12.dp))
 
                     Button(
@@ -220,11 +156,7 @@ fun SubscriptionCard(viewModel: SubscriptionViewModel = viewModel()) {
             },
             message = message,
             onMessageShown = { viewModel.clearMessage() },
-            onSuccess = { 
-                showActivateDialog = false 
-            },
-            deviceId = deviceId,
-            viewModel = viewModel
+            onSuccess = { showActivateDialog = false }
         )
     }
 }
@@ -235,15 +167,10 @@ private fun ActivateCodeDialog(
     onActivate: (String, String) -> Unit,
     message: String?,
     onMessageShown: () -> Unit,
-    onSuccess: () -> Unit,
-    deviceId: String,
-    viewModel: SubscriptionViewModel
+    onSuccess: () -> Unit
 ) {
     var code by remember { mutableStateOf("") }
     var telegramId by remember { mutableStateOf("") }
-    var showFullDeviceId by remember { mutableStateOf(false) }
-    val clipboardManager = LocalClipboardManager.current
-    var copySuccess by remember { mutableStateOf(false) }
 
     LaunchedEffect(message) {
         if (message == "Activated successfully!") {
@@ -259,9 +186,7 @@ private fun ActivateCodeDialog(
             colors = CardDefaults.cardColors(containerColor = AppPalette.surfaceRaised)
         ) {
             Column(
-                modifier = Modifier
-                    .padding(20.dp)
-                    .fillMaxWidth(),
+                modifier = Modifier.padding(20.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
@@ -270,76 +195,7 @@ private fun ActivateCodeDialog(
                     color = Color.White,
                     fontSize = 18.sp
                 )
-                
-                Spacer(Modifier.height(12.dp))
-                
-                // نمایش Device ID با قابلیت کپی
-                Surface(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(8.dp),
-                    color = AppPalette.divider.copy(alpha = 0.2f)
-                ) {
-                    Column(
-                        modifier = Modifier.padding(12.dp)
-                    ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = "📱 Device ID",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = AppPalette.textSecondary,
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                TextButton(
-                                    onClick = { showFullDeviceId = !showFullDeviceId },
-                                    contentPadding = PaddingValues(horizontal = 4.dp)
-                                ) {
-                                    Text(
-                                        text = if (showFullDeviceId) "Hide" else "Show",
-                                        color = AppPalette.accent,
-                                        fontSize = 11.sp
-                                    )
-                                }
-                                IconButton(
-                                    onClick = {
-                                        clipboardManager.setText(AnnotatedString(deviceId))
-                                        copySuccess = true
-                                    },
-                                    modifier = Modifier.size(28.dp)
-                                ) {
-                                    Icon(
-                                        Icons.Default.ContentCopy,
-                                        contentDescription = "Copy",
-                                        tint = if (copySuccess) AppPalette.statusConnected else AppPalette.textSecondary,
-                                        modifier = Modifier.size(16.dp)
-                                    )
-                                }
-                            }
-                        }
-                        Text(
-                            text = if (showFullDeviceId) deviceId else deviceId.take(8) + "••••••••" + deviceId.takeLast(4),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = Color.White,
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Medium,
-                            modifier = Modifier.padding(top = 4.dp)
-                        )
-                        Text(
-                            text = "Send this ID to get your activation code",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = AppPalette.textSecondary.copy(alpha = 0.7f),
-                            fontSize = 10.sp
-                        )
-                    }
-                }
-                
                 Spacer(Modifier.height(16.dp))
-                
                 OutlinedTextField(
                     value = code,
                     onValueChange = { code = it.uppercase() },
@@ -358,15 +214,6 @@ private fun ActivateCodeDialog(
                 if (message != null && message != "Activated successfully!") {
                     Spacer(Modifier.height(8.dp))
                     Text(message, color = AppPalette.statusError, fontSize = 12.sp, textAlign = TextAlign.Center)
-                }
-                if (message == "Activated successfully!") {
-                    Spacer(Modifier.height(8.dp))
-                    Text(
-                        "✅ Activated successfully!",
-                        color = AppPalette.statusConnected,
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.Bold
-                    )
                 }
                 Spacer(Modifier.height(20.dp))
                 Button(
