@@ -385,7 +385,8 @@ fun DashboardScreen(
                 ) {
                     val isWindows = remember { try { System.getProperty("os.name")?.lowercase()?.contains("win") == true } catch (_: Throwable) { false } }
                     val isAndroid = remember { !isDesktop }
-                    val handleToggle: () -> Boolean = {
+              
+                     val handleToggle: () -> Boolean = handleToggle@{
                         // ✅ چک کردن اشتراک قبل از اتصال
                         if (connectionStatus == ConnectionStatus.STOPPED) {
                             val info = subscriptionViewModel?.subscriptionInfo?.value
@@ -395,11 +396,12 @@ fun DashboardScreen(
                                     "اشتراک شما فعال نیست! لطفاً کد فعال‌سازی را وارد کنید.",
                                     Toast.LENGTH_SHORT
                                 ).show()
-                                return@let false
+                                return@handleToggle false
                             }
                         }
-
-                        if (connectionStatus == ConnectionStatus.STOPPING) {
+                                
+                    
+                            if (connectionStatus == ConnectionStatus.STOPPING) {
                             onForceStop()
                             true
                         } else if (config.protocol == AetherProtocol.ZERO_TRUST && connectionStatus == ConnectionStatus.STOPPED) {
