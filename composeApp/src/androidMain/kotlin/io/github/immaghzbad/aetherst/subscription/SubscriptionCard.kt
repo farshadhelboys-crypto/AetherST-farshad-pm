@@ -1,6 +1,5 @@
 package io.github.immaghzbad.aetherst.subscription
 
-import android.provider.Settings
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -8,10 +7,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -26,11 +23,9 @@ fun SubscriptionCard(viewModel: SubscriptionViewModel = viewModel()) {
     val info by viewModel.subscriptionInfo.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val message by viewModel.activationMessage.collectAsState()
-    val context = LocalContext.current
 
     var showActivateDialog by remember { mutableStateOf(false) }
     var now by remember { mutableStateOf(System.currentTimeMillis()) }
-    var showDeviceId by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         while (true) {
@@ -70,17 +65,10 @@ fun SubscriptionCard(viewModel: SubscriptionViewModel = viewModel()) {
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = when (currentInfo?.type) {
-                                "paid" -> "SUBSCRIPTION"
-                                "none" -> "NO ACTIVE SUBSCRIPTION"
-                                else -> "NO ACTIVE SUBSCRIPTION"
-                            },
+                            text = "SUBSCRIPTION",
                             style = MaterialTheme.typography.labelMedium,
                             fontWeight = FontWeight.Bold,
-                            color = when (currentInfo?.type) {
-                                "paid" -> AppPalette.statusConnected
-                                else -> AppPalette.statusError
-                            },
+                            color = AppPalette.textSecondary,
                             letterSpacing = 1.sp
                         )
                         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -130,19 +118,19 @@ fun SubscriptionCard(viewModel: SubscriptionViewModel = viewModel()) {
                         )
                     } else {
                         Text(
-                            text = "No active subscription. Please enter a valid code.",
+                            text = if (currentInfo?.type?.startsWith("error") == true)
+                                "Could not check subscription. Check your connection."
+                            else
+                                "No active subscription. Please enter your activation code.",
                             style = MaterialTheme.typography.bodyMedium,
-                            color = AppPalette.statusError
+                            color = AppPalette.textSecondary
                         )
                     }
 
                     Spacer(Modifier.height(12.dp))
 
                     Button(
-                        onClick = {
-                            showActivateDialog = true
-                            showDeviceId = true
-                        },
+                        onClick = { showActivateDialog = true },
                         modifier = Modifier.fillMaxWidth(),
                         colors = ButtonDefaults.buttonColors(containerColor = AppPalette.accent),
                         shape = RoundedCornerShape(12.dp)
@@ -159,22 +147,13 @@ fun SubscriptionCard(viewModel: SubscriptionViewModel = viewModel()) {
     }
 
     if (showActivateDialog) {
-        val deviceId = Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID) ?: "unknown"
         ActivateCodeDialog(
-            onDismiss = {
-                showActivateDialog = false
-                showDeviceId = false
-            },
-            onActivate = { code ->
-                viewModel.activateCode(code, "handled_by_github")
-            },
+            onDismiss = { showActivateDialog = false },
+            onActivate = { code -> viewModel.activateCode(code) },
+            onRefresh = { viewModel.refreshStatus() },
             message = message,
             onMessageShown = { viewModel.clearMessage() },
-            onSuccess = {
-                showActivateDialog = false
-                showDeviceId = false
-            },
-            deviceId = if (showDeviceId) deviceId else null
+            deviceId = viewModel.deviceId
         )
     }
 }
@@ -183,20 +162,12 @@ fun SubscriptionCard(viewModel: SubscriptionViewModel = viewModel()) {
 private fun ActivateCodeDialog(
     onDismiss: () -> Unit,
     onActivate: (String) -> Unit,
+    onRefresh: () -> Unit,
     message: String?,
     onMessageShown: () -> Unit,
-    onSuccess: () -> Unit,
-    deviceId: String? = null
+    deviceId: String
 ) {
     var code by remember { mutableStateOf("") }
-
-    LaunchedEffect(message) {
-        if (message == "Activated successfully!") {
-            delay(800)
-            onSuccess()
-            onMessageShown()
-        }
-    }
 
     Dialog(onDismissRequest = onDismiss) {
         Card(
@@ -213,18 +184,22 @@ private fun ActivateCodeDialog(
                     color = Color.White,
                     fontSize = 18.sp
                 )
+                Spacer(Modifier.height(12.dp))
+
+                Text(
+                    text = "Your Device ID:",
+                    color = AppPalette.textSecondary,
+                    fontSize = 11.sp
+                )
+                Text(
+                    text = deviceId,
+                    color = AppPalette.accent,
+                    fontSize = 12.sp,
+                    textAlign = TextAlign.Center
+                )
+
                 Spacer(Modifier.height(16.dp))
-                
-                if (deviceId != null) {
-                    Text(
-                        text = "Device ID: $deviceId",
-                        color = Color.White.copy(alpha = 0.6f),
-                        fontSize = 12.sp,
-                        textAlign = TextAlign.Center
-                    )
-                    Spacer(Modifier.height(8.dp))
-                }
-                
+
                 OutlinedTextField(
                     value = code,
                     onValueChange = { code = it.uppercase() },
@@ -232,21 +207,45 @@ private fun ActivateCodeDialog(
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
-                
-                if (message != null && message != "Activated successfully!") {
+
+                if (message != null) {
                     Spacer(Modifier.height(8.dp))
-                    Text(message, color = AppPalette.statusError, fontSize = 12.sp, textAlign = TextAlign.Center)
+                    Text(
+                        message,
+                        color = if (message.contains("success", ignoreCase = true)) AppPalette.statusConnected else AppPalette.statusScanning,
+                        fontSize = 12.sp,
+                        textAlign = TextAlign.Center
+                    )
                 }
+
                 Spacer(Modifier.height(20.dp))
+
                 Button(
                     onClick = { onActivate(code) },
                     enabled = code.isNotBlank(),
                     modifier = Modifier.fillMaxWidth(),
                     colors = ButtonDefaults.buttonColors(containerColor = AppPalette.accent)
                 ) {
-                    Text("ACTIVATE", fontWeight = FontWeight.Bold, color = AppPalette.onAccent)
+                    Text("CHECK CODE", fontWeight = FontWeight.Bold, color = AppPalette.onAccent)
                 }
-                TextButton(onClick = onDismiss, modifier = Modifier.fillMaxWidth()) {
+
+                Spacer(Modifier.height(8.dp))
+
+                TextButton(
+                    onClick = {
+                        onRefresh()
+                        onMessageShown()
+                        onDismiss()
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("I've sent my Device ID, Refresh Status", color = AppPalette.accent, fontSize = 12.sp)
+                }
+
+                TextButton(
+                    onClick = { onDismiss(); onMessageShown() },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
                     Text("Cancel", color = AppPalette.textSecondary)
                 }
             }
