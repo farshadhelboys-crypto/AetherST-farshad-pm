@@ -117,7 +117,6 @@ import io.github.immaghzbad.aetherst.shared.ui.components.CountryFlag
 import io.github.immaghzbad.aetherst.shared.util.CountryNames
 import kotlinx.coroutines.launch
 import io.github.immaghzbad.aetherst.subscription.PlatformSubscriptionCard
-import io.github.immaghzbad.aetherst.subscription.SubscriptionViewModel
 
 private val IosCardBg = AppPalette.surfaceRaised
 private val IosGroupBg = AppPalette.divider
@@ -146,9 +145,7 @@ fun DashboardScreen(
     onCopy: (String) -> Unit = {},
     onOpenSettingsToZeroTrust: () -> Unit = {},
     bottomContentPadding: Dp = 0.dp,
-    platformContext: PlatformContext? = null,
-    // پارامترهای جدید برای اشتراک
-    subscriptionViewModel: SubscriptionViewModel? = null
+    platformContext: PlatformContext? = null
 ) {
     var showProxyOverlay by remember { mutableStateOf(true) }
     var showAdminRequiredDialog by remember { mutableStateOf(false) }
@@ -156,18 +153,6 @@ fun DashboardScreen(
     var supportDialogAuto by remember { mutableStateOf(true) }
     val uriHandler = LocalUriHandler.current
     val settings = platformContext?.let { getSettings(it) }
-
-    // دریافت وضعیت اشتراک
-    val subscriptionInfo by subscriptionViewModel?.subscriptionInfo?.collectAsStateWithLifecycle() ?: remember { mutableStateOf(null) }
-    val isSubscriptionLoading by subscriptionViewModel?.isLoading?.collectAsStateWithLifecycle() ?: remember { mutableStateOf(false) }
-    
-    // بررسی فعال بودن اشتراک
-    val isSubscriptionActive = remember(subscriptionInfo) {
-        subscriptionInfo?.isActive == true && subscriptionInfo.expiresAtMillis > System.currentTimeMillis()
-    }
-    
-    // بررسی اینکه اشتراک Trial است یا Paid
-    val isTrial = subscriptionInfo?.type == "trial"
 
     LaunchedEffect(Unit) {
         if (settings != null && !settings.getBoolean("support_dialog_dismissed", false)) {
@@ -325,54 +310,6 @@ fun DashboardScreen(
                         }
                     }
                 }
-                
-                // ===== نمایش هشدار عدم وجود اشتراک فعال =====
-                if (!isSubscriptionActive && !isSubscriptionLoading && subscriptionViewModel != null) {
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 4.dp),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = CardDefaults.cardColors(containerColor = IosErrorRed.copy(alpha = 0.15f))
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(12.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Shield,
-                                contentDescription = null,
-                                tint = IosErrorRed,
-                                modifier = Modifier.size(18.dp)
-                            )
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = if (isTrial) "دوره آزمایشی به پایان رسیده" else "اشتراک غیرفعال",
-                                    color = IosErrorRed,
-                                    fontSize = (12 * scaleFactor).sp,
-                                    fontWeight = FontWeight.Bold
-                                )
-                                Text(
-                                    text = "برای اتصال، اشتراک خود را فعال کنید",
-                                    color = IosErrorRed.copy(alpha = 0.8f),
-                                    fontSize = (10 * scaleFactor).sp
-                                )
-                            }
-                            Text(
-                                text = "فعال‌سازی",
-                                color = IosActiveBlue,
-                                fontSize = (11 * scaleFactor).sp,
-                                fontWeight = FontWeight.Bold,
-                                modifier = Modifier.clickable {
-                                    // اسکرول به پایین برای مشاهده کارت اشتراک
-                                }
-                            )
-                        }
-                    }
-                }
             }
 
             Column(
@@ -389,17 +326,7 @@ fun DashboardScreen(
                 ) {
                     val isWindows = remember { try { System.getProperty("os.name")?.lowercase()?.contains("win") == true } catch (_: Throwable) { false } }
                     val isAndroid = remember { !isDesktop }
-                    
-                    // ===== بررسی امکان اتصال بر اساس وضعیت اشتراک =====
-                    val canConnect = isSubscriptionActive || isTrial || isSubscriptionLoading
-                    
                     val handleToggle: () -> Boolean = {
-                        // ===== اگر اشتراک فعال نیست، اجازه اتصال نده =====
-                        if (!canConnect) {
-                            // نمایش پیام به کاربر
-                            return@Box
-                        }
-                        
                         if (connectionStatus == ConnectionStatus.STOPPING) {
                             onForceStop()
                             true
@@ -419,55 +346,13 @@ fun DashboardScreen(
                             true
                         }
                     }
-                    
-                    // ===== اگر اشتراک فعال نیست، دکمه را غیرفعال کن =====
-                    if (!canConnect && !isSubscriptionLoading) {
-                        // نمایش دکمه غیرفعال با پیام
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 16.dp)
-                        ) {
-                            Surface(
-                                modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(16.dp),
-                                color = IosGroupBg.copy(alpha = 0.5f)
-                            ) {
-                                Column(
-                                    modifier = Modifier.padding(16.dp),
-                                    horizontalAlignment = Alignment.CenterHorizontally
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.Shield,
-                                        contentDescription = null,
-                                        tint = IosErrorRed,
-                                        modifier = Modifier.size(32.dp)
-                                    )
-                                    Spacer(modifier = Modifier.height(8.dp))
-                                    Text(
-                                        text = "اشتراک شما فعال نیست",
-                                        color = Color.White,
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = (14 * scaleFactor).sp
-                                    )
-                                    Text(
-                                        text = "برای اتصال به VPN، اشتراک خود را از قسمت پایین فعال کنید",
-                                        color = IosSecondaryLabel,
-                                        fontSize = (12 * scaleFactor).sp,
-                                        textAlign = TextAlign.Center,
-                                        modifier = Modifier.padding(top = 4.dp)
-                                    )
-                                }
-                            }
-                        }
-                    } else if (config.connectButtonStyle == "capsule") {
+                    if (config.connectButtonStyle == "capsule") {
                         CapsuleConnectButton(
                             connectionStatus = connectionStatus,
                             onToggle = handleToggle,
                             onRecover = onForceStop,
                             modifier = Modifier.fillMaxWidth(),
-                            scaleFactor = scaleFactor,
-                            enabled = canConnect
+                            scaleFactor = scaleFactor
                         )
                     } else if ((isDesktop && isWindows) || isAndroid) {
                         WindowsSwipeSwitch(
@@ -476,8 +361,7 @@ fun DashboardScreen(
                             onRecover = onForceStop,
                             onAdminCancelResetKey = if (showAdminRequiredDialog) 1 else 0,
                             modifier = Modifier.fillMaxWidth(),
-                            scaleFactor = scaleFactor,
-                            enabled = canConnect
+                            scaleFactor = scaleFactor
                         )
                     } else {
                         val minDim = if (screenWidth < screenHeight) screenWidth else screenHeight
@@ -486,8 +370,7 @@ fun DashboardScreen(
                             connectionStatus = connectionStatus,
                             onToggle = { handleToggle().let {} },
                             onRecover = onForceStop,
-                            size = buttonSize,
-                            enabled = canConnect
+                            size = buttonSize
                         )
                     }
                 }
@@ -520,7 +403,7 @@ fun DashboardScreen(
                                 Switch(
                                     checked = config.psiphonEnabled && psiphonAllowed,
                                     onCheckedChange = { onTogglePsiphon(it) },
-                                    enabled = psiphonAllowed && (connectionStatus == ConnectionStatus.STOPPED || connectionStatus == ConnectionStatus.ERROR) && canConnect,
+                                    enabled = psiphonAllowed && (connectionStatus == ConnectionStatus.STOPPED || connectionStatus == ConnectionStatus.ERROR),
                                     colors = SwitchDefaults.colors(checkedThumbColor = Color.White, checkedTrackColor = IosActiveGreen, checkedBorderColor = Color.Transparent, uncheckedThumbColor = Color.White, uncheckedTrackColor = AppPalette.inactiveTrack, uncheckedBorderColor = Color.Transparent, disabledCheckedTrackColor = IosActiveGreen.copy(alpha = 0.4f), disabledCheckedThumbColor = Color.White.copy(alpha = 0.9f), disabledCheckedBorderColor = Color.Transparent,                                     disabledUncheckedTrackColor = AppPalette.inactiveTrack.copy(alpha = 0.6f), disabledUncheckedThumbColor = Color.White.copy(alpha = 0.7f), disabledUncheckedBorderColor = Color.Transparent)
                                 )
                             }
@@ -550,14 +433,14 @@ fun DashboardScreen(
                         IosConnectionModeSegmentedControl(
                             selectedMode = config.connectionMode,
                             onModeSelected = { onUpdateConfig(config.copy(connectionMode = it)) },
-                            enabled = (connectionStatus == ConnectionStatus.STOPPED || connectionStatus == ConnectionStatus.ERROR) && canConnect,
+                            enabled = connectionStatus == ConnectionStatus.STOPPED || connectionStatus == ConnectionStatus.ERROR,
                             scaleFactor = scaleFactor
                         )
                     }
                     IosProtocolSegmentedControl(
                         selectedProtocol = config.protocol,
                         onProtocolSelected = onUpdateProtocol,
-                        enabled = (connectionStatus == ConnectionStatus.STOPPED || connectionStatus == ConnectionStatus.ERROR) && canConnect,
+                        enabled = connectionStatus == ConnectionStatus.STOPPED || connectionStatus == ConnectionStatus.ERROR,
                         allowedProtocols = if (config.psiphonEnabled) setOf(AetherProtocol.MASQUE) else null,
                         scaleFactor = scaleFactor
                     )
@@ -1296,8 +1179,7 @@ fun IosPowerButton(
     connectionStatus: ConnectionStatus,
     onToggle: () -> Unit,
     onRecover: () -> Unit = {},
-    size: Dp = 140.dp,
-    enabled: Boolean = true  // پارامتر جدید
+    size: Dp = 140.dp
 ) {
     val isConnected = connectionStatus == ConnectionStatus.RUNNING
     val isWorking = connectionStatus == ConnectionStatus.STARTING ||
@@ -1305,7 +1187,7 @@ fun IosPowerButton(
                     connectionStatus == ConnectionStatus.RECONNECTING ||
                     connectionStatus == ConnectionStatus.STOPPING
     val isError = connectionStatus == ConnectionStatus.ERROR
-    val canToggle = enabled
+    val canToggle = true
 
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
@@ -1334,7 +1216,6 @@ fun IosPowerButton(
 
     val buttonColor by animateColorAsState(
         targetValue = when {
-            !enabled -> IosGroupBg  // غیرفعال
             isConnected -> IosActiveGreen
             isWorking -> IosScanningAmber
             isError -> IosErrorRed
@@ -1363,7 +1244,7 @@ fun IosPowerButton(
             .size(size * 2.5f),
         contentAlignment = Alignment.Center
     ) {
-        if ((isWorking || isConnected) && enabled) {
+        if (isWorking || isConnected) {
             val pulseColor = buttonColor.copy(alpha = 0.45f)
             val glowShape = RoundedCornerShape(size * cornerRadiusPercent)
 
@@ -1440,7 +1321,7 @@ fun IosPowerButton(
                 Icon(
                     imageVector = Icons.Default.PowerSettingsNew,
                     contentDescription = null,
-                    tint = if (enabled) Color.White else Color.White.copy(alpha = 0.3f),
+                    tint = Color.White,
                     modifier = Modifier.size(size * 0.45f)
                 )
             }
@@ -1454,8 +1335,7 @@ fun CapsuleConnectButton(
     onToggle: () -> Boolean,
     modifier: Modifier = Modifier,
     scaleFactor: Float = 1f,
-    onRecover: () -> Unit = {},
-    enabled: Boolean = true  // پارامتر جدید
+    onRecover: () -> Unit = {}
 ) {
     val sf = scaleFactor.coerceIn(0.7f, 1.1f)
     val isConnected = connectionStatus == ConnectionStatus.RUNNING
@@ -1465,14 +1345,12 @@ fun CapsuleConnectButton(
     )
     val isError = connectionStatus == ConnectionStatus.ERROR
     val trackColor = when {
-        !enabled -> IosGroupBg.copy(alpha = 0.3f)  // غیرفعال
         isConnected -> IosActiveGreen
         isWorking -> IosScanningAmber
         isError -> IosErrorRed
         else -> IosGroupBg
     }
     val label = when {
-        !enabled -> "اشتراک غیرفعال"
         connectionStatus == ConnectionStatus.STOPPING -> "توقف اجباری"
         isWorking -> "در حال اتصال..."
         isConnected -> "قطع اتصال"
@@ -1484,10 +1362,7 @@ fun CapsuleConnectButton(
             .height((56 * sf).dp.coerceIn(48.dp, 64.dp))
             .clip(RoundedCornerShape(28.dp))
             .background(trackColor)
-            .clickable(enabled = enabled) { 
-                if (connectionStatus == ConnectionStatus.STOPPING) onRecover() 
-                else onToggle() 
-            },
+            .clickable { if (connectionStatus == ConnectionStatus.STOPPING) onRecover() else onToggle() },
         contentAlignment = Alignment.Center
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -1497,7 +1372,7 @@ fun CapsuleConnectButton(
             }
             Text(
                 text = label,
-                color = if (enabled) Color.White else Color.White.copy(alpha = 0.5f),
+                color = Color.White,
                 fontWeight = FontWeight.Bold,
                 fontSize = ((14 * sf).coerceIn(12f, 16f)).sp,
                 letterSpacing = (0.6f * sf).sp
@@ -1513,8 +1388,7 @@ fun WindowsSwipeSwitch(
     modifier: Modifier = Modifier,
     scaleFactor: Float = 1f,
     onAdminCancelResetKey: Int = 0,
-    onRecover: () -> Unit = {},
-    enabled: Boolean = true  // پارامتر جدید
+    onRecover: () -> Unit = {}
 ) {
     val isConnected = connectionStatus == ConnectionStatus.RUNNING
     val isWorking = connectionStatus == ConnectionStatus.STARTING ||
@@ -1525,30 +1399,27 @@ fun WindowsSwipeSwitch(
             connectionStatus == ConnectionStatus.RECONNECTING ||
             connectionStatus == ConnectionStatus.STOPPING
     val isError = connectionStatus == ConnectionStatus.ERROR
-    val canSwipe = enabled
+    val canSwipe = true
     val scope = rememberCoroutineScope()
     val offsetX = remember { Animatable(0f) }
     var isDragging by remember { mutableStateOf(false) }
     val trackColor by animateColorAsState(
         targetValue = when {
-            !enabled -> IosGroupBg.copy(alpha = 0.3f)  // غیرفعال
             isConnected -> IosActiveGreen
             isWorking -> IosScanningAmber
             isError -> IosErrorRed
             else -> IosGroupBg
         }, label = "trackColor"
     )
-    val text = when {
-        !enabled -> "لطفاً اشتراک را فعال کنید"
-        connectionStatus == ConnectionStatus.STARTING -> "در یافتن سرورها..."
-        connectionStatus == ConnectionStatus.VALIDATING -> "در حال اعتبارسنجی..."
-        connectionStatus == ConnectionStatus.DATAPLANE_VALIDATED, connectionStatus == ConnectionStatus.SOCKS_READY, connectionStatus == ConnectionStatus.TUN_ACTIVE -> "در حال اتصال..."
-        connectionStatus == ConnectionStatus.RECONNECTING -> "اتصال مجدد..."
-        connectionStatus == ConnectionStatus.STOPPING -> "برای توقف اجباری بکشید"
-        connectionStatus == ConnectionStatus.RUNNING -> "برای قطع اتصال بکشید"
-        connectionStatus == ConnectionStatus.ERROR, connectionStatus == ConnectionStatus.FAILED -> "برای اتصال مجدد بکشید"
-        connectionStatus == ConnectionStatus.STOPPED -> "برای اتصال بکشید"
-        else -> "اتصال"
+    val text = when (connectionStatus) {
+        ConnectionStatus.STARTING -> "در یافتن سرورها..."
+        ConnectionStatus.VALIDATING -> "در حال اعتبارسنجی..."
+        ConnectionStatus.DATAPLANE_VALIDATED, ConnectionStatus.SOCKS_READY, ConnectionStatus.TUN_ACTIVE -> "در حال اتصال..."
+        ConnectionStatus.RECONNECTING -> "اتصال مجدد..."
+        ConnectionStatus.STOPPING -> "برای توقف اجباری بکشید"
+        ConnectionStatus.RUNNING -> "برای قطع اتصال بکشید"
+        ConnectionStatus.ERROR, ConnectionStatus.FAILED -> "برای اتصال مجدد بکشید"
+        ConnectionStatus.STOPPED -> "برای اتصال بکشید"
     }
     val hintTransition = rememberInfiniteTransition(label = "hint")
     val hintShift by hintTransition.animateFloat(
@@ -1589,12 +1460,8 @@ fun WindowsSwipeSwitch(
         val isDisconnectDrag = (isConnected || isWorking) && isDragging && dragFraction > 0.05f
         val effectiveTrackColor = if (isDisconnectDrag) lerp(trackColor, IosErrorRed, dragFraction) else trackColor
 
-        LaunchedEffect(isConnected, isWorking, maxDrag, enabled) {
+        LaunchedEffect(isConnected, isWorking, maxDrag) {
             if (isDragging) return@LaunchedEffect
-            if (!enabled) {
-                offsetX.snapTo(0f)
-                return@LaunchedEffect
-            }
             if (isWorking) {
                 offsetX.snapTo(if (isConnected) maxDrag else 0f)
             } else {
@@ -1702,7 +1569,7 @@ fun WindowsSwipeSwitch(
                     },
                 contentAlignment = Alignment.Center
             ) {
-                if (isWorking && !isDragging && enabled) {
+                if (isWorking && !isDragging) {
                     CircularProgressIndicator(
                         modifier = Modifier.size(22.dp),
                         color = effectiveTrackColor,
@@ -1712,12 +1579,12 @@ fun WindowsSwipeSwitch(
                     Icon(
                         imageVector = if (isConnected || isWorking) Icons.AutoMirrored.Filled.ArrowBack else Icons.AutoMirrored.Filled.ArrowForward,
                         contentDescription = null,
-                        tint = if (enabled) IosActiveBlue else IosSecondaryLabel,
+                        tint = IosActiveBlue,
                         modifier = Modifier.size(24.dp)
                     )
                 }
             }
-        if (!isWorking && !isConnected && enabled) {
+        if (!isWorking && !isConnected) {
             val connectFraction = if (maxDrag > 0f) (offsetX.value / maxDrag).coerceIn(0f, 1f) else 0f
             val rightAlpha = if (isDragging) (1f - connectFraction).coerceIn(0f, 1f) else 1f
             val rightShift = if (isDragging) connectFraction * 40f else hintShift * 0.6f
