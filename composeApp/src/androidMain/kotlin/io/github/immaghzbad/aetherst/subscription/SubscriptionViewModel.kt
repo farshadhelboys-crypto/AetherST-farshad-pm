@@ -5,6 +5,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 class SubscriptionViewModel(application: Application) : AndroidViewModel(application) {
@@ -19,8 +20,15 @@ class SubscriptionViewModel(application: Application) : AndroidViewModel(applica
 
     private val _activationMessage = MutableStateFlow<String?>(null)
     val activationMessage: StateFlow<String?> = _activationMessage
+    
+    private val _deviceId = MutableStateFlow("")
+    val deviceId: StateFlow<String> = _deviceId.asStateFlow()
+    
+    private val _showDeviceId = MutableStateFlow(true)
+    val showDeviceId: StateFlow<Boolean> = _showDeviceId.asStateFlow()
 
     init {
+        _deviceId.value = repository.getDeviceId()
         refreshStatus()
     }
 
@@ -28,7 +36,10 @@ class SubscriptionViewModel(application: Application) : AndroidViewModel(applica
         viewModelScope.launch {
             _isLoading.value = true
             try {
-                _subscriptionInfo.value = repository.getSubscriptionStatus()
+                val status = repository.getSubscriptionStatus()
+                _subscriptionInfo.value = status
+                // اگر اشتراک فعال باشد، Device ID را مخفی کن
+                _showDeviceId.value = !status.isActive || status.type == "trial"
             } catch (e: Exception) {
                 _activationMessage.value = "Connection error: ${e.message}"
             }
@@ -50,6 +61,9 @@ class SubscriptionViewModel(application: Application) : AndroidViewModel(applica
                 is ActivationResult.CodeAlreadyUsed -> {
                     _activationMessage.value = "This code has already been used."
                 }
+                is ActivationResult.DeviceMismatch -> {
+                    _activationMessage.value = "This code is already used on another device."
+                }
                 is ActivationResult.Error -> {
                     _activationMessage.value = "Error: ${result.message}"
                 }
@@ -60,5 +74,9 @@ class SubscriptionViewModel(application: Application) : AndroidViewModel(applica
 
     fun clearMessage() {
         _activationMessage.value = null
+    }
+    
+    fun copyDeviceId(): String {
+        return _deviceId.value
     }
 }
