@@ -48,7 +48,7 @@ class SubscriptionViewModel(application: Application) : AndroidViewModel(applica
                     _activationMessage.value = "نامعتبر ."
                 }
                 is ActivationResult.CodeAlreadyUsed -> {
-                    _activationMessage.value = "این کد قبلا استفاده شده است .
+                    _activationMessage.value = "این کد قبلا استفاده شده است ."
                 }
                 is ActivationResult.CodeUsedByOtherDevice -> {
                     _activationMessage.value = "این کد در دستگاه دیگری استفاده شده است ."
