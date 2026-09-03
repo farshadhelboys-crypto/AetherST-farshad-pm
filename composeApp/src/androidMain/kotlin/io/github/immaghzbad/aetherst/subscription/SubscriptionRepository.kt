@@ -2,17 +2,10 @@ package io.github.immaghzbad.aetherst.subscription
 
 import android.content.Context
 import android.provider.Settings
-import android.util.Log
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
-import org.json.JSONObject
-import java.io.BufferedReader
-import java.io.InputStreamReader
-import java.net.HttpURLConnection
-import java.net.URL
-
-private const val TAG = "SubscriptionRepo"
-private const val CODES_URL = "https://raw.githubusercontent.com/farshadhelboys-crypto/Feri_pm_tunnel_subscriptions/refs/heads/main/codes.json"
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.Timestamp
+import kotlinx.coroutines.tasks.await
+import java.util.Date
 
 data class SubscriptionInfo(
     val type: String,
@@ -24,122 +17,73 @@ sealed class ActivationResult {
     object Success : ActivationResult()
     object CodeNotFound : ActivationResult()
     object CodeAlreadyUsed : ActivationResult()
-    object CodeUsedByOtherDevice : ActivationResult()
     data class Error(val message: String) : ActivationResult()
 }
 
-private data class CodeEntry(
-    val code: String,
-    val deviceId: String,
-    val durationDays: Long,
-    val used: Boolean
-)
-
 class SubscriptionRepository(private val context: Context) {
+
+    private val db = FirebaseFirestore.getInstance()
 
     fun getDeviceId(): String {
         return Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID) ?: "unknown_device"
     }
 
-    private fun describeError(e: Exception): String {
-        val className = e.javaClass.simpleName
-        val msg = e.message ?: "no message"
-        val causeClass = e.cause?.javaClass?.simpleName ?: "none"
-        val causeMsg = e.cause?.message ?: ""
-        return "$className: $msg | cause: $causeClass - $causeMsg"
-    }
-
-    private suspend fun fetchCodes(): List<CodeEntry> = withContext(Dispatchers.IO) {
-        val connection = URL(CODES_URL).openConnection() as HttpURLConnection
-        connection.requestMethod = "GET"
-        connection.connectTimeout = 15000
-        connection.readTimeout = 15000
-
-        val responseCode = connection.responseCode
-        if (responseCode != HttpURLConnection.HTTP_OK) {
-            throw Exception("HTTP $responseCode")
-        }
-
-        val reader = BufferedReader(InputStreamReader(connection.inputStream))
-        val response = StringBuilder()
-        var line: String?
-        while (reader.readLine().also { line = it } != null) {
-            response.append(line)
-        }
-        reader.close()
-
-        val json = JSONObject(response.toString())
-        val codesArray = json.getJSONArray("codes")
-        val result = mutableListOf<CodeEntry>()
-
-        for (i in 0 until codesArray.length()) {
-            val obj = codesArray.getJSONObject(i)
-            result.add(
-                CodeEntry(
-                    code = obj.getString("code"),
-                    deviceId = obj.optString("deviceId", ""),
-                    durationDays = obj.getLong("durationDays"),
-                    used = obj.getBoolean("used")
-                )
-            )
-        }
-        result
-    }
-
     suspend fun getSubscriptionStatus(): SubscriptionInfo {
         val deviceId = getDeviceId()
-        Log.d(TAG, "Checking subscription for device: $deviceId")
+        val doc = db.collection("subscriptions").document(deviceId).get().await()
 
-        return try {
-            val codes = fetchCodes()
-            val myActiveCode = codes.find { it.deviceId == deviceId && it.used }
-
-            if (myActiveCode != null) {
-                val expiresAt = System.currentTimeMillis() + myActiveCode.durationDays * 24 * 60 * 60 * 1000
-                Log.d(TAG, "Active subscription found: ${myActiveCode.durationDays} days")
-                SubscriptionInfo("paid", expiresAt, true)
-            } else {
-                Log.d(TAG, "No active subscription for this device")
-                SubscriptionInfo("none", 0L, false)
-            }
-
-        } catch (e: Exception) {
-            val detail = describeError(e)
-            Log.e(TAG, "getSubscriptionStatus failed: $detail", e)
-            SubscriptionInfo("error:$detail", 0L, false)
+        if (!doc.exists()) {
+            val trialExpiry = Timestamp(Date(System.currentTimeMillis() + 24 * 60 * 60 * 1000))
+            val newTrial = hashMapOf(
+                "deviceId" to deviceId,
+                "type" to "trial",
+                "expiresAt" to trialExpiry,
+                "telegramId" to "",
+                "code" to ""
+            )
+            db.collection("subscriptions").document(deviceId).set(newTrial).await()
+            return SubscriptionInfo("trial", trialExpiry.toDate().time, true)
         }
+
+        val type = doc.getString("type") ?: "trial"
+        val expiresAt = doc.getTimestamp("expiresAt")?.toDate()?.time ?: 0L
+        val isActive = expiresAt > System.currentTimeMillis()
+
+        return SubscriptionInfo(type, expiresAt, isActive)
     }
 
     suspend fun activateCode(code: String, telegramId: String): ActivationResult {
-        Log.d(TAG, "Attempting to activate code: $code")
+        val deviceId = getDeviceId()
+        val codeDoc = db.collection("subscription_codes").document(code).get().await()
+
+        if (!codeDoc.exists()) {
+            return ActivationResult.CodeNotFound
+        }
+
+        val used = codeDoc.getBoolean("used") ?: true
+        if (used) {
+            return ActivationResult.CodeAlreadyUsed
+        }
+
+        val durationDays = codeDoc.getLong("durationDays") ?: 0L
+        val newExpiry = Timestamp(Date(System.currentTimeMillis() + durationDays * 24 * 60 * 60 * 1000))
 
         return try {
-            val deviceId = getDeviceId()
-            val codes = fetchCodes()
-            val found = codes.find { it.code.equals(code, ignoreCase = true) }
+            val subscriptionUpdate = hashMapOf(
+                "deviceId" to deviceId,
+                "type" to "paid",
+                "expiresAt" to newExpiry,
+                "telegramId" to telegramId,
+                "code" to code
+            )
+            db.collection("subscriptions").document(deviceId).set(subscriptionUpdate).await()
 
-            if (found == null) {
-                Log.e(TAG, "Code not found: $code")
-                return ActivationResult.CodeNotFound
-            }
+            db.collection("subscription_codes").document(code)
+                .update("used", true, "usedBy", telegramId).await()
 
-            if (found.used && found.deviceId == deviceId) {
-                Log.d(TAG, "Code already activated on this device")
-                return ActivationResult.Success
-            }
-
-            if (found.used) {
-                Log.e(TAG, "Code already used by another device")
-                return ActivationResult.CodeUsedByOtherDevice
-            }
-
-            Log.w(TAG, "Code is valid but must be marked used manually by admin: $code -> $deviceId")
-            ActivationResult.CodeAlreadyUsed
-
+            ActivationResult.Success
         } catch (e: Exception) {
-            val detail = describeError(e)
-            Log.e(TAG, "activateCode failed: $detail", e)
-            ActivationResult.Error(detail)
+            ActivationResult.Error(e.message ?: "Unknown error")
         }
     }
 }
