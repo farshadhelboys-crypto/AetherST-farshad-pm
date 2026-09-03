@@ -20,8 +20,6 @@ class SubscriptionViewModel(application: Application) : AndroidViewModel(applica
     private val _activationMessage = MutableStateFlow<String?>(null)
     val activationMessage: StateFlow<String?> = _activationMessage
 
-    val deviceId: String get() = repository.getDeviceId()
-
     init {
         refreshStatus()
     }
@@ -38,10 +36,10 @@ class SubscriptionViewModel(application: Application) : AndroidViewModel(applica
         }
     }
 
-    fun activateCode(code: String) {
+    fun activateCode(code: String, telegramId: String) {
         viewModelScope.launch {
             _isLoading.value = true
-            when (val result = repository.activateCode(code.trim(), "")) {
+            when (val result = repository.activateCode(code.trim(), telegramId.trim())) {
                 is ActivationResult.Success -> {
                     _activationMessage.value = "Activated successfully!"
                     refreshStatus()
@@ -50,10 +48,7 @@ class SubscriptionViewModel(application: Application) : AndroidViewModel(applica
                     _activationMessage.value = "Invalid code."
                 }
                 is ActivationResult.CodeAlreadyUsed -> {
-                    _activationMessage.value = "Code verified. Please send your Device ID to the admin to complete activation:\n${repository.getDeviceId()}"
-                }
-                is ActivationResult.CodeUsedByOtherDevice -> {
-                    _activationMessage.value = "This code has already been used on another device."
+                    _activationMessage.value = "This code has already been used."
                 }
                 is ActivationResult.Error -> {
                     _activationMessage.value = "Error: ${result.message}"
