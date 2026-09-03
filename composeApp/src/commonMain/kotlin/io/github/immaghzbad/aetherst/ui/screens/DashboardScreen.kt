@@ -1168,7 +1168,7 @@ fun IosStatusHeroCard(
                                 color = if (pingState.error != null) IosErrorRed else IosActiveBlue,
                                 fontSize = (12 * scaleFactor).sp
                             )
-                        )
+                        }
                     } else {
                         Text(
                             text = if (connectionStatus == ConnectionStatus.RECONNECTING) strings.DASHBOARD_RETRY else strings.DASHBOARD_NO_UPLINK,
