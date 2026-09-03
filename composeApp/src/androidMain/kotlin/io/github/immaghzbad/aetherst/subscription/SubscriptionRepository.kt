@@ -11,10 +11,11 @@ import java.io.InputStreamReader
 import java.net.HttpURLConnection
 import java.net.URL
 
-private const val TAG = "GitHubSubscriptionRepo"
+private const val TAG = "SubscriptionRepo"
+private const val CODES_URL = "https://raw.githubusercontent.com/farshadhelboys-crypto/Feri_pm_tunnel_subscriptions/refs/heads/main/codes.json"
 
 data class SubscriptionInfo(
-    val type: String,  // "paid" یا "none" یا "error"
+    val type: String,
     val expiresAtMillis: Long,
     val isActive: Boolean
 )
@@ -23,132 +24,122 @@ sealed class ActivationResult {
     object Success : ActivationResult()
     object CodeNotFound : ActivationResult()
     object CodeAlreadyUsed : ActivationResult()
+    object CodeUsedByOtherDevice : ActivationResult()
     data class Error(val message: String) : ActivationResult()
 }
 
-class GitHubSubscriptionRepository(private val context: Context) {
+private data class CodeEntry(
+    val code: String,
+    val deviceId: String,
+    val durationDays: Long,
+    val used: Boolean
+)
 
-    // ⚠️ لینک گیت‌هاب خودت رو اینجا بچسبون
-    private val CODES_URL = "https://raw.githubusercontent.com/farshadhelboys-crypto/Feri_pm_tunnel_subscriptions/refs/heads/main/codes.json"
-
-    private var cachedCodes: MutableList<CodeEntry>? = null
-    private var lastFetchTime: Long = 0
-    private val CACHE_DURATION = 60_000L // ۱ دقیقه
-
-    private data class CodeEntry(
-        val code: String,
-        var deviceId: String,
-        val durationDays: Long,
-        var used: Boolean
-    )
+class SubscriptionRepository(private val context: Context) {
 
     fun getDeviceId(): String {
         return Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID) ?: "unknown_device"
     }
 
-    private suspend fun fetchCodes(): List<CodeEntry> {
-        if (cachedCodes != null && System.currentTimeMillis() - lastFetchTime < CACHE_DURATION) {
-            return cachedCodes!!
+    private fun describeError(e: Exception): String {
+        val className = e.javaClass.simpleName
+        val msg = e.message ?: "no message"
+        val causeClass = e.cause?.javaClass?.simpleName ?: "none"
+        val causeMsg = e.cause?.message ?: ""
+        return "$className: $msg | cause: $causeClass - $causeMsg"
+    }
+
+    private suspend fun fetchCodes(): List<CodeEntry> = withContext(Dispatchers.IO) {
+        val connection = URL(CODES_URL).openConnection() as HttpURLConnection
+        connection.requestMethod = "GET"
+        connection.connectTimeout = 15000
+        connection.readTimeout = 15000
+
+        val responseCode = connection.responseCode
+        if (responseCode != HttpURLConnection.HTTP_OK) {
+            throw Exception("HTTP $responseCode")
         }
 
-        return withContext(Dispatchers.IO) {
-            try {
-                Log.d(TAG, "🔄 دریافت کدها از GitHub...")
-                
-                val url = URL(CODES_URL)
-                val connection = url.openConnection() as HttpURLConnection
-                connection.requestMethod = "GET"
-                connection.connectTimeout = 10000
-                connection.readTimeout = 10000
-
-                val responseCode = connection.responseCode
-                if (responseCode != HttpURLConnection.HTTP_OK) {
-                    throw Exception("HTTP Error: $responseCode")
-                }
-
-                val reader = BufferedReader(InputStreamReader(connection.inputStream))
-                val response = StringBuilder()
-                var line: String?
-                while (reader.readLine().also { line = it } != null) {
-                    response.append(line)
-                }
-                reader.close()
-
-                val json = JSONObject(response.toString())
-                val codesArray = json.getJSONArray("codes")
-                val result = mutableListOf<CodeEntry>()
-
-                for (i in 0 until codesArray.length()) {
-                    val obj = codesArray.getJSONObject(i)
-                    result.add(
-                        CodeEntry(
-                            code = obj.getString("code"),
-                            deviceId = obj.getString("deviceId"),
-                            durationDays = obj.getLong("durationDays"),
-                            used = obj.getBoolean("used")
-                        )
-                    )
-                }
-
-                cachedCodes = result
-                lastFetchTime = System.currentTimeMillis()
-                Log.d(TAG, "✅ ${result.size} کد دریافت شد")
-                result
-
-            } catch (e: Exception) {
-                Log.e(TAG, "❌ خطا: ${e.message}")
-                cachedCodes ?: throw e
-            }
+        val reader = BufferedReader(InputStreamReader(connection.inputStream))
+        val response = StringBuilder()
+        var line: String?
+        while (reader.readLine().also { line = it } != null) {
+            response.append(line)
         }
+        reader.close()
+
+        val json = JSONObject(response.toString())
+        val codesArray = json.getJSONArray("codes")
+        val result = mutableListOf<CodeEntry>()
+
+        for (i in 0 until codesArray.length()) {
+            val obj = codesArray.getJSONObject(i)
+            result.add(
+                CodeEntry(
+                    code = obj.getString("code"),
+                    deviceId = obj.optString("deviceId", ""),
+                    durationDays = obj.getLong("durationDays"),
+                    used = obj.getBoolean("used")
+                )
+            )
+        }
+        result
     }
 
     suspend fun getSubscriptionStatus(): SubscriptionInfo {
         val deviceId = getDeviceId()
-        Log.d(TAG, "📡 بررسی اشتراک برای: $deviceId")
-        
+        Log.d(TAG, "Checking subscription for device: $deviceId")
+
         return try {
             val codes = fetchCodes()
-            val found = codes.find { it.deviceId == deviceId && it.used }
-            
-            if (found != null) {
-                val expiresAt = System.currentTimeMillis() + found.durationDays * 24 * 60 * 60 * 1000
-                Log.d(TAG, "✅ اشتراک فعال: ${found.durationDays} روز")
-                return SubscriptionInfo("paid", expiresAt, true)
+            val myActiveCode = codes.find { it.deviceId == deviceId && it.used }
+
+            if (myActiveCode != null) {
+                val expiresAt = System.currentTimeMillis() + myActiveCode.durationDays * 24 * 60 * 60 * 1000
+                Log.d(TAG, "Active subscription found: ${myActiveCode.durationDays} days")
+                SubscriptionInfo("paid", expiresAt, true)
+            } else {
+                Log.d(TAG, "No active subscription for this device")
+                SubscriptionInfo("none", 0L, false)
             }
 
-            Log.d(TAG, "⛔ بدون اشتراک فعال")
-            SubscriptionInfo("none", 0L, false)
-            
         } catch (e: Exception) {
-            Log.e(TAG, "❌ خطا: ${e.message}")
-            SubscriptionInfo("error", 0L, false)
+            val detail = describeError(e)
+            Log.e(TAG, "getSubscriptionStatus failed: $detail", e)
+            SubscriptionInfo("error:$detail", 0L, false)
         }
     }
 
     suspend fun activateCode(code: String, telegramId: String): ActivationResult {
-        val deviceId = getDeviceId()
-        Log.d(TAG, "🔑 فعال‌سازی کد: $code")
-        
+        Log.d(TAG, "Attempting to activate code: $code")
+
         return try {
+            val deviceId = getDeviceId()
             val codes = fetchCodes()
-            val found = codes.find { it.code == code }
-            
+            val found = codes.find { it.code.equals(code, ignoreCase = true) }
+
             if (found == null) {
-                Log.e(TAG, "❌ کد پیدا نشد")
+                Log.e(TAG, "Code not found: $code")
                 return ActivationResult.CodeNotFound
             }
 
-            if (found.used) {
-                Log.e(TAG, "❌ کد استفاده شده")
-                return ActivationResult.CodeAlreadyUsed
+            if (found.used && found.deviceId == deviceId) {
+                Log.d(TAG, "Code already activated on this device")
+                return ActivationResult.Success
             }
 
-            Log.d(TAG, "✅ کد معتبر: $code")
-            ActivationResult.Success
-            
+            if (found.used) {
+                Log.e(TAG, "Code already used by another device")
+                return ActivationResult.CodeUsedByOtherDevice
+            }
+
+            Log.w(TAG, "Code is valid but must be marked used manually by admin: $code -> $deviceId")
+            ActivationResult.CodeAlreadyUsed
+
         } catch (e: Exception) {
-            Log.e(TAG, "❌ خطا: ${e.message}")
-            ActivationResult.Error(e.message ?: "Unknown error")
+            val detail = describeError(e)
+            Log.e(TAG, "activateCode failed: $detail", e)
+            ActivationResult.Error(detail)
         }
     }
 }
