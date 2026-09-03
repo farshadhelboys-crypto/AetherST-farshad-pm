@@ -41,17 +41,17 @@ class SubscriptionViewModel(application: Application) : AndroidViewModel(applica
             _isLoading.value = true
             when (val result = repository.activateCode(code.trim(), telegramId.trim())) {
                 is ActivationResult.Success -> {
-                    _activationMessage.value = "با موفقیت فعال سازی انجام شد !"
+                    _activationMessage.value = "Activated successfully!"
                     refreshStatus()
                 }
                 is ActivationResult.CodeNotFound -> {
-                    _activationMessage.value = "نامعتبر ."
+                    _activationMessage.value = "Invalid code."
                 }
                 is ActivationResult.CodeAlreadyUsed -> {
-                    _activationMessage.value = "این کد قبلا استفاده شده است ."
+                    _activationMessage.value = "This code has already been used."
                 }
                 is ActivationResult.CodeUsedByOtherDevice -> {
-                    _activationMessage.value = "این کد در دستگاه دیگری استفاده شده است ."
+                    _activationMessage.value = "This code has already been used on another device."
                 }
                 is ActivationResult.Error -> {
                     _activationMessage.value = "Error: ${result.message}"
