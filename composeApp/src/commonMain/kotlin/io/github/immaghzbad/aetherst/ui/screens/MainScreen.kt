@@ -1,6 +1,5 @@
 package io.github.immaghzbad.aetherst.shared.ui.screens
 
-import android.app.Application
 import androidx.compose.material.icons.filled.LiveTv
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.foundation.layout.PaddingValues
@@ -71,7 +70,6 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.rememberNavController
@@ -96,7 +94,6 @@ import io.github.immaghzbad.aetherst.shared.ui.OnboardingViewModel
 import io.github.immaghzbad.aetherst.shared.ui.components.IosToast
 import io.github.immaghzbad.aetherst.shared.ui.components.PlatformBackHandler
 import io.github.immaghzbad.aetherst.shared.model.AetherProtocol
-import io.github.immaghzbad.aetherst.subscription.SubscriptionViewModel
 import kotlin.math.roundToInt
 
 private val IosNavBackground = AppPalette.surfaceRaised
@@ -196,15 +193,6 @@ fun MainScreen(viewModel: AetherViewModel, onboardingViewModel: OnboardingViewMo
 private fun DashboardContent(viewModel: AetherViewModel, scaleFactor: Float, platformContext: PlatformContext) {
     var showTrayAdminDialog by remember { mutableStateOf(false) }
     var zeroTrustOpen by remember { mutableStateOf(false) }
-
-    // ============================================
-    // ✅ ساخت SubscriptionViewModel و پاس دادن به DashboardScreen
-    // ============================================
-    val subscriptionViewModel: SubscriptionViewModel = viewModel(
-        key = "subscription_vm"
-    ) {
-        SubscriptionViewModel(platformContext.getApplicationContext() as Application)
-    }
 
     val config by viewModel.config.collectAsStateWithLifecycle()
     val connectionStatus by viewModel.connectionStatus.collectAsStateWithLifecycle()
@@ -358,8 +346,7 @@ private fun DashboardContent(viewModel: AetherViewModel, scaleFactor: Float, pla
                         },
                         appVersion = viewModel.appVersion,
                         bottomContentPadding = totalNavBarHeight,
-                        platformContext = platformContext,
-                        subscriptionViewModel = subscriptionViewModel  // ✅ اضافه شد
+                        platformContext = platformContext
                     )
                     Screen.Settings -> SettingsScreen(
                         config = config,
