@@ -36,6 +36,7 @@ fun SubscriptionCard(viewModel: SubscriptionViewModel = viewModel()) {
     val message by viewModel.activationMessage.collectAsState()
 
     var showActivateDialog by remember { mutableStateOf(false) }
+    var showExtendDialog by remember { mutableStateOf(false) }
     var now by remember { mutableStateOf(System.currentTimeMillis()) }
 
     LaunchedEffect(Unit) {
@@ -168,7 +169,13 @@ fun SubscriptionCard(viewModel: SubscriptionViewModel = viewModel()) {
                     Spacer(Modifier.height(12.dp))
 
                     Button(
-                        onClick = { showActivateDialog = true },
+                        onClick = {
+                            if (isActive) {
+                                showExtendDialog = true
+                            } else {
+                                showActivateDialog = true
+                            }
+                        },
                         modifier = Modifier.fillMaxWidth(),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = if (isActive) AppPalette.accent.copy(alpha = 0.8f) else AppPalette.accent
@@ -188,7 +195,7 @@ fun SubscriptionCard(viewModel: SubscriptionViewModel = viewModel()) {
 
     if (showActivateDialog) {
         ActivateCodeDialog(
-            onDismiss = { 
+            onDismiss = {
                 showActivateDialog = false
                 viewModel.refreshStatus()
             },
@@ -197,6 +204,21 @@ fun SubscriptionCard(viewModel: SubscriptionViewModel = viewModel()) {
             message = message,
             onMessageShown = { viewModel.clearMessage() },
             deviceId = viewModel.deviceId
+        )
+    }
+
+    if (showExtendDialog) {
+        ExtendSubscriptionDialog(
+            onDismiss = {
+                showExtendDialog = false
+                viewModel.refreshStatus()
+            },
+            onExtend = { code -> viewModel.extendSubscription(code) },
+            onRefresh = { viewModel.refreshStatus() },
+            message = message,
+            onMessageShown = { viewModel.clearMessage() },
+            deviceId = viewModel.deviceId,
+            currentInfo = info
         )
     }
 }
@@ -219,7 +241,7 @@ private fun ActivateCodeDialog(
         if (message != null && message.isNotBlank()) {
             when {
                 message.contains("فعال شد", ignoreCase = true) ||
-                message.contains("موفق", ignoreCase = true) || 
+                message.contains("موفق", ignoreCase = true) ||
                 message.contains("success", ignoreCase = true) ||
                 message.contains("به‌روز", ignoreCase = true) -> {
                     onRefresh()
@@ -252,7 +274,7 @@ private fun ActivateCodeDialog(
         }
     }
 
-    Dialog(onDismissRequest = { 
+    Dialog(onDismissRequest = {
         if (!isActivating) {
             onDismiss()
             onMessageShown()
@@ -274,7 +296,7 @@ private fun ActivateCodeDialog(
                     color = Color.White,
                     fontSize = 18.sp
                 )
-                
+
                 Spacer(Modifier.height(4.dp))
                 Text(
                     "کد فعال‌سازی را وارد کنید",
@@ -282,7 +304,7 @@ private fun ActivateCodeDialog(
                     fontSize = 12.sp,
                     textAlign = TextAlign.Center
                 )
-                
+
                 Spacer(Modifier.height(16.dp))
 
                 Text(
@@ -325,7 +347,7 @@ private fun ActivateCodeDialog(
 
                 OutlinedTextField(
                     value = code,
-                    onValueChange = { 
+                    onValueChange = {
                         code = it.uppercase().filter { char -> char.isLetterOrDigit() }
                     },
                     label = { Text("کد فعال‌سازی") },
@@ -344,16 +366,16 @@ private fun ActivateCodeDialog(
                     Card(
                         modifier = Modifier.fillMaxWidth(),
                         colors = CardDefaults.cardColors(
-                            containerColor = if (message.contains("فعال شد", ignoreCase = true) || 
-                                                message.contains("موفق", ignoreCase = true) || 
-                                                message.contains("success", ignoreCase = true) ||
-                                                message.contains("به‌روز", ignoreCase = true)) 
-                                AppPalette.statusConnected.copy(alpha = 0.15f) 
+                            containerColor = if (message.contains("فعال شد", ignoreCase = true) ||
+                                message.contains("موفق", ignoreCase = true) ||
+                                message.contains("success", ignoreCase = true) ||
+                                message.contains("به‌روز", ignoreCase = true))
+                                AppPalette.statusConnected.copy(alpha = 0.15f)
                             else if (message.contains("منتظر", ignoreCase = true) ||
-                                     message.contains("pending", ignoreCase = true) ||
-                                     message.contains("ارسال", ignoreCase = true))
+                                message.contains("pending", ignoreCase = true) ||
+                                message.contains("ارسال", ignoreCase = true))
                                 AppPalette.statusScanning.copy(alpha = 0.15f)
-                            else 
+                            else
                                 AppPalette.statusError.copy(alpha = 0.15f)
                         ),
                         shape = RoundedCornerShape(8.dp)
@@ -365,27 +387,27 @@ private fun ActivateCodeDialog(
                         ) {
                             Text(
                                 text = message,
-                                color = if (message.contains("فعال شد", ignoreCase = true) || 
-                                            message.contains("موفق", ignoreCase = true) || 
-                                            message.contains("success", ignoreCase = true) ||
-                                            message.contains("به‌روز", ignoreCase = true)) 
-                                    AppPalette.statusConnected 
+                                color = if (message.contains("فعال شد", ignoreCase = true) ||
+                                    message.contains("موفق", ignoreCase = true) ||
+                                    message.contains("success", ignoreCase = true) ||
+                                    message.contains("به‌روز", ignoreCase = true))
+                                    AppPalette.statusConnected
                                 else if (message.contains("منتظر", ignoreCase = true) ||
-                                         message.contains("pending", ignoreCase = true) ||
-                                         message.contains("ارسال", ignoreCase = true))
+                                    message.contains("pending", ignoreCase = true) ||
+                                    message.contains("ارسال", ignoreCase = true))
                                     AppPalette.statusScanning
-                                else 
+                                else
                                     AppPalette.statusError,
                                 fontSize = 12.sp,
                                 textAlign = TextAlign.Start,
                                 modifier = Modifier.weight(1f)
                             )
-                            
+
                             IconButton(
-                                onClick = { 
+                                onClick = {
                                     onMessageShown()
-                                    if (message.contains("فعال شد", ignoreCase = true) || 
-                                        message.contains("موفق", ignoreCase = true) || 
+                                    if (message.contains("فعال شد", ignoreCase = true) ||
+                                        message.contains("موفق", ignoreCase = true) ||
                                         message.contains("success", ignoreCase = true)) {
                                         onDismiss()
                                     }
@@ -451,7 +473,7 @@ private fun ActivateCodeDialog(
                 }
 
                 TextButton(
-                    onClick = { 
+                    onClick = {
                         if (!isActivating) {
                             onDismiss()
                             onMessageShown()
@@ -459,6 +481,246 @@ private fun ActivateCodeDialog(
                     },
                     modifier = Modifier.fillMaxWidth(),
                     enabled = !isActivating
+                ) {
+                    Text("انصراف", color = AppPalette.textSecondary, fontSize = 13.sp)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ExtendSubscriptionDialog(
+    onDismiss: () -> Unit,
+    onExtend: (String) -> Unit,
+    onRefresh: () -> Unit,
+    message: String?,
+    onMessageShown: () -> Unit,
+    deviceId: String,
+    currentInfo: SubscriptionInfo?
+) {
+    var code by remember { mutableStateOf("") }
+    var isExtending by remember { mutableStateOf(false) }
+    val clipboardManager = LocalClipboardManager.current
+    val context = LocalContext.current
+
+    val remainingDays = if (currentInfo != null && currentInfo.isActive) {
+        val remaining = currentInfo.expiresAtMillis - System.currentTimeMillis()
+        (remaining / (1000 * 60 * 60 * 24)).toInt()
+    } else 0
+
+    LaunchedEffect(message) {
+        if (message != null && message.isNotBlank()) {
+            when {
+                message.contains("تمدید", ignoreCase = true) ||
+                message.contains("موفق", ignoreCase = true) ||
+                message.contains("success", ignoreCase = true) -> {
+                    onRefresh()
+                    delay(1500)
+                    isExtending = false
+                    onDismiss()
+                    onMessageShown()
+                    Toast.makeText(context, "✅ اشتراک تمدید شد!", Toast.LENGTH_LONG).show()
+                }
+                message.contains("نامعتبر", ignoreCase = true) ||
+                message.contains("invalid", ignoreCase = true) ||
+                message.contains("خطا", ignoreCase = true) -> {
+                    delay(2500)
+                    isExtending = false
+                    onMessageShown()
+                }
+                message.contains("منتظر", ignoreCase = true) ||
+                message.contains("pending", ignoreCase = true) ||
+                message.contains("ارسال", ignoreCase = true) ||
+                message.contains("تایید", ignoreCase = true) -> {
+                    isExtending = false
+                }
+                else -> {
+                    delay(3000)
+                    isExtending = false
+                    onMessageShown()
+                }
+            }
+        }
+    }
+
+    Dialog(onDismissRequest = {
+        if (!isExtending) {
+            onDismiss()
+            onMessageShown()
+        }
+    }) {
+        Card(
+            shape = RoundedCornerShape(20.dp),
+            colors = CardDefaults.cardColors(containerColor = AppPalette.surfaceRaised)
+        ) {
+            Column(
+                modifier = Modifier
+                    .padding(20.dp)
+                    .fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    "🔄 تمدید اشتراک",
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White,
+                    fontSize = 18.sp
+                )
+
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    if (remainingDays > 0) "زمان باقیمانده: $remainingDays روز" else "اشتراک در حال انقضا است",
+                    color = if (remainingDays > 0) AppPalette.statusConnected else AppPalette.statusScanning,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Medium
+                )
+
+                Spacer(Modifier.height(12.dp))
+                Text(
+                    "کد تمدید را وارد کنید",
+                    color = AppPalette.textSecondary,
+                    fontSize = 12.sp,
+                    textAlign = TextAlign.Center
+                )
+
+                Spacer(Modifier.height(16.dp))
+
+                Text(
+                    text = "📱 شناسه دستگاه:",
+                    color = AppPalette.textSecondary,
+                    fontSize = 11.sp
+                )
+                Spacer(Modifier.height(4.dp))
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(AppPalette.divider)
+                        .clickable {
+                            clipboardManager.setText(AnnotatedString(deviceId))
+                            Toast.makeText(context, "✅ شناسه دستگاه کپی شد!", Toast.LENGTH_SHORT).show()
+                        }
+                        .padding(horizontal = 12.dp, vertical = 10.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = deviceId,
+                        color = AppPalette.accent,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.weight(1f)
+                    )
+                    Icon(
+                        imageVector = Icons.Default.ContentCopy,
+                        contentDescription = "کپی",
+                        tint = AppPalette.accent,
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
+
+                Spacer(Modifier.height(16.dp))
+
+                OutlinedTextField(
+                    value = code,
+                    onValueChange = {
+                        code = it.uppercase().filter { char -> char.isLetterOrDigit() }
+                    },
+                    label = { Text("کد تمدید") },
+                    placeholder = { Text("کد تمدید را وارد کنید") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = !isExtending,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = AppPalette.accent,
+                        unfocusedBorderColor = AppPalette.divider
+                    )
+                )
+
+                if (message != null && message.isNotBlank()) {
+                    Spacer(Modifier.height(8.dp))
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(
+                            containerColor = if (message.contains("موفق", ignoreCase = true) ||
+                                message.contains("success", ignoreCase = true))
+                                AppPalette.statusConnected.copy(alpha = 0.15f)
+                            else
+                                AppPalette.statusError.copy(alpha = 0.15f)
+                        ),
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Text(
+                            text = message,
+                            color = if (message.contains("موفق", ignoreCase = true) ||
+                                message.contains("success", ignoreCase = true))
+                                AppPalette.statusConnected
+                            else
+                                AppPalette.statusError,
+                            fontSize = 12.sp,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.padding(12.dp)
+                        )
+                    }
+                }
+
+                Spacer(Modifier.height(20.dp))
+
+                Button(
+                    onClick = {
+                        if (code.isNotBlank()) {
+                            isExtending = true
+                            onExtend(code)
+                        }
+                    },
+                    enabled = code.isNotBlank() && !isExtending,
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(containerColor = AppPalette.accent)
+                ) {
+                    if (isExtending) {
+                        Row(horizontalArrangement = Arrangement.Center) {
+                            CircularProgressIndicator(
+                                color = AppPalette.onAccent,
+                                modifier = Modifier.size(20.dp),
+                                strokeWidth = 2.dp
+                            )
+                            Spacer(Modifier.width(8.dp))
+                            Text("در حال تمدید...", fontWeight = FontWeight.Bold, color = AppPalette.onAccent)
+                        }
+                    } else {
+                        Text("✅ تمدید اشتراک", fontWeight = FontWeight.Bold, color = AppPalette.onAccent)
+                    }
+                }
+
+                Spacer(Modifier.height(8.dp))
+
+                TextButton(
+                    onClick = {
+                        if (!isExtending) {
+                            onRefresh()
+                            Toast.makeText(context, "🔄 در حال به‌روزرسانی وضعیت...", Toast.LENGTH_SHORT).show()
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = !isExtending
+                ) {
+                    Text(
+                        "🔄 وضعیت را به‌روز کن",
+                        color = AppPalette.accent,
+                        fontSize = 12.sp
+                    )
+                }
+
+                TextButton(
+                    onClick = {
+                        if (!isExtending) {
+                            onDismiss()
+                            onMessageShown()
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = !isExtending
                 ) {
                     Text("انصراف", color = AppPalette.textSecondary, fontSize = 13.sp)
                 }
