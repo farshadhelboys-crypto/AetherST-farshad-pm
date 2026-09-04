@@ -26,7 +26,6 @@ data class SubscriptionInfo(
     val type: String,
     val expiresAtMillis: Long,
     val isActive: Boolean
-    val activatedAt: Long = 0L  // ⭐ این خط رو اضافه کن
 )
 
 sealed class ActivationResult {
@@ -37,11 +36,13 @@ sealed class ActivationResult {
     data class Error(val message: String) : ActivationResult()
 }
 
+// ⭐ تغییر ۱: اضافه کردن activatedAt به CodeEntry
 private data class CodeEntry(
     val code: String,
     val deviceId: String,
     val durationDays: Long,
-    val used: Boolean
+    val used: Boolean,
+    val activatedAt: Long = 0L  // ⭐ اضافه شد
 )
 
 class SubscriptionRepository(private val context: Context) {
@@ -70,6 +71,7 @@ class SubscriptionRepository(private val context: Context) {
         return "$className: $msg"
     }
 
+    // ⭐ تغییر ۲: خواندن activatedAt از JSON
     private suspend fun fetchCodes(): List<CodeEntry> = withContext(Dispatchers.IO) {
         val connection = URL(CODES_URL).openConnection() as HttpURLConnection
         connection.requestMethod = "GET"
@@ -100,7 +102,8 @@ class SubscriptionRepository(private val context: Context) {
                     code = obj.getString("code"),
                     deviceId = obj.optString("deviceId", ""),
                     durationDays = obj.getLong("durationDays"),
-                    used = obj.getBoolean("used")
+                    used = obj.getBoolean("used"),
+                    activatedAt = obj.optLong("activatedAt", 0L)  // ⭐ خواندن activatedAt
                 )
             )
         }
@@ -128,8 +131,14 @@ class SubscriptionRepository(private val context: Context) {
             val myActiveCode = codes.find { it.deviceId == deviceId && it.used }
 
             if (myActiveCode != null) {
-                // تاریخ انقضا را محاسبه کن
-                val expiresAt = System.currentTimeMillis() + myActiveCode.durationDays * 24 * 60 * 60 * 1000
+                // ⭐ تغییر ۳: استفاده از activatedAt برای محاسبه تاریخ انقضا
+                val expiresAt = if (myActiveCode.activatedAt > 0) {
+                    // اگر activatedAt وجود دارد، از آن استفاده کن
+                    myActiveCode.activatedAt + myActiveCode.durationDays * 24 * 60 * 60 * 1000
+                } else {
+                    // اگر activatedAt وجود ندارد (سازگاری با کدهای قدیمی)
+                    System.currentTimeMillis() + myActiveCode.durationDays * 24 * 60 * 60 * 1000
+                }
                 
                 // در حافظه محلی ذخیره کن
                 prefs.edit().apply {
@@ -204,7 +213,7 @@ class SubscriptionRepository(private val context: Context) {
         }
     }
 
-    // تابع برای بررسی دستی وضعیت از سرور و به‌روزرسانی کش
+    // ⭐ تغییر ۴: اصلاح refreshStatusFromServer برای استفاده از activatedAt
     suspend fun refreshStatusFromServer(): SubscriptionInfo {
         val deviceId = getDeviceId()
         Log.d(TAG, "Refreshing subscription from server for device: $deviceId")
@@ -214,7 +223,15 @@ class SubscriptionRepository(private val context: Context) {
             val myActiveCode = codes.find { it.deviceId == deviceId && it.used }
 
             if (myActiveCode != null) {
-                val expiresAt = System.currentTimeMillis() + myActiveCode.durationDays * 24 * 60 * 60 * 1000
+                // ⭐ استفاده از activatedAt برای محاسبه تاریخ انقضا
+                val expiresAt = if (myActiveCode.activatedAt > 0) {
+                    // اگر activatedAt وجود دارد، از آن استفاده کن
+                    myActiveCode.activatedAt + myActiveCode.durationDays * 24 * 60 * 60 * 1000
+                } else {
+                    // اگر activatedAt وجود ندارد (سازگاری با کدهای قدیمی)
+                    System.currentTimeMillis() + myActiveCode.durationDays * 24 * 60 * 60 * 1000
+                }
+                
                 prefs.edit().apply {
                     putLong(KEY_EXPIRES_AT, expiresAt)
                     putBoolean(KEY_IS_ACTIVE, true)
