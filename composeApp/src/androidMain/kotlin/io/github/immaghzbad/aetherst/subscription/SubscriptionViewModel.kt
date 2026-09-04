@@ -10,6 +10,9 @@ import kotlinx.coroutines.launch
 class SubscriptionViewModel(application: Application) : AndroidViewModel(application) {
 
     private val repository = SubscriptionRepository(application)
+    
+    val deviceId: String get() = repository.getDeviceId()
+   
 
     private val _subscriptionInfo = MutableStateFlow<SubscriptionInfo?>(null)
     val subscriptionInfo: StateFlow<SubscriptionInfo?> = _subscriptionInfo
@@ -48,7 +51,7 @@ class SubscriptionViewModel(application: Application) : AndroidViewModel(applica
                     _activationMessage.value = "Invalid code."
                 }
                 is ActivationResult.CodeAlreadyUsed -> {
-                    _activationMessage.value = "This code has already been used."
+                    _activationMessage.value = "Code verified! Please send your Device ID to admin to activate."
                 }
                 is ActivationResult.CodeUsedByOtherDevice -> {
                     _activationMessage.value = "This code has already been used on another device."
