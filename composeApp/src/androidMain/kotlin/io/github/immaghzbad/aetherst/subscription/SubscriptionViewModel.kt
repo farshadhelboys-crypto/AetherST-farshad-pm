@@ -3,10 +3,10 @@ package io.github.immaghzbad.aetherst.subscription
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 class SubscriptionViewModel(application: Application) : AndroidViewModel(application) {
@@ -31,6 +31,9 @@ class SubscriptionViewModel(application: Application) : AndroidViewModel(applica
         loadSubscriptionStatus()
     }
 
+    /**
+     * بارگذاری وضعیت اشتراک از کش یا سرور
+     */
     fun loadSubscriptionStatus() {
         viewModelScope.launch {
             _isLoading.value = true
@@ -49,7 +52,9 @@ class SubscriptionViewModel(application: Application) : AndroidViewModel(applica
         }
     }
 
-    // ⭐ تغییر: استفاده از forceRefreshStatus
+    /**
+     * به‌روزرسانی وضعیت از سرور (با نمایش لودینگ)
+     */
     fun refreshStatus() {
         viewModelScope.launch {
             if (_isRefreshing.value) return@launch
@@ -87,6 +92,9 @@ class SubscriptionViewModel(application: Application) : AndroidViewModel(applica
         }
     }
 
+    /**
+     * فعال‌سازی کد اشتراک
+     */
     fun activateCode(code: String, telegramId: String) {
         val trimmedCode = code.trim().uppercase()
         if (trimmedCode.length < 8) {
@@ -107,7 +115,7 @@ class SubscriptionViewModel(application: Application) : AndroidViewModel(applica
                         delay(500)
                         val status = repository.forceRefreshStatus()
                         _subscriptionInfo.value = status
-                        delay(2000)
+                        delay(1500)
                         _activationMessage.value = null
                     }
                     
@@ -155,29 +163,43 @@ class SubscriptionViewModel(application: Application) : AndroidViewModel(applica
         }
     }
 
+    /**
+     * بررسی دستی وضعیت اشتراک (بدون نمایش لودینگ)
+     */
     fun checkStatusSilently() {
         viewModelScope.launch {
             try {
                 val status = repository.getSubscriptionStatus()
                 _subscriptionInfo.value = status
             } catch (e: Exception) {
-                // خطا را نادیده بگیر
+                // خطا را نادیده بگیر (برای استفاده در پس‌زمینه)
             }
         }
     }
 
+    /**
+     * پاک کردن پیام وضعیت
+     */
     fun clearMessage() {
         _activationMessage.value = null
     }
 
+    /**
+     * پاک کردن کش (برای خروج کاربر یا تست)
+     */
     fun clearCache() {
-        repository.clearCache()
-        _subscriptionInfo.value = null
-        _activationMessage.value = "🗑️ اطلاعات کش پاک شد"
-        delay(2000)
-        _activationMessage.value = null
+        viewModelScope.launch {
+            repository.clearCache()
+            _subscriptionInfo.value = null
+            _activationMessage.value = "🗑️ اطلاعات کش پاک شد"
+            delay(2000)
+            _activationMessage.value = null
+        }
     }
 
+    /**
+     * دریافت زمان باقیمانده به صورت متن
+     */
     fun getRemainingTimeText(): String {
         val info = _subscriptionInfo.value ?: return "نامشخص"
         if (!info.isActive) return "منقضی شده"
@@ -196,6 +218,9 @@ class SubscriptionViewModel(application: Application) : AndroidViewModel(applica
         }
     }
 
+    /**
+     * دریافت درصد پیشرفت اشتراک
+     */
     fun getProgressPercentage(): Float {
         val info = _subscriptionInfo.value ?: return 0f
         if (!info.isActive) return 0f
