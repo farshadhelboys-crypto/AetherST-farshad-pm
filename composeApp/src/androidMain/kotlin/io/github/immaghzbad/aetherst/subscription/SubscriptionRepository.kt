@@ -51,13 +51,13 @@ private data class CodeEntry(
 
 class SubscriptionRepository(private val context: Context) {
 
-    private val prefs: SharedPreferences = 
+    private val prefs: SharedPreferences =
         context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
     fun getDeviceId(): String {
         var deviceId = prefs.getString(KEY_DEVICE_ID, null)
         if (deviceId == null) {
-            deviceId = Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID) 
+            deviceId = Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID)
                 ?: "unknown_device"
             prefs.edit().putString(KEY_DEVICE_ID, deviceId).apply()
         }
@@ -70,22 +70,20 @@ class SubscriptionRepository(private val context: Context) {
         return "$className: $msg"
     }
 
-    // Cache Busting با پارامترهای تصادفی
     private suspend fun fetchCodes(): List<CodeEntry> = withContext(Dispatchers.IO) {
         var connection: HttpURLConnection? = null
         try {
             val timestamp = System.currentTimeMillis()
             val random = (1000..9999).random()
             val url = URL("$CODES_URL?t=$timestamp&r=$random")
-            
+
             Log.d(TAG, "Fetching codes from: $url")
-            
+
             connection = url.openConnection() as HttpURLConnection
             connection.requestMethod = "GET"
             connection.connectTimeout = 15000
             connection.readTimeout = 15000
-            
-            // هدرهای غیرفعال کردن کش
+
             connection.setRequestProperty("Cache-Control", "no-cache, no-store, must-revalidate")
             connection.setRequestProperty("Pragma", "no-cache")
             connection.setRequestProperty("Expires", "0")
@@ -121,10 +119,10 @@ class SubscriptionRepository(private val context: Context) {
                     )
                 )
             }
-            
+
             Log.d(TAG, "Fetched ${result.size} codes")
             result
-            
+
         } catch (e: Exception) {
             Log.e(TAG, "fetchCodes error: ${e.message}", e)
             throw e
@@ -141,7 +139,6 @@ class SubscriptionRepository(private val context: Context) {
         val savedIsActive = prefs.getBoolean(KEY_IS_ACTIVE, false)
         val currentTime = System.currentTimeMillis()
 
-        // بررسی کدهای در انتظار
         val pendingCode = prefs.getString(KEY_PENDING_CODE, null)
         if (pendingCode != null) {
             val pendingTime = prefs.getLong(KEY_PENDING_TIME, 0)
@@ -167,13 +164,13 @@ class SubscriptionRepository(private val context: Context) {
                 } else {
                     System.currentTimeMillis() + myActiveCode.durationDays * 24 * 60 * 60 * 1000
                 }
-                
+
                 prefs.edit().apply {
                     putLong(KEY_EXPIRES_AT, expiresAt)
                     putBoolean(KEY_IS_ACTIVE, true)
                     putLong(KEY_LAST_CHECK, System.currentTimeMillis())
                 }.apply()
-                
+
                 SubscriptionInfo("paid", expiresAt, true)
             } else {
                 prefs.edit().apply {
@@ -181,14 +178,14 @@ class SubscriptionRepository(private val context: Context) {
                     putBoolean(KEY_IS_ACTIVE, false)
                     putLong(KEY_LAST_CHECK, System.currentTimeMillis())
                 }.apply()
-                
+
                 SubscriptionInfo("none", 0L, false)
             }
 
         } catch (e: Exception) {
             val detail = describeError(e)
             Log.e(TAG, "getSubscriptionStatus failed: $detail", e)
-            
+
             if (savedExpiresAt > 0) {
                 SubscriptionInfo("paid", savedExpiresAt, savedExpiresAt > currentTime)
             } else {
@@ -227,12 +224,11 @@ class SubscriptionRepository(private val context: Context) {
                 return ActivationResult.CodeUsedByOtherDevice
             }
 
-            // کد پیدا شد اما استفاده نشده
             prefs.edit().apply {
                 putString(KEY_PENDING_CODE, code)
                 putLong(KEY_PENDING_TIME, System.currentTimeMillis())
             }.apply()
-            
+
             ActivationResult.Pending
 
         } catch (e: Exception) {
@@ -242,14 +238,58 @@ class SubscriptionRepository(private val context: Context) {
         }
     }
 
-    // Force Refresh با Retry
+    suspend fun extendSubscription(code: String, currentExpiresAt: Long): ActivationResult {
+        Log.d(TAG, "Extending subscription with code: $code")
+
+        return try {
+            val deviceId = getDeviceId()
+            val codes = fetchCodes()
+            val found = codes.find { it.code.equals(code, ignoreCase = true) }
+
+            if (found == null) {
+                return ActivationResult.CodeNotFound
+            }
+
+            if (found.used && found.deviceId == deviceId) {
+                val newExpiresAt = if (currentExpiresAt > System.currentTimeMillis()) {
+                    currentExpiresAt + found.durationDays * 24 * 60 * 60 * 1000
+                } else {
+                    System.currentTimeMillis() + found.durationDays * 24 * 60 * 60 * 1000
+                }
+
+                prefs.edit().apply {
+                    putLong(KEY_EXPIRES_AT, newExpiresAt)
+                    putBoolean(KEY_IS_ACTIVE, true)
+                    putLong(KEY_LAST_CHECK, System.currentTimeMillis())
+                }.apply()
+                return ActivationResult.Success
+            }
+
+            if (found.used) {
+                return ActivationResult.CodeUsedByOtherDevice
+            }
+
+            prefs.edit().apply {
+                putString(KEY_PENDING_CODE, code)
+                putLong(KEY_PENDING_TIME, System.currentTimeMillis())
+            }.apply()
+
+            ActivationResult.Pending
+
+        } catch (e: Exception) {
+            val detail = describeError(e)
+            Log.e(TAG, "extendSubscription failed: $detail", e)
+            ActivationResult.Error(detail)
+        }
+    }
+
     suspend fun forceRefreshStatus(): SubscriptionInfo {
         val deviceId = getDeviceId()
         Log.d(TAG, "Force refreshing from server for device: $deviceId")
-        
+
         var attempts = 0
         var lastError: Exception? = null
-        
+
         while (attempts < 5) {
             try {
                 val codes = fetchCodes()
@@ -261,7 +301,7 @@ class SubscriptionRepository(private val context: Context) {
                     } else {
                         System.currentTimeMillis() + myActiveCode.durationDays * 24 * 60 * 60 * 1000
                     }
-                    
+
                     prefs.edit().apply {
                         putLong(KEY_EXPIRES_AT, expiresAt)
                         putBoolean(KEY_IS_ACTIVE, true)
@@ -280,7 +320,7 @@ class SubscriptionRepository(private val context: Context) {
                     }.apply()
                     return SubscriptionInfo("none", 0L, false)
                 }
-                
+
             } catch (e: Exception) {
                 lastError = e
                 Log.e(TAG, "Force refresh attempt ${attempts + 1} failed: ${e.message}", e)
@@ -290,7 +330,7 @@ class SubscriptionRepository(private val context: Context) {
                 }
             }
         }
-        
+
         val detail = lastError?.let { describeError(it) } ?: "Unknown error"
         return SubscriptionInfo("error:$detail".take(50), 0L, false)
     }
@@ -303,7 +343,7 @@ class SubscriptionRepository(private val context: Context) {
     fun getLastCheckTime(): Long {
         return prefs.getLong(KEY_LAST_CHECK, 0L)
     }
-    
+
     fun isPending(): Boolean {
         return prefs.getString(KEY_PENDING_CODE, null) != null
     }
