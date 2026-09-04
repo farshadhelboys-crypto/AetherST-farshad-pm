@@ -57,7 +57,7 @@ fun SubscriptionCard(viewModel: SubscriptionViewModel = viewModel()) {
             } else {
                 val currentInfo = info
                 val remainingMillis = (currentInfo?.expiresAtMillis ?: 0L) - now
-                val isActive = remainingMillis > 0
+                val isActive = currentInfo?.type == "paid" && remainingMillis > 0
 
                 Column {
                     Row(
@@ -66,11 +66,7 @@ fun SubscriptionCard(viewModel: SubscriptionViewModel = viewModel()) {
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = when (currentInfo?.type) {
-                                "trial" -> "FREE TRIAL"
-                                "paid" -> "SUBSCRIPTION"
-                                else -> "SUBSCRIPTION"
-                            },
+                            text = "SUBSCRIPTION",
                             style = MaterialTheme.typography.labelMedium,
                             fontWeight = FontWeight.Bold,
                             color = AppPalette.textSecondary,
@@ -123,7 +119,10 @@ fun SubscriptionCard(viewModel: SubscriptionViewModel = viewModel()) {
                         )
                     } else {
                         Text(
-                            text = "Your subscription has expired.",
+                            text = if (currentInfo?.type?.startsWith("error") == true)
+                                "Could not check subscription. Check your connection."
+                            else
+                                "No active subscription. Please enter your activation code.",
                             style = MaterialTheme.typography.bodyMedium,
                             color = AppPalette.textSecondary
                         )
@@ -151,12 +150,11 @@ fun SubscriptionCard(viewModel: SubscriptionViewModel = viewModel()) {
     if (showActivateDialog) {
         ActivateCodeDialog(
             onDismiss = { showActivateDialog = false },
-            onActivate = { code, telegramId ->
-                viewModel.activateCode(code, telegramId)
-            },
+            onActivate = { code -> viewModel.activateCode(code, "") },
+            onRefresh = { viewModel.refreshStatus() },
             message = message,
             onMessageShown = { viewModel.clearMessage() },
-            onSuccess = { showActivateDialog = false }
+            deviceId = viewModel.deviceId
         )
     }
 }
@@ -164,21 +162,13 @@ fun SubscriptionCard(viewModel: SubscriptionViewModel = viewModel()) {
 @Composable
 private fun ActivateCodeDialog(
     onDismiss: () -> Unit,
-    onActivate: (String, String) -> Unit,
+    onActivate: (String) -> Unit,
+    onRefresh: () -> Unit,
     message: String?,
     onMessageShown: () -> Unit,
-    onSuccess: () -> Unit
+    deviceId: String
 ) {
     var code by remember { mutableStateOf("") }
-    var telegramId by remember { mutableStateOf("") }
-
-    LaunchedEffect(message) {
-        if (message == "Activated successfully!") {
-            delay(800)
-            onSuccess()
-            onMessageShown()
-        }
-    }
 
     Dialog(onDismissRequest = onDismiss) {
         Card(
@@ -195,7 +185,25 @@ private fun ActivateCodeDialog(
                     color = Color.White,
                     fontSize = 18.sp
                 )
+                Spacer(Modifier.height(12.dp))
+
+                Text(
+                    text = "Your Device ID (send this to admin):",
+                    color = AppPalette.textSecondary,
+                    fontSize = 11.sp,
+                    textAlign = TextAlign.Center
+                )
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    text = deviceId,
+                    color = AppPalette.accent,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Bold,
+                    textAlign = TextAlign.Center
+                )
+
                 Spacer(Modifier.height(16.dp))
+
                 OutlinedTextField(
                     value = code,
                     onValueChange = { code = it.uppercase() },
@@ -203,28 +211,45 @@ private fun ActivateCodeDialog(
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
-                Spacer(Modifier.height(12.dp))
-                OutlinedTextField(
-                    value = telegramId,
-                    onValueChange = { telegramId = it },
-                    label = { Text("Telegram ID (e.g. @username)") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
-                )
-                if (message != null && message != "Activated successfully!") {
+
+                if (message != null) {
                     Spacer(Modifier.height(8.dp))
-                    Text(message, color = AppPalette.statusError, fontSize = 12.sp, textAlign = TextAlign.Center)
+                    Text(
+                        message,
+                        color = if (message.contains("success", ignoreCase = true)) AppPalette.statusConnected else AppPalette.statusScanning,
+                        fontSize = 12.sp,
+                        textAlign = TextAlign.Center
+                    )
                 }
+
                 Spacer(Modifier.height(20.dp))
+
                 Button(
-                    onClick = { onActivate(code, telegramId) },
-                    enabled = code.isNotBlank() && telegramId.isNotBlank(),
+                    onClick = { onActivate(code) },
+                    enabled = code.isNotBlank(),
                     modifier = Modifier.fillMaxWidth(),
                     colors = ButtonDefaults.buttonColors(containerColor = AppPalette.accent)
                 ) {
-                    Text("ACTIVATE", fontWeight = FontWeight.Bold, color = AppPalette.onAccent)
+                    Text("CHECK CODE", fontWeight = FontWeight.Bold, color = AppPalette.onAccent)
                 }
-                TextButton(onClick = onDismiss, modifier = Modifier.fillMaxWidth()) {
+
+                Spacer(Modifier.height(8.dp))
+
+                TextButton(
+                    onClick = {
+                        onRefresh()
+                        onMessageShown()
+                        onDismiss()
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("شناسه دستگاه خود را ارسال کرده ام،بارگزاری مجدد..", color = AppPalette.accent, fontSize = 12.sp)
+                }
+
+                TextButton(
+                    onClick = { onDismiss(); onMessageShown() },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
                     Text("Cancel", color = AppPalette.textSecondary)
                 }
             }
