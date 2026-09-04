@@ -6,6 +6,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -171,12 +172,11 @@ fun SubscriptionCard(viewModel: SubscriptionViewModel = viewModel()) {
 
                     Spacer(Modifier.height(12.dp))
 
-                    // دکمه فعال‌سازی - اصلاح شده
+                    // دکمه فعال‌سازی
                     Button(
                         onClick = { showActivateDialog = true },
                         modifier = Modifier.fillMaxWidth(),
                         colors = ButtonDefaults.buttonColors(
-                            // استفاده از accent به جای success (که وجود ندارد)
                             containerColor = if (isActive) AppPalette.accent.copy(alpha = 0.8f) else AppPalette.accent
                         ),
                         shape = RoundedCornerShape(12.dp)
@@ -219,9 +219,46 @@ private fun ActivateCodeDialog(
     val clipboardManager = LocalClipboardManager.current
     val context = LocalContext.current
 
-    // پاک کردن پیام هنگام بسته شدن
-    LaunchedEffect(Unit) {
-        onMessageShown()
+    // ⭐⭐⭐ مدیریت خودکار دیالوگ بر اساس پیام ⭐⭐⭐
+    LaunchedEffect(message) {
+        if (message != null && message.isNotBlank()) {
+            when {
+                // ✅ موفقیت
+                message.contains("فعال شد", ignoreCase = true) ||
+                message.contains("موفق", ignoreCase = true) || 
+                message.contains("success", ignoreCase = true) ||
+                message.contains("به‌روز", ignoreCase = true) -> {
+                    delay(1500)
+                    isActivating = false
+                    onDismiss()
+                    onMessageShown()
+                    Toast.makeText(context, "✅ اشتراک فعال شد!", Toast.LENGTH_LONG).show()
+                }
+                // ❌ خطا
+                message.contains("نامعتبر", ignoreCase = true) ||
+                message.contains("invalid", ignoreCase = true) ||
+                message.contains("خطا", ignoreCase = true) ||
+                message.contains("error", ignoreCase = true) -> {
+                    delay(2500)
+                    isActivating = false
+                    onMessageShown()
+                }
+                // ⏳ در انتظار
+                message.contains("منتظر", ignoreCase = true) ||
+                message.contains("pending", ignoreCase = true) ||
+                message.contains("ارسال", ignoreCase = true) ||
+                message.contains("تایید", ignoreCase = true) -> {
+                    isActivating = false
+                    // دیالوگ باز بمونه
+                }
+                // ℹ️ بقیه پیام‌ها
+                else -> {
+                    delay(3000)
+                    isActivating = false
+                    onMessageShown()
+                }
+            }
+        }
     }
 
     Dialog(onDismissRequest = { 
@@ -314,37 +351,75 @@ private fun ActivateCodeDialog(
                     )
                 )
 
-                // پیام وضعیت - اصلاح شده
+                // پیام وضعیت با دکمه بستن
                 if (message != null && message.isNotBlank()) {
                     Spacer(Modifier.height(8.dp))
                     Card(
                         modifier = Modifier.fillMaxWidth(),
                         colors = CardDefaults.cardColors(
-                            containerColor = if (message.contains("موفق", ignoreCase = true) || 
-                                                message.contains("success", ignoreCase = true)) 
+                            containerColor = if (message.contains("فعال شد", ignoreCase = true) || 
+                                                message.contains("موفق", ignoreCase = true) || 
+                                                message.contains("success", ignoreCase = true) ||
+                                                message.contains("به‌روز", ignoreCase = true)) 
                                 AppPalette.statusConnected.copy(alpha = 0.15f) 
+                            else if (message.contains("منتظر", ignoreCase = true) ||
+                                     message.contains("pending", ignoreCase = true) ||
+                                     message.contains("ارسال", ignoreCase = true))
+                                AppPalette.statusScanning.copy(alpha = 0.15f)
                             else 
                                 AppPalette.statusError.copy(alpha = 0.15f)
                         ),
                         shape = RoundedCornerShape(8.dp)
                     ) {
-                        Text(
-                            text = message,
-                            color = if (message.contains("موفق", ignoreCase = true) || 
-                                        message.contains("success", ignoreCase = true)) 
-                                AppPalette.statusConnected 
-                            else 
-                                AppPalette.statusError,
-                            fontSize = 12.sp,
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier.padding(12.dp)
-                        )
+                        Row(
+                            modifier = Modifier.padding(12.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = message,
+                                color = if (message.contains("فعال شد", ignoreCase = true) || 
+                                            message.contains("موفق", ignoreCase = true) || 
+                                            message.contains("success", ignoreCase = true) ||
+                                            message.contains("به‌روز", ignoreCase = true)) 
+                                    AppPalette.statusConnected 
+                                else if (message.contains("منتظر", ignoreCase = true) ||
+                                         message.contains("pending", ignoreCase = true) ||
+                                         message.contains("ارسال", ignoreCase = true))
+                                    AppPalette.statusScanning
+                                else 
+                                    AppPalette.statusError,
+                                fontSize = 12.sp,
+                                textAlign = TextAlign.Start,
+                                modifier = Modifier.weight(1f)
+                            )
+                            
+                            // دکمه بستن پیام
+                            IconButton(
+                                onClick = { 
+                                    onMessageShown()
+                                    if (message.contains("فعال شد", ignoreCase = true) || 
+                                        message.contains("موفق", ignoreCase = true) || 
+                                        message.contains("success", ignoreCase = true)) {
+                                        onDismiss()
+                                    }
+                                },
+                                modifier = Modifier.size(24.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Close,
+                                    contentDescription = "بستن",
+                                    tint = AppPalette.textSecondary,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
+                        }
                     }
                 }
 
                 Spacer(Modifier.height(20.dp))
 
-                // دکمه‌ها
+                // دکمه بررسی کد
                 Button(
                     onClick = {
                         if (code.isNotBlank()) {
@@ -379,8 +454,6 @@ private fun ActivateCodeDialog(
                         if (!isActivating) {
                             onRefresh()
                             Toast.makeText(context, "🔄 در حال به‌روزرسانی وضعیت...", Toast.LENGTH_SHORT).show()
-                            onDismiss()
-                            onMessageShown()
                         }
                     },
                     modifier = Modifier.fillMaxWidth(),
