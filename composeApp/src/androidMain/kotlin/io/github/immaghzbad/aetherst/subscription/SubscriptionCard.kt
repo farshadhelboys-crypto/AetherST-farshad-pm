@@ -137,20 +137,19 @@ fun SubscriptionCard(viewModel: SubscriptionViewModel = viewModel()) {
 
                     Spacer(Modifier.height(12.dp))
 
-                    Button(
-                        onClick = { showActivateDialog = true },
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = ButtonDefaults.buttonColors(containerColor = AppPalette.accent),
-                        shape = RoundedCornerShape(12.dp)
-                    ) {
-                        Text(
-                            text = if (isActive) "Enter Activation Code" else "Activate Now",
-                            fontWeight = FontWeight.Bold,
-                            color = AppPalette.onAccent
-                        )
-                    }
-                }
-            }
+                     // در SubscriptionCard.kt - بخش نمایش دکمه را تغییر دهید
+Button(
+    onClick = { showActivateDialog = true },
+    modifier = Modifier.fillMaxWidth(),
+    colors = ButtonDefaults.buttonColors(containerColor = if (isActive) AppPalette.success else AppPalette.accent),
+    shape = RoundedCornerShape(12.dp)
+) {
+    Text(
+        text = if (isActive) "Extend Subscription" else "Activate Now",
+        fontWeight = FontWeight.Bold,
+        color = AppPalette.onAccent
+    )
+}
         }
     }
 
