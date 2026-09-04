@@ -20,6 +20,7 @@ private const val PREFS_NAME = "subscription_prefs"
 private const val KEY_EXPIRES_AT = "expires_at_millis"
 private const val KEY_IS_ACTIVE = "is_active"
 private const val KEY_DEVICE_ID = "device_id"
+private const val KEY_LAST_CHECK = "last_check_time"
 
 data class SubscriptionInfo(
     val type: String,
@@ -133,6 +134,7 @@ class SubscriptionRepository(private val context: Context) {
                 prefs.edit().apply {
                     putLong(KEY_EXPIRES_AT, expiresAt)
                     putBoolean(KEY_IS_ACTIVE, true)
+                    putLong(KEY_LAST_CHECK, System.currentTimeMillis())
                 }.apply()
                 
                 SubscriptionInfo("paid", expiresAt, true)
@@ -141,6 +143,7 @@ class SubscriptionRepository(private val context: Context) {
                 prefs.edit().apply {
                     putLong(KEY_EXPIRES_AT, 0L)
                     putBoolean(KEY_IS_ACTIVE, false)
+                    putLong(KEY_LAST_CHECK, System.currentTimeMillis())
                 }.apply()
                 
                 SubscriptionInfo("none", 0L, false)
@@ -160,7 +163,7 @@ class SubscriptionRepository(private val context: Context) {
     }
 
     suspend fun activateCode(code: String, telegramId: String): ActivationResult {
-        Log.d(TAG, "Attempting to activate code: $code")
+        Log.d(TAG, "Attempting to activate code: $code for device: ${getDeviceId()}")
 
         return try {
             val deviceId = getDeviceId()
@@ -178,6 +181,7 @@ class SubscriptionRepository(private val context: Context) {
                 prefs.edit().apply {
                     putLong(KEY_EXPIRES_AT, expiresAt)
                     putBoolean(KEY_IS_ACTIVE, true)
+                    putLong(KEY_LAST_CHECK, System.currentTimeMillis())
                 }.apply()
                 return ActivationResult.Success
             }
@@ -187,8 +191,9 @@ class SubscriptionRepository(private val context: Context) {
                 return ActivationResult.CodeUsedByOtherDevice
             }
 
-            // کد پیدا شد اما استفاده نشده - باید توسط سرور فعال شود
-            // توجه: اینجا باید درخواست به سرور برای فعال‌سازی بفرستید
+            // کد پیدا شد اما استفاده نشده
+            // توجه: در اینجا باید به سرور برای فعال‌سازی درخواست بدهید
+            // فعلاً به عنوان AlreadyUsed برگردانده می‌شود تا کاربر Device ID را ارسال کند
             ActivationResult.CodeAlreadyUsed
 
         } catch (e: Exception) {
@@ -212,12 +217,14 @@ class SubscriptionRepository(private val context: Context) {
                 prefs.edit().apply {
                     putLong(KEY_EXPIRES_AT, expiresAt)
                     putBoolean(KEY_IS_ACTIVE, true)
+                    putLong(KEY_LAST_CHECK, System.currentTimeMillis())
                 }.apply()
                 SubscriptionInfo("paid", expiresAt, true)
             } else {
                 prefs.edit().apply {
                     putLong(KEY_EXPIRES_AT, 0L)
                     putBoolean(KEY_IS_ACTIVE, false)
+                    putLong(KEY_LAST_CHECK, System.currentTimeMillis())
                 }.apply()
                 SubscriptionInfo("none", 0L, false)
             }
@@ -233,5 +240,10 @@ class SubscriptionRepository(private val context: Context) {
     fun clearCache() {
         prefs.edit().clear().apply()
         Log.d(TAG, "Cache cleared")
+    }
+
+    // دریافت زمان آخرین بررسی
+    fun getLastCheckTime(): Long {
+        return prefs.getLong(KEY_LAST_CHECK, 0L)
     }
 }
