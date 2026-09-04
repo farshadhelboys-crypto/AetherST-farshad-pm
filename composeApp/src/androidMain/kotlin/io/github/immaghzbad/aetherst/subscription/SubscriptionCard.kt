@@ -38,7 +38,6 @@ fun SubscriptionCard(viewModel: SubscriptionViewModel = viewModel()) {
     var showActivateDialog by remember { mutableStateOf(false) }
     var now by remember { mutableStateOf(System.currentTimeMillis()) }
 
-    // به‌روزرسانی زمان هر ثانیه
     LaunchedEffect(Unit) {
         while (true) {
             delay(1000)
@@ -77,7 +76,6 @@ fun SubscriptionCard(viewModel: SubscriptionViewModel = viewModel()) {
                 val isActive = currentInfo?.type == "paid" && remainingMillis > 0
 
                 Column {
-                    // هدر
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -111,7 +109,6 @@ fun SubscriptionCard(viewModel: SubscriptionViewModel = viewModel()) {
 
                     Spacer(Modifier.height(12.dp))
 
-                    // نمایش زمان باقیمانده
                     if (isActive) {
                         val days = remainingMillis / (1000 * 60 * 60 * 24)
                         val hours = (remainingMillis / (1000 * 60 * 60)) % 24
@@ -132,7 +129,6 @@ fun SubscriptionCard(viewModel: SubscriptionViewModel = viewModel()) {
 
                         Spacer(Modifier.height(10.dp))
 
-                        // نوار پیشرفت
                         val totalDays = 30
                         val progress = (remainingMillis / (1000f * 60 * 60 * 24)) / totalDays
                         LinearProgressIndicator(
@@ -145,7 +141,6 @@ fun SubscriptionCard(viewModel: SubscriptionViewModel = viewModel()) {
                             trackColor = AppPalette.divider
                         )
 
-                        // نمایش تاریخ انقضا
                         if (days <= 3 && days >= 0) {
                             Spacer(Modifier.height(4.dp))
                             val expiryDate = SimpleDateFormat("dd MMM yyyy", Locale("fa"))
@@ -172,7 +167,6 @@ fun SubscriptionCard(viewModel: SubscriptionViewModel = viewModel()) {
 
                     Spacer(Modifier.height(12.dp))
 
-                    // دکمه فعال‌سازی
                     Button(
                         onClick = { showActivateDialog = true },
                         modifier = Modifier.fillMaxWidth(),
@@ -192,10 +186,12 @@ fun SubscriptionCard(viewModel: SubscriptionViewModel = viewModel()) {
         }
     }
 
-    // دیالوگ فعال‌سازی
     if (showActivateDialog) {
         ActivateCodeDialog(
-            onDismiss = { showActivateDialog = false },
+            onDismiss = { 
+                showActivateDialog = false
+                viewModel.refreshStatus()
+            },
             onActivate = { code -> viewModel.activateCode(code, "") },
             onRefresh = { viewModel.refreshStatus() },
             message = message,
@@ -219,22 +215,20 @@ private fun ActivateCodeDialog(
     val clipboardManager = LocalClipboardManager.current
     val context = LocalContext.current
 
-    // ⭐⭐⭐ مدیریت خودکار دیالوگ بر اساس پیام ⭐⭐⭐
     LaunchedEffect(message) {
         if (message != null && message.isNotBlank()) {
             when {
-                // ✅ موفقیت
                 message.contains("فعال شد", ignoreCase = true) ||
                 message.contains("موفق", ignoreCase = true) || 
                 message.contains("success", ignoreCase = true) ||
                 message.contains("به‌روز", ignoreCase = true) -> {
+                    onRefresh()
                     delay(1500)
                     isActivating = false
                     onDismiss()
                     onMessageShown()
                     Toast.makeText(context, "✅ اشتراک فعال شد!", Toast.LENGTH_LONG).show()
                 }
-                // ❌ خطا
                 message.contains("نامعتبر", ignoreCase = true) ||
                 message.contains("invalid", ignoreCase = true) ||
                 message.contains("خطا", ignoreCase = true) ||
@@ -243,15 +237,12 @@ private fun ActivateCodeDialog(
                     isActivating = false
                     onMessageShown()
                 }
-                // ⏳ در انتظار
                 message.contains("منتظر", ignoreCase = true) ||
                 message.contains("pending", ignoreCase = true) ||
                 message.contains("ارسال", ignoreCase = true) ||
                 message.contains("تایید", ignoreCase = true) -> {
                     isActivating = false
-                    // دیالوگ باز بمونه
                 }
-                // ℹ️ بقیه پیام‌ها
                 else -> {
                     delay(3000)
                     isActivating = false
@@ -277,7 +268,6 @@ private fun ActivateCodeDialog(
                     .fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // عنوان
                 Text(
                     "فعال‌سازی اشتراک",
                     fontWeight = FontWeight.Bold,
@@ -295,7 +285,6 @@ private fun ActivateCodeDialog(
                 
                 Spacer(Modifier.height(16.dp))
 
-                // شناسه دستگاه
                 Text(
                     text = "📱 شناسه دستگاه (برای کپی کلیک کنید، به مدیر ارسال کنید):",
                     color = AppPalette.textSecondary,
@@ -334,7 +323,6 @@ private fun ActivateCodeDialog(
 
                 Spacer(Modifier.height(16.dp))
 
-                // ورودی کد
                 OutlinedTextField(
                     value = code,
                     onValueChange = { 
@@ -351,7 +339,6 @@ private fun ActivateCodeDialog(
                     )
                 )
 
-                // پیام وضعیت با دکمه بستن
                 if (message != null && message.isNotBlank()) {
                     Spacer(Modifier.height(8.dp))
                     Card(
@@ -394,7 +381,6 @@ private fun ActivateCodeDialog(
                                 modifier = Modifier.weight(1f)
                             )
                             
-                            // دکمه بستن پیام
                             IconButton(
                                 onClick = { 
                                     onMessageShown()
@@ -419,7 +405,6 @@ private fun ActivateCodeDialog(
 
                 Spacer(Modifier.height(20.dp))
 
-                // دکمه بررسی کد
                 Button(
                     onClick = {
                         if (code.isNotBlank()) {
@@ -448,7 +433,6 @@ private fun ActivateCodeDialog(
 
                 Spacer(Modifier.height(8.dp))
 
-                // دکمه Refresh
                 TextButton(
                     onClick = {
                         if (!isActivating) {
@@ -466,7 +450,6 @@ private fun ActivateCodeDialog(
                     )
                 }
 
-                // دکمه انصراف
                 TextButton(
                     onClick = { 
                         if (!isActivating) {
