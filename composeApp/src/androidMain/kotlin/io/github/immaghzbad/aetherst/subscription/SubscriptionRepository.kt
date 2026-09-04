@@ -1,6 +1,7 @@
 package io.github.immaghzbad.aetherst.subscription
 
 import android.content.Context
+import android.content.SharedPreferences
 import android.provider.Settings
 import android.util.Log
 import kotlinx.coroutines.Dispatchers
@@ -13,6 +14,12 @@ import java.net.URL
 
 private const val TAG = "SubscriptionRepo"
 private const val CODES_URL = "https://raw.githubusercontent.com/farshadhelboys-crypto/Feri_pm_tunnel_subscriptions/refs/heads/main/codes.json"
+
+// تنظیمات SharedPreferences
+private const val PREFS_NAME = "subscription_prefs"
+private const val KEY_EXPIRES_AT = "expires_at_millis"
+private const val KEY_IS_ACTIVE = "is_active"
+private const val KEY_DEVICE_ID = "device_id"
 
 data class SubscriptionInfo(
     val type: String,
@@ -37,8 +44,22 @@ private data class CodeEntry(
 
 class SubscriptionRepository(private val context: Context) {
 
+    // SharedPreferences برای ذخیره‌سازی دائمی
+    private val prefs: SharedPreferences = 
+        context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+
     fun getDeviceId(): String {
-        return Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID) ?: "unknown_device"
+        // ابتدا از حافظه محلی بخوان
+        var deviceId = prefs.getString(KEY_DEVICE_ID, null)
+        
+        if (deviceId == null) {
+            // اگر وجود نداشت، از سیستم بگیر و ذخیره کن
+            deviceId = Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID) 
+                ?: "unknown_device"
+            prefs.edit().putString(KEY_DEVICE_ID, deviceId).apply()
+        }
+        
+        return deviceId
     }
 
     private fun describeError(e: Exception): String {
@@ -88,21 +109,53 @@ class SubscriptionRepository(private val context: Context) {
         val deviceId = getDeviceId()
         Log.d(TAG, "Checking subscription for device: $deviceId")
 
+        // ابتدا از حافظه محلی بخوان
+        val savedExpiresAt = prefs.getLong(KEY_EXPIRES_AT, 0L)
+        val savedIsActive = prefs.getBoolean(KEY_IS_ACTIVE, false)
+        val currentTime = System.currentTimeMillis()
+
+        // اگر در حافظه محلی ذخیره شده و هنوز معتبر است
+        if (savedIsActive && savedExpiresAt > currentTime) {
+            Log.d(TAG, "Using cached subscription: expires at $savedExpiresAt")
+            return SubscriptionInfo("paid", savedExpiresAt, true)
+        }
+
+        // اگر منقضی شده، از سرور بررسی کن
         return try {
             val codes = fetchCodes()
             val myActiveCode = codes.find { it.deviceId == deviceId && it.used }
 
             if (myActiveCode != null) {
+                // تاریخ انقضا را محاسبه کن
                 val expiresAt = System.currentTimeMillis() + myActiveCode.durationDays * 24 * 60 * 60 * 1000
+                
+                // در حافظه محلی ذخیره کن
+                prefs.edit().apply {
+                    putLong(KEY_EXPIRES_AT, expiresAt)
+                    putBoolean(KEY_IS_ACTIVE, true)
+                }.apply()
+                
                 SubscriptionInfo("paid", expiresAt, true)
             } else {
+                // پاک کردن اطلاعات منقضی شده
+                prefs.edit().apply {
+                    putLong(KEY_EXPIRES_AT, 0L)
+                    putBoolean(KEY_IS_ACTIVE, false)
+                }.apply()
+                
                 SubscriptionInfo("none", 0L, false)
             }
 
         } catch (e: Exception) {
             val detail = describeError(e)
             Log.e(TAG, "getSubscriptionStatus failed: $detail", e)
-            SubscriptionInfo("error:$detail", 0L, false)
+            
+            // در صورت خطا، اطلاعات ذخیره شده را برگردان (حتی اگر منقضی شده باشد)
+            if (savedExpiresAt > 0) {
+                SubscriptionInfo("paid", savedExpiresAt, savedExpiresAt > currentTime)
+            } else {
+                SubscriptionInfo("error:$detail", 0L, false)
+            }
         }
     }
 
@@ -118,14 +171,24 @@ class SubscriptionRepository(private val context: Context) {
                 return ActivationResult.CodeNotFound
             }
 
+            // اگر کد قبلاً برای این دستگاه فعال شده
             if (found.used && found.deviceId == deviceId) {
+                // ذخیره در حافظه محلی
+                val expiresAt = System.currentTimeMillis() + found.durationDays * 24 * 60 * 60 * 1000
+                prefs.edit().apply {
+                    putLong(KEY_EXPIRES_AT, expiresAt)
+                    putBoolean(KEY_IS_ACTIVE, true)
+                }.apply()
                 return ActivationResult.Success
             }
 
+            // اگر کد توسط دستگاه دیگری استفاده شده
             if (found.used) {
                 return ActivationResult.CodeUsedByOtherDevice
             }
 
+            // کد پیدا شد اما استفاده نشده - باید توسط سرور فعال شود
+            // توجه: اینجا باید درخواست به سرور برای فعال‌سازی بفرستید
             ActivationResult.CodeAlreadyUsed
 
         } catch (e: Exception) {
@@ -133,5 +196,42 @@ class SubscriptionRepository(private val context: Context) {
             Log.e(TAG, "activateCode failed: $detail", e)
             ActivationResult.Error(detail)
         }
+    }
+
+    // تابع برای بررسی دستی وضعیت از سرور و به‌روزرسانی کش
+    suspend fun refreshStatusFromServer(): SubscriptionInfo {
+        val deviceId = getDeviceId()
+        Log.d(TAG, "Refreshing subscription from server for device: $deviceId")
+
+        return try {
+            val codes = fetchCodes()
+            val myActiveCode = codes.find { it.deviceId == deviceId && it.used }
+
+            if (myActiveCode != null) {
+                val expiresAt = System.currentTimeMillis() + myActiveCode.durationDays * 24 * 60 * 60 * 1000
+                prefs.edit().apply {
+                    putLong(KEY_EXPIRES_AT, expiresAt)
+                    putBoolean(KEY_IS_ACTIVE, true)
+                }.apply()
+                SubscriptionInfo("paid", expiresAt, true)
+            } else {
+                prefs.edit().apply {
+                    putLong(KEY_EXPIRES_AT, 0L)
+                    putBoolean(KEY_IS_ACTIVE, false)
+                }.apply()
+                SubscriptionInfo("none", 0L, false)
+            }
+
+        } catch (e: Exception) {
+            val detail = describeError(e)
+            Log.e(TAG, "refreshStatusFromServer failed: $detail", e)
+            SubscriptionInfo("error:$detail", 0L, false)
+        }
+    }
+
+    // تابع برای پاک کردن کش (برای تست یا خروج کاربر)
+    fun clearCache() {
+        prefs.edit().clear().apply()
+        Log.d(TAG, "Cache cleared")
     }
 }
