@@ -1,8 +1,12 @@
 package io.github.immaghzbad.aetherst.subscription
 
+import android.widget.Toast
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -10,6 +14,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -169,6 +176,8 @@ private fun ActivateCodeDialog(
     deviceId: String
 ) {
     var code by remember { mutableStateOf("") }
+    val clipboardManager = LocalClipboardManager.current
+    val context = LocalContext.current
 
     Dialog(onDismissRequest = onDismiss) {
         Card(
@@ -188,19 +197,40 @@ private fun ActivateCodeDialog(
                 Spacer(Modifier.height(12.dp))
 
                 Text(
-                    text = "Your Device ID (send this to admin):",
+                    text = "Your Device ID (tap to copy, send to admin):",
                     color = AppPalette.textSecondary,
                     fontSize = 11.sp,
                     textAlign = TextAlign.Center
                 )
-                Spacer(Modifier.height(4.dp))
-                Text(
-                    text = deviceId,
-                    color = AppPalette.accent,
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Bold,
-                    textAlign = TextAlign.Center
-                )
+                Spacer(Modifier.height(6.dp))
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(AppPalette.divider)
+                        .clickable {
+                            clipboardManager.setText(AnnotatedString(deviceId))
+                            Toast.makeText(context, "Device ID copied!", Toast.LENGTH_SHORT).show()
+                        }
+                        .padding(horizontal = 12.dp, vertical = 10.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = deviceId,
+                        color = AppPalette.accent,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.weight(1f)
+                    )
+                    Icon(
+                        imageVector = Icons.Default.ContentCopy,
+                        contentDescription = "Copy",
+                        tint = AppPalette.accent,
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
 
                 Spacer(Modifier.height(16.dp))
 
@@ -243,7 +273,7 @@ private fun ActivateCodeDialog(
                     },
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("شناسه دستگاه خود را ارسال کرده ام،بارگزاری مجدد..", color = AppPalette.accent, fontSize = 12.sp)
+                    Text("I've sent my Device ID, Refresh Status", color = AppPalette.accent, fontSize = 12.sp)
                 }
 
                 TextButton(
