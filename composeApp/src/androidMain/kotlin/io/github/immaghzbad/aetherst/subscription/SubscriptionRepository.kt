@@ -70,11 +70,10 @@ class SubscriptionRepository(private val context: Context) {
         return "$className: $msg"
     }
 
-    // ⭐ تغییر: اضافه کردن Cache Busting به fetchCodes
+    // ⭐ Cache Busting با پارامترهای تصادفی
     private suspend fun fetchCodes(): List<CodeEntry> = withContext(Dispatchers.IO) {
         var connection: HttpURLConnection? = null
         try {
-            // ⭐⭐⭐ پارامترهای تصادفی برای شکستن کش ⭐⭐⭐
             val timestamp = System.currentTimeMillis()
             val random = (1000..9999).random()
             val url = URL("$CODES_URL?t=$timestamp&r=$random")
@@ -86,7 +85,7 @@ class SubscriptionRepository(private val context: Context) {
             connection.connectTimeout = 15000
             connection.readTimeout = 15000
             
-            // ⭐ هدرهای غیرفعال کردن کش
+            // هدرهای غیرفعال کردن کش
             connection.setRequestProperty("Cache-Control", "no-cache, no-store, must-revalidate")
             connection.setRequestProperty("Pragma", "no-cache")
             connection.setRequestProperty("Expires", "0")
@@ -239,58 +238,7 @@ class SubscriptionRepository(private val context: Context) {
         }
     }
 
-    // ⭐ تغییر: اضافه کردن Force Refresh با Retry
-    suspend fun refreshStatusFromServer(): SubscriptionInfo {
-        val deviceId = getDeviceId()
-        Log.d(TAG, "Refreshing subscription from server for device: $deviceId")
-
-        var attempts = 0
-        var lastError: Exception? = null
-
-        while (attempts < 3) {
-            try {
-                val codes = fetchCodes()
-                val myActiveCode = codes.find { it.deviceId == deviceId && it.used }
-
-                if (myActiveCode != null) {
-                    val expiresAt = if (myActiveCode.activatedAt > 0) {
-                        myActiveCode.activatedAt + myActiveCode.durationDays * 24 * 60 * 60 * 1000
-                    } else {
-                        System.currentTimeMillis() + myActiveCode.durationDays * 24 * 60 * 60 * 1000
-                    }
-                    
-                    prefs.edit().apply {
-                        putLong(KEY_EXPIRES_AT, expiresAt)
-                        putBoolean(KEY_IS_ACTIVE, true)
-                        putLong(KEY_LAST_CHECK, System.currentTimeMillis())
-                        remove(KEY_PENDING_CODE)
-                        remove(KEY_PENDING_TIME)
-                    }.apply()
-                    return SubscriptionInfo("paid", expiresAt, true)
-                } else {
-                    prefs.edit().apply {
-                        putLong(KEY_EXPIRES_AT, 0L)
-                        putBoolean(KEY_IS_ACTIVE, false)
-                        putLong(KEY_LAST_CHECK, System.currentTimeMillis())
-                    }.apply()
-                    return SubscriptionInfo("none", 0L, false)
-                }
-
-            } catch (e: Exception) {
-                lastError = e
-                Log.e(TAG, "Refresh attempt ${attempts + 1} failed: ${e.message}", e)
-                attempts++
-                if (attempts < 3) {
-                    delay(500)
-                }
-            }
-        }
-
-        val detail = lastError?.let { describeError(it) } ?: "Unknown error"
-        return SubscriptionInfo("error:$detail", 0L, false)
-    }
-
-    // ⭐ تابع جدید: Force Refresh با پارامترهای تصادفی
+    // ⭐ Force Refresh با Retry
     suspend fun forceRefreshStatus(): SubscriptionInfo {
         val deviceId = getDeviceId()
         Log.d(TAG, "Force refreshing from server for device: $deviceId")
@@ -341,6 +289,56 @@ class SubscriptionRepository(private val context: Context) {
         
         val detail = lastError?.let { describeError(it) } ?: "Unknown error"
         return SubscriptionInfo("error:$detail".take(50), 0L, false)
+    }
+
+    suspend fun refreshStatusFromServer(): SubscriptionInfo {
+        val deviceId = getDeviceId()
+        Log.d(TAG, "Refreshing subscription from server for device: $deviceId")
+
+        var attempts = 0
+        var lastError: Exception? = null
+
+        while (attempts < 3) {
+            try {
+                val codes = fetchCodes()
+                val myActiveCode = codes.find { it.deviceId == deviceId && it.used }
+
+                if (myActiveCode != null) {
+                    val expiresAt = if (myActiveCode.activatedAt > 0) {
+                        myActiveCode.activatedAt + myActiveCode.durationDays * 24 * 60 * 60 * 1000
+                    } else {
+                        System.currentTimeMillis() + myActiveCode.durationDays * 24 * 60 * 60 * 1000
+                    }
+                    
+                    prefs.edit().apply {
+                        putLong(KEY_EXPIRES_AT, expiresAt)
+                        putBoolean(KEY_IS_ACTIVE, true)
+                        putLong(KEY_LAST_CHECK, System.currentTimeMillis())
+                        remove(KEY_PENDING_CODE)
+                        remove(KEY_PENDING_TIME)
+                    }.apply()
+                    return SubscriptionInfo("paid", expiresAt, true)
+                } else {
+                    prefs.edit().apply {
+                        putLong(KEY_EXPIRES_AT, 0L)
+                        putBoolean(KEY_IS_ACTIVE, false)
+                        putLong(KEY_LAST_CHECK, System.currentTimeMillis())
+                    }.apply()
+                    return SubscriptionInfo("none", 0L, false)
+                }
+
+            } catch (e: Exception) {
+                lastError = e
+                Log.e(TAG, "Refresh attempt ${attempts + 1} failed: ${e.message}", e)
+                attempts++
+                if (attempts < 3) {
+                    delay(500)
+                }
+            }
+        }
+
+        val detail = lastError?.let { describeError(it) } ?: "Unknown error"
+        return SubscriptionInfo("error:$detail", 0L, false)
     }
 
     fun clearCache() {
