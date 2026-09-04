@@ -132,7 +132,7 @@ fun SubscriptionCard(viewModel: SubscriptionViewModel = viewModel()) {
                         Spacer(Modifier.height(10.dp))
 
                         // نوار پیشرفت
-                        val totalDays = 30 // یا مقدار واقعی از سرور
+                        val totalDays = 30
                         val progress = (remainingMillis / (1000f * 60 * 60 * 24)) / totalDays
                         LinearProgressIndicator(
                             progress = { progress.coerceIn(0.01f, 1f) },
@@ -160,6 +160,8 @@ fun SubscriptionCard(viewModel: SubscriptionViewModel = viewModel()) {
                         Text(
                             text = if (currentInfo?.type?.startsWith("error") == true)
                                 "⚠️ خطا در بررسی اشتراک. اتصال خود را بررسی کنید."
+                            else if (currentInfo?.type == "pending")
+                                "⏳ کد فعال‌سازی در انتظار تایید است..."
                             else
                                 "🔑 اشتراک فعالی وجود ندارد. کد فعال‌سازی را وارد کنید.",
                             style = MaterialTheme.typography.bodyMedium,
@@ -169,12 +171,13 @@ fun SubscriptionCard(viewModel: SubscriptionViewModel = viewModel()) {
 
                     Spacer(Modifier.height(12.dp))
 
-                    // دکمه فعال‌سازی
+                    // دکمه فعال‌سازی - اصلاح شده
                     Button(
                         onClick = { showActivateDialog = true },
                         modifier = Modifier.fillMaxWidth(),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = if (isActive) AppPalette.success else AppPalette.accent
+                            // استفاده از accent به جای success (که وجود ندارد)
+                            containerColor = if (isActive) AppPalette.accent.copy(alpha = 0.8f) else AppPalette.accent
                         ),
                         shape = RoundedCornerShape(12.dp)
                     ) {
@@ -311,15 +314,15 @@ private fun ActivateCodeDialog(
                     )
                 )
 
-                // پیام وضعیت
+                // پیام وضعیت - اصلاح شده
                 if (message != null && message.isNotBlank()) {
                     Spacer(Modifier.height(8.dp))
                     Card(
                         modifier = Modifier.fillMaxWidth(),
                         colors = CardDefaults.cardColors(
-                            containerColor = if (message.contains("success", ignoreCase = true) || 
-                                                message.contains("موفق", ignoreCase = true)) 
-                                AppPalette.success.copy(alpha = 0.15f) 
+                            containerColor = if (message.contains("موفق", ignoreCase = true) || 
+                                                message.contains("success", ignoreCase = true)) 
+                                AppPalette.statusConnected.copy(alpha = 0.15f) 
                             else 
                                 AppPalette.statusError.copy(alpha = 0.15f)
                         ),
@@ -327,8 +330,8 @@ private fun ActivateCodeDialog(
                     ) {
                         Text(
                             text = message,
-                            color = if (message.contains("success", ignoreCase = true) || 
-                                        message.contains("موفق", ignoreCase = true)) 
+                            color = if (message.contains("موفق", ignoreCase = true) || 
+                                        message.contains("success", ignoreCase = true)) 
                                 AppPalette.statusConnected 
                             else 
                                 AppPalette.statusError,
