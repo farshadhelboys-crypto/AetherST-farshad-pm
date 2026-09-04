@@ -26,6 +26,7 @@ data class SubscriptionInfo(
     val type: String,
     val expiresAtMillis: Long,
     val isActive: Boolean
+    val activatedAt: Long = 0L  // ⭐ این خط رو اضافه کن
 )
 
 sealed class ActivationResult {
