@@ -20,6 +20,7 @@ val ElegantTextSecondary = Color(0xFF9A9A94)
 val ConnectedGreen = Color(0xFF81C784)
 val ScanningAmber = Color(0xFFFFB74D)
 val ErrorRed = Color(0xFFF2B8B5)
+val success = Color(0xFF34C759)  // سبز
 
 object AppPalette {
     val accent = Color(0xFFD4AF37)
