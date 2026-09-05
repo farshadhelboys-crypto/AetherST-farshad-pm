@@ -209,7 +209,6 @@ fun SubscriptionCard(viewModel: SubscriptionViewModel = viewModel()) {
     if (showExtendDialog) {
         ExtendSubscriptionDialog(
             onDismiss = {
-                // فقط پنل تمدید بسته می‌شود؛ بستن پنل نباید تایمر را Refresh یا Reset کند.
                 showExtendDialog = false
             },
             onExtend = { code -> viewModel.extendSubscription(code) },
@@ -347,7 +346,7 @@ private fun ActivateCodeDialog(
                 OutlinedTextField(
                     value = code,
                     onValueChange = {
-                        code = it.uppercase().filter { char -> char.isLetterOrDigit() }
+                        code = it.uppercase()
                     },
                     label = { Text("کد فعال‌سازی") },
                     placeholder = { Text("کد ۱۶ رقمی را وارد کنید") },
@@ -511,9 +510,6 @@ private fun ExtendSubscriptionDialog(
     LaunchedEffect(message) {
         if (message != null && message.isNotBlank()) {
             when {
-                // مهم: این Dialog نباید صرفاً با دیدن message، Refresh انجام دهد.
-                // message ممکن است از قبل در ViewModel باقی مانده باشد و با باز شدن
-                // پنل باعث اجرای ناخواسته refresh و تغییر expiresAt شود.
                 message.contains("تمدید", ignoreCase = true) ||
                 message.contains("موفق", ignoreCase = true) ||
                 message.contains("success", ignoreCase = true) -> {
@@ -626,7 +622,7 @@ private fun ExtendSubscriptionDialog(
                 OutlinedTextField(
                     value = code,
                     onValueChange = {
-                        code = it.uppercase().filter { char -> char.isLetterOrDigit() }
+                        code = it.uppercase()
                     },
                     label = { Text("کد تمدید") },
                     placeholder = { Text("کد تمدید را وارد کنید") },
