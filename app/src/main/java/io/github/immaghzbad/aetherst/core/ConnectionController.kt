@@ -49,6 +49,9 @@ class ConnectionController private constructor(context: Context) {
     private var isManualTraffic = false
     private var lastManualTx = 0L
     private var lastManualRx = 0L
+    private var lastStatsTx = 0L
+    private var lastStatsRx = 0L
+    private var lastStatsTimeNanos = 0L
 
     companion object {
         const val ACTION_STATUS_CHANGED = "io.github.immaghzbad.aetherst.STATUS_CHANGED"
@@ -450,6 +453,9 @@ class ConnectionController private constructor(context: Context) {
         isManualTraffic = false
         lastManualTx = 0L
         lastManualRx = 0L
+        lastStatsTx = 0L
+        lastStatsRx = 0L
+        lastStatsTimeNanos = 0L
     }
 
     private fun updateTrafficFromStats() {
@@ -458,9 +464,16 @@ class ConnectionController private constructor(context: Context) {
         
         val diffTx = (currentTx - baseTx).coerceAtLeast(0)
         val diffRx = (currentRx - baseRx).coerceAtLeast(0)
-        
-        _sessionTraffic.value = SessionTraffic(diffTx, diffRx)
-        Bridge.trafficOverride.value = SessionTraffic(diffTx, diffRx)
+        val nowNanos = System.nanoTime()
+        val dt = if (lastStatsTimeNanos > 0L) ((nowNanos - lastStatsTimeNanos) / 1_000_000_000.0).coerceAtLeast(0.001) else 1.0
+        val txSpeed = if (lastStatsTimeNanos > 0L) ((currentTx - lastStatsTx).coerceAtLeast(0L) / dt) else 0.0
+        val rxSpeed = if (lastStatsTimeNanos > 0L) ((currentRx - lastStatsRx).coerceAtLeast(0L) / dt) else 0.0
+        lastStatsTx = currentTx
+        lastStatsRx = currentRx
+        lastStatsTimeNanos = nowNanos
+        val traffic = SessionTraffic(diffTx, diffRx, txSpeed, rxSpeed)
+        _sessionTraffic.value = traffic
+        Bridge.trafficOverride.value = traffic
     }
 
     fun setTraffic(tx: Long, rx: Long) {
