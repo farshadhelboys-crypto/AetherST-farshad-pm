@@ -1,0 +1,11 @@
+name = "aetherst-license-api"
+main = "src/index.js"
+compatibility_date = "2026-09-01"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "aetherst-licenses"
+database_id = "REPLACE_WITH_YOUR_D1_DATABASE_ID"
+
+[vars]
+ADMIN_TOKEN = "CHANGE_THIS_TO_A_LONG_RANDOM_SECRET"
