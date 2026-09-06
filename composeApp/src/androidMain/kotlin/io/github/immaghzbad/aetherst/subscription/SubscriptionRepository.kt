@@ -46,7 +46,7 @@ class SubscriptionRepository(private val context: Context) {
         return id
     }
 
-    private fun request(method: String, endpoint: String, body: JSONObject? = null): ApiResult = withNetwork {
+    private suspend fun request(method: String, endpoint: String, body: JSONObject? = null): ApiResult = withNetwork {
         val conn = (URL(LICENSE_API_URL.trimEnd('/') + endpoint).openConnection() as HttpURLConnection)
         conn.requestMethod = method
         conn.connectTimeout = 12000
@@ -71,9 +71,8 @@ class SubscriptionRepository(private val context: Context) {
         ApiResult(json.optBoolean("active", false), json.optLong("expiresAt", 0L), json.optLong("serverTime", System.currentTimeMillis()))
     }
 
-    private suspend fun statusFromServer(): ApiResult = withContext(Dispatchers.IO) {
+    private suspend fun statusFromServer(): ApiResult =
         request("GET", "/v1/status?deviceId=${java.net.URLEncoder.encode(getDeviceId(), "UTF-8")}")
-    }
 
     suspend fun getSubscriptionStatus(): SubscriptionInfo = withContext(Dispatchers.IO) {
         try {
@@ -133,6 +132,11 @@ class SubscriptionRepository(private val context: Context) {
     }
 
     private suspend fun <T> withNetwork(block: () -> T): T = withContext(Dispatchers.IO) { block() }
+
+    fun clearCache() {
+        prefs.edit().clear().apply()
+        Log.d(TAG, "Subscription cache cleared")
+    }
     private class CodeNotFoundException : Exception()
     private class OtherDeviceException : Exception()
     private class RevokedException : Exception()
