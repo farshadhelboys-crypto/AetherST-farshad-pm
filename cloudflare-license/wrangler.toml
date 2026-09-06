@@ -5,7 +5,7 @@ compatibility_date = "2026-09-01"
 [[d1_databases]]
 binding = "DB"
 database_name = "aetherst-licenses"
-database_id = "REPLACE_WITH_YOUR_D1_DATABASE_ID"
+database_id = "fa47f1c1-e920-4979-b0a0-14957764702d"
 
 [vars]
 ADMIN_TOKEN = "CHANGE_THIS_TO_A_LONG_RANDOM_SECRET"
