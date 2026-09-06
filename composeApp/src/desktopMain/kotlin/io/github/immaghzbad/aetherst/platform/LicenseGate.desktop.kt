@@ -1,7 +1,7 @@
 package io.github.immaghzbad.aetherst.platform
 
-private object DesktopLicenseGate : LicenseGate {
-    override suspend fun isConnectionAllowed(): Boolean = true
+actual class LicenseGate actual constructor(context: PlatformContext) {
+    actual suspend fun isConnectionAllowed(): Boolean = true
+    actual fun startMonitoring(onExpired: () -> Unit) {}
+    actual fun stopMonitoring() {}
 }
-
-actual fun getLicenseGate(context: PlatformContext): LicenseGate = DesktopLicenseGate
