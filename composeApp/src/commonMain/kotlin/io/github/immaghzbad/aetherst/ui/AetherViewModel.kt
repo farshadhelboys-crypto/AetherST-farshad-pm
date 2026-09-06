@@ -8,6 +8,7 @@ import io.github.immaghzbad.aetherst.platform.getSettings
 import io.github.immaghzbad.aetherst.platform.getSystemUtils
 import io.github.immaghzbad.aetherst.platform.getVpnController
 import io.github.immaghzbad.aetherst.platform.isDesktop
+import io.github.immaghzbad.aetherst.platform.LicenseGate
 import io.github.immaghzbad.aetherst.shared.core.ConnectionController
 import io.github.immaghzbad.aetherst.shared.data.AetherConfigRepository
 import io.github.immaghzbad.aetherst.shared.data.IpInfo
@@ -50,7 +51,7 @@ class AetherViewModel(platformContext: PlatformContext) : ViewModel() {
     private val vpnController = getVpnController(platformContext)
     private val systemUtils = getSystemUtils(platformContext)
     private val appInfoProvider = getAppInfoProvider(platformContext)
-    private val licenseGate = io.github.immaghzbad.aetherst.platform.getLicenseGate(platformContext)
+    private val licenseGate = LicenseGate(platformContext)
 
     val config: StateFlow<AetherConfig> = repository.config
     val isOnboardingComplete: StateFlow<Boolean> = repository.isOnboardingComplete
@@ -101,8 +102,13 @@ class AetherViewModel(platformContext: PlatformContext) : ViewModel() {
         observeConnectionStatus()
         checkBatteryOptimizationStatus()
         checkLastCrash()
+        licenseGate.startMonitoring {
+            if (connectionStatus.value != ConnectionStatus.STOPPED && connectionStatus.value != ConnectionStatus.ERROR) {
+                forceStop()
+            }
+            showToast("⛔ اشتراک شما منقضی یا غیرفعال شده است", true)
+        }
         loadInstalledApps()
-        startLicenseMonitor()
         // 🔇 بروزرسانی غیرفعال شد - کاربران از طریق کانال تلگرام مطلع می‌شن
         // if (isDesktop) checkForUpdates()
     }
@@ -130,32 +136,13 @@ class AetherViewModel(platformContext: PlatformContext) : ViewModel() {
             }
         }
 
-        // Stopping never requires a license check.
-        if (currentState != ConnectionStatus.STOPPED && currentState != ConnectionStatus.ERROR) {
-            try {
-                ConnectionController.markStatus(ConnectionStatus.STOPPING)
-                if (cfg.connectionMode == ConnectionMode.TUNNEL) {
-                    vpnController.stopVpn()
-                } else {
-                    vpnController.stopProxy()
-                }
-            } catch (exception: Exception) {
-                LogRepository.e("[UI] توقف اتصال ناموفق: ${exception.message}")
-                ConnectionController.markStatus(ConnectionStatus.ERROR)
-            }
-            return
-        }
-
-        // Starting is protected by the subscription gate.
         viewModelScope.launch {
-            val allowed = licenseGate.isConnectionAllowed()
-            if (!allowed) {
-                showToast("🔒 اشتراک فعال ندارید. ابتدا لایسنس را فعال یا تمدید کنید.", true)
-                LogRepository.w("[License] تلاش برای اتصال بدون اشتراک فعال مسدود شد", "License")
-                return@launch
-            }
-
             try {
+                if ((currentState == ConnectionStatus.STOPPED) || (currentState == ConnectionStatus.ERROR)) {
+                    if (!licenseGate.isConnectionAllowed()) {
+                        showToast("🔒 برای اتصال، اشتراک فعال لازم است", true)
+                        return@launch
+                    }
                 if (cfg.connectionMode == ConnectionMode.TUNNEL) {
                     if (vpnController.prepareVpn(onPermissionRequired)) {
                         ConnectionController.markStatus(ConnectionStatus.STARTING)
@@ -165,34 +152,17 @@ class AetherViewModel(platformContext: PlatformContext) : ViewModel() {
                     ConnectionController.markStatus(ConnectionStatus.STARTING)
                     vpnController.startProxy()
                 }
+            } else {
+                ConnectionController.markStatus(ConnectionStatus.STOPPING)
+                if (cfg.connectionMode == ConnectionMode.TUNNEL) {
+                    vpnController.stopVpn()
+                } else {
+                    vpnController.stopProxy()
+                }
+                }
             } catch (exception: Exception) {
                 LogRepository.e("[UI] تغییر وضعیت اتصال ناموفق: ${exception.message}")
                 ConnectionController.markStatus(ConnectionStatus.ERROR)
-            }
-        }
-    }
-
-    private fun startLicenseMonitor() {
-        viewModelScope.launch {
-            while (true) {
-                delay(10 * 60 * 1000L)
-
-                val state = connectionStatus.value
-                if (state == ConnectionStatus.STOPPED || state == ConnectionStatus.ERROR) continue
-
-                val allowed = licenseGate.isConnectionAllowed()
-                if (!allowed) {
-                    LogRepository.w("[License] اشتراک منقضی/غیرفعال شد؛ اتصال متوقف شد", "License")
-                    try {
-                        ConnectionController.markStatus(ConnectionStatus.STOPPING)
-                        val mode = config.value.connectionMode
-                        if (mode == ConnectionMode.TUNNEL) vpnController.stopVpn() else vpnController.stopProxy()
-                    } catch (e: Exception) {
-                        LogRepository.e("[License] توقف اجباری اتصال ناموفق: ${e.message}")
-                        ConnectionController.markStatus(ConnectionStatus.ERROR)
-                    }
-                    showToast("⛔ اشتراک شما منقضی یا غیرفعال شده است.", true)
-                }
             }
         }
     }
