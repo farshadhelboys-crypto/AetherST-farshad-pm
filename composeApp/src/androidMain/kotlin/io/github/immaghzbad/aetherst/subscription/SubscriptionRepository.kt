@@ -3,6 +3,7 @@ package io.github.immaghzbad.aetherst.subscription
 import android.content.Context
 import android.content.SharedPreferences
 import android.provider.Settings
+import android.util.Log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
@@ -17,6 +18,7 @@ private const val KEY_IS_ACTIVE = "is_active"
 private const val KEY_DEVICE_ID = "device_id"
 private const val KEY_LAST_CHECK = "last_check_time"
 private const val KEY_LICENSE_CODE = "license_code"
+private const val TAG = "SubscriptionRepository"
 
 // بعد از Deploy کردن Cloudflare Worker، فقط این آدرس را با آدرس Worker خودت عوض کن.
 private const val LICENSE_API_URL = "https://REPLACE_WITH_YOUR_WORKER.workers.dev"
@@ -80,6 +82,7 @@ class SubscriptionRepository(private val context: Context) {
             save(r)
             SubscriptionInfo(if (r.active) "paid" else "none", r.expiresAt, r.active && r.expiresAt > r.serverTime)
         } catch (e: Exception) {
+            Log.e(TAG, "Error getting subscription status: ${e.message}", e)
             val exp = prefs.getLong(KEY_EXPIRES_AT, 0L)
             val active = prefs.getBoolean(KEY_IS_ACTIVE, false) && exp > System.currentTimeMillis()
             SubscriptionInfo(if (active) "paid_cached" else "error", exp, active)
@@ -94,11 +97,21 @@ class SubscriptionRepository(private val context: Context) {
             })
             save(r)
             prefs.edit().putString(KEY_LICENSE_CODE, code.trim().uppercase()).apply()
+            Log.d(TAG, "Code activated successfully: ${code.trim().uppercase()}")
             ActivationResult.Success
-        } catch (_: CodeNotFoundException) { ActivationResult.CodeNotFound
-        } catch (_: OtherDeviceException) { ActivationResult.CodeUsedByOtherDevice
-        } catch (_: RevokedException) { ActivationResult.Error("این لایسنس توسط مدیر غیرفعال شده است")
-        } catch (e: Exception) { ActivationResult.Error(e.message ?: "خطا در ارتباط با سرور") }
+        } catch (_: CodeNotFoundException) { 
+            Log.w(TAG, "Code not found: $code")
+            ActivationResult.CodeNotFound
+        } catch (_: OtherDeviceException) { 
+            Log.w(TAG, "Code used by other device: $code")
+            ActivationResult.CodeUsedByOtherDevice
+        } catch (_: RevokedException) { 
+            Log.w(TAG, "Code revoked: $code")
+            ActivationResult.Error("این لایسنس توسط مدیر غیرفعال شده است")
+        } catch (e: Exception) { 
+            Log.e(TAG, "Error activating code: ${e.message}", e)
+            ActivationResult.Error(e.message ?: "خطا در ارتباط با سرور") 
+        }
     }
 
     suspend fun extendSubscription(code: String, currentExpiresAt: Long): ActivationResult = activateCode(code, "")
@@ -109,6 +122,7 @@ class SubscriptionRepository(private val context: Context) {
             save(r)
             SubscriptionInfo(if (r.active) "paid" else "none", r.expiresAt, r.active && r.expiresAt > r.serverTime)
         } catch (e: Exception) {
+            Log.e(TAG, "Error force refreshing status: ${e.message}", e)
             val exp = prefs.getLong(KEY_EXPIRES_AT, 0L)
             SubscriptionInfo("error", exp, false)
         }
@@ -128,7 +142,12 @@ class SubscriptionRepository(private val context: Context) {
     }
 
     private fun save(r: ApiResult) {
-        prefs.edit().putLong(KEY_EXPIRES_AT, r.expiresAt).putBoolean(KEY_IS_ACTIVE, r.active && r.expiresAt > r.serverTime).putLong(KEY_LAST_CHECK, System.currentTimeMillis()).apply()
+        prefs.edit().apply {
+            putLong(KEY_EXPIRES_AT, r.expiresAt)
+            putBoolean(KEY_IS_ACTIVE, r.active && r.expiresAt > r.serverTime)
+            putLong(KEY_LAST_CHECK, System.currentTimeMillis())
+        }.apply()
+        Log.d(TAG, "Subscription data saved: active=${r.active}, expiresAt=${r.expiresAt}")
     }
 
     private suspend fun <T> withNetwork(block: () -> T): T = withContext(Dispatchers.IO) { block() }
@@ -137,6 +156,7 @@ class SubscriptionRepository(private val context: Context) {
         prefs.edit().clear().apply()
         Log.d(TAG, "Subscription cache cleared")
     }
+    
     private class CodeNotFoundException : Exception()
     private class OtherDeviceException : Exception()
     private class RevokedException : Exception()
