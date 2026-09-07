@@ -31,10 +31,13 @@ import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.PowerSettingsNew
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Speed
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -48,6 +51,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -109,372 +113,366 @@ fun DashboardScreenV2(
         connectionStatus == ConnectionStatus.DATAPLANE_VALIDATED ||
         isFariKnightActive
 
+    val pulse by rememberInfiniteTransition(label = "connectPulse").animateFloat(
+        initialValue = 1f,
+        targetValue = if (isRunning || isBusy) 1.08f else 1f,
+        animationSpec = infiniteRepeatable(tween(1200), RepeatMode.Reverse),
+        label = "pulse"
+    )
+
+    val brandShift by rememberInfiniteTransition(label = "brand").animateFloat(
+        initialValue = 0f,
+        targetValue = 1000f,
+        animationSpec = infiniteRepeatable(tween(3500, easing = LinearEasing), RepeatMode.Restart),
+        label = "brandShift"
+    )
+    val glowAlpha by rememberInfiniteTransition(label = "glow").animateFloat(
+        initialValue = 0.35f,
+        targetValue = 0.9f,
+        animationSpec = infiniteRepeatable(tween(1600, easing = LinearEasing), RepeatMode.Reverse),
+        label = "glowAlpha"
+    )
+
     val statusText = when {
         isFariKnightActive && !isRunning -> "فری شوالیه در حال جستجوی بهترین مسیر..."
+        isRunning -> "اتصال امن برقرار است"
+        isBusy -> "در حال برقراری اتصال..."
         connectionStatus == ConnectionStatus.ERROR || connectionStatus == ConnectionStatus.FAILED -> "اتصال ناموفق بود"
-        isBusy && !isRunning -> "در حال برقراری ارتباط..."
-        isRunning -> "متصل"
-        else -> "قطع"
+        else -> "آماده اتصال"
     }
 
     val statusColor = when {
         isFariKnightActive && !isRunning -> Color(0xFFFFB300)
-        connectionStatus == ConnectionStatus.ERROR || connectionStatus == ConnectionStatus.FAILED -> AppPalette.statusError
-        isBusy && !isRunning -> AppPalette.statusScanning
         isRunning -> AppPalette.statusConnected
-        else -> AppPalette.textSecondary
+        connectionStatus == ConnectionStatus.ERROR || connectionStatus == ConnectionStatus.FAILED -> AppPalette.statusError
+        isBusy -> AppPalette.statusScanning
+        else -> AppPalette.accent
     }
 
     fun toggle() {
         if (connectionStatus == ConnectionStatus.STOPPING) onForceStop() else onToggleVpn()
     }
 
-    val infinite = rememberInfiniteTransition(label = "dash")
-    val pulse by infinite.animateFloat(
-        initialValue = 0.92f,
-        targetValue = 1.08f,
-        animationSpec = infiniteRepeatable(tween(1200), RepeatMode.Reverse),
-        label = "pulse"
-    )
-    val glowAlpha by infinite.animateFloat(
-        initialValue = 0.35f,
-        targetValue = 0.9f,
-        animationSpec = infiniteRepeatable(tween(1600, easing = LinearEasing), RepeatMode.Reverse),
-        label = "glow"
-    )
-    val brandShift by infinite.animateFloat(
-        initialValue = 0f,
-        targetValue = 1000f,
-        animationSpec = infiniteRepeatable(tween(3500, easing = LinearEasing), RepeatMode.Restart),
-        label = "brand"
-    )
-
-    val cardBg = Color.White.copy(alpha = 0.05f)
-    val cardShape = RoundedCornerShape(20.dp)
-
-    Column(
-        Modifier
+    Box(
+        modifier = Modifier
             .fillMaxSize()
             .background(
                 Brush.verticalGradient(
-                    listOf(Color(0xFF0B1220), Color(0xFF111827), Color(0xFF0B1220))
+                    listOf(Color(0xFF090A0F), Color(0xFF10131B), Color(0xFF08090D))
                 )
             )
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = 16.dp, vertical = 12.dp)
-            .padding(bottom = bottomContentPadding),
-        verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
-        Row(
-            Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(start = 16.dp, end = 16.dp, top = 22.dp, bottom = bottomContentPadding + 18.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            Column {
-                Text("Feri Pm Tunnel", color = Color.White, fontWeight = FontWeight.ExtraBold, fontSize = 20.sp)
-                Text("نسخه $appVersion", color = AppPalette.textSecondary, fontSize = 11.sp)
-            }
-            Row {
-                IconButton(onClick = { showInfo = true }) {
-                    Icon(Icons.Default.Lock, contentDescription = null, tint = AppPalette.textSecondary)
-                }
-                IconButton(onClick = onOpenSettingsToZeroTrust) {
-                    Icon(Icons.Default.Settings, contentDescription = null, tint = AppPalette.textSecondary)
-                }
-            }
-        }
-
-        // Connect card
-        Box(
-            Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(28.dp))
-                .background(cardBg)
-        ) {
-            Column(
-                Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 22.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+            // Header
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Box(
-                        Modifier
-                            .size((130 * if (isRunning || isBusy) pulse else 1f).dp)
-                            .clip(CircleShape)
-                            .background(statusColor.copy(alpha = 0.25f), CircleShape)
-                            .padding(13.dp)
-                            .border(1.dp, statusColor.copy(alpha = 0.55f), CircleShape)
-                            .padding(18.dp)
-                            .clip(CircleShape)
-                            .background(statusColor.copy(alpha = 0.13f))
-                    )
-                    IconButton(
-                        onClick = { toggle() },
-                        enabled = !isBusy || isRunning,
-                        modifier = Modifier.size(112.dp)
-                    ) {
-                        Box(
-                            Modifier
-                                .fillMaxSize()
-                                .clip(CircleShape)
-                                .background(statusColor),
-                            contentAlignment = Alignment.Center
+                Column(modifier = Modifier.weight(1f)) {
+                    Text("Feri Pm Tunnel", color = Color.White, fontSize = 27.sp, fontWeight = FontWeight.ExtraBold)
+                    Text("تونل سریع، امن و خصوصی", color = AppPalette.textSecondary, fontSize = 12.sp)
+                }
+                Box(
+                    modifier = Modifier
+                        .size(44.dp)
+                        .clip(CircleShape)
+                        .background(Color.White.copy(alpha = 0.07f))
+                        .clickable { showInfo = true },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(Icons.Default.Settings, contentDescription = null, tint = Color.White, modifier = Modifier.size(21.dp))
+                }
+            }
+
+            // Connection hero
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(30.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.Transparent)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(
+                            Brush.radialGradient(
+                                colors = listOf(statusColor.copy(alpha = 0.24f), Color(0xFF141720), Color(0xFF11131A))
+                            )
+                        )
+                        .padding(vertical = 22.dp, horizontal = 18.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(statusText, color = statusColor, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                        Spacer(modifier = Modifier.height(18.dp))
+                        Box(contentAlignment = Alignment.Center, modifier = Modifier.size(190.dp)) {
+                            Box(
+                                modifier = Modifier
+                                    .size(170.dp)
+                                    .scale(pulse)
+                                    .border(1.dp, statusColor.copy(alpha = 0.25f), CircleShape)
+                                    .padding(13.dp)
+                                    .border(1.dp, statusColor.copy(alpha = 0.55f), CircleShape)
+                                    .padding(18.dp)
+                                    .clip(CircleShape)
+                                    .background(statusColor.copy(alpha = 0.13f))
+                            )
+                            IconButton(
+                                onClick = { toggle() },
+                                enabled = !isBusy || isRunning,
+                                modifier = Modifier.size(112.dp)
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .clip(CircleShape)
+                                        .background(statusColor),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    if (isBusy && !isRunning) {
+                                        CircularProgressIndicator(
+                                            color = Color.White,
+                                            strokeWidth = 3.dp,
+                                            modifier = Modifier.size(32.dp)
+                                        )
+                                    } else {
+                                        Icon(
+                                            Icons.Default.PowerSettingsNew,
+                                            contentDescription = null,
+                                            tint = Color.White,
+                                            modifier = Modifier.size(40.dp)
+                                        )
+                                    }
+                                }
+                            }
+                        }
+
+                        // farshad pm special effect
+                        Spacer(modifier = Modifier.height(8.dp))
+                        val brandBrush = Brush.linearGradient(
+                            colors = listOf(
+                                Color(0xFF60A5FA),
+                                Color(0xFFA78BFA),
+                                Color(0xFFF472B6),
+                                Color(0xFF60A5FA)
+                            ),
+                            start = Offset(brandShift, 0f),
+                            end = Offset(brandShift + 200f, 80f)
+                        )
+                        Text(
+                            text = "farshad pm",
+                            style = TextStyle(
+                                brush = brandBrush,
+                                fontSize = 22.sp,
+                                fontWeight = FontWeight.Black,
+                                shadow = Shadow(
+                                    color = Color(0xFF8B5CF6).copy(alpha = glowAlpha),
+                                    offset = Offset(0f, 0f),
+                                    blurRadius = 18f
+                                )
+                            ),
+                            modifier = Modifier.alpha(0.95f)
+                        )
+
+                        Spacer(modifier = Modifier.height(10.dp))
+                        Text(
+                            if (isRunning) formatDuration(elapsedSeconds) else "برای شروع، دکمه اتصال را بزنید",
+                            color = Color.White,
+                            fontSize = if (isRunning) 22.sp else 13.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+
+                        Spacer(modifier = Modifier.height(14.dp))
+
+                        // فری شوالیه
+                        Button(
+                            onClick = onFariKnight,
+                            enabled = !isRunning || isFariKnightActive,
+                            shape = RoundedCornerShape(16.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = if (isFariKnightActive) Color(0xFFFFB300) else Color(0xFF7C3AED),
+                                contentColor = Color.White,
+                                disabledContainerColor = Color(0xFF7C3AED).copy(alpha = 0.35f)
+                            ),
+                            modifier = Modifier
+                                .fillMaxWidth(0.88f)
+                                .height(46.dp)
                         ) {
-                            if (isBusy && !isRunning) {
+                            Icon(Icons.Default.AutoAwesome, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                if (isFariKnightActive) "توقف فری شوالیه" else "فری شوالیه",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 14.sp
+                            )
+                        }
+                        Text(
+                            "اگر وصل نشد، همه پروتکل‌ها را مرحله‌به‌مرحله امتحان می‌کند",
+                            color = AppPalette.textSecondary,
+                            fontSize = 10.sp,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.padding(top = 6.dp, start = 12.dp, end = 12.dp)
+                        )
+                    }
+                }
+            }
+
+            // Quick stats: total + speed
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                StatCard(
+                    title = "دانلود",
+                    value = formatTrafficBytes(sessionTraffic.downloadedBytes),
+                    subtitle = formatRate(sessionTraffic.downloadSpeedBps),
+                    icon = Icons.Default.Speed,
+                    modifier = Modifier.weight(1f)
+                )
+                StatCard(
+                    title = "آپلود",
+                    value = formatTrafficBytes(sessionTraffic.uploadedBytes),
+                    subtitle = formatRate(sessionTraffic.uploadSpeedBps),
+                    icon = Icons.Default.Language,
+                    modifier = Modifier.weight(1f)
+                )
+                StatCard(
+                    title = "پینگ",
+                    value = if (pingState.ms >= 0) "${pingState.ms} ms" else "—",
+                    subtitle = "تأخیر",
+                    icon = Icons.Default.Speed,
+                    modifier = Modifier.weight(1f)
+                )
+            }
+
+            if (!isDesktop) {
+                PlatformSubscriptionCard()
+            }
+
+            // Network information
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(22.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.055f))
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(
+                                modifier = Modifier
+                                    .size(38.dp)
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(AppPalette.accent.copy(alpha = 0.16f)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                if (ipInfo.flagEmoji.isNotBlank()) {
+                                    Text(ipInfo.flagEmoji, fontSize = 18.sp)
+                                } else {
+                                    Icon(
+                                        Icons.Default.Language,
+                                        contentDescription = null,
+                                        tint = AppPalette.accent,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
+                            }
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Column {
+                                Text("شبکه فعلی", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                                Text(
+                                    when {
+                                        ipInfo.isLoading -> "در حال دریافت موقعیت..."
+                                        ipInfo.country.isNotBlank() -> ipInfo.country
+                                        else -> "اطلاعات شبکه"
+                                    },
+                                    color = AppPalette.textSecondary,
+                                    fontSize = 11.sp
+                                )
+                            }
+                        }
+                        IconButton(onClick = onRefreshIpInfo) {
+                            if (ipInfo.isLoading) {
                                 CircularProgressIndicator(
-                                    color = Color.White,
-                                    strokeWidth = 3.dp,
-                                    modifier = Modifier.size(32.dp)
+                                    color = AppPalette.accent,
+                                    strokeWidth = 2.dp,
+                                    modifier = Modifier.size(16.dp)
                                 )
                             } else {
-                                Icon(
-                                    Icons.Default.PowerSettingsNew,
-                                    contentDescription = null,
-                                    tint = Color.White,
-                                    modifier = Modifier.size(40.dp)
-                                )
+                                Icon(Icons.Default.Refresh, contentDescription = null, tint = AppPalette.textSecondary)
                             }
                         }
                     }
+                    InfoRow(
+                        title = "IP",
+                        value = if (ipInfo.ip.isNotBlank()) ipInfo.ip else "—",
+                        onCopy = { if (ipInfo.ip.isNotBlank()) onCopy(ipInfo.ip) }
+                    )
+                    InfoRow(
+                        title = "کشور",
+                        value = when {
+                            ipInfo.country.isNotBlank() && ipInfo.countryCode.isNotBlank() ->
+                                "${ipInfo.country} (${ipInfo.countryCode})"
+                            ipInfo.country.isNotBlank() -> ipInfo.country
+                            ipInfo.error != null -> ipInfo.error ?: "خطا"
+                            else -> "—"
+                        },
+                        onCopy = null
+                    )
+                    InfoRow(
+                        title = "پروتکل",
+                        value = config.protocol.displayName,
+                        onCopy = null
+                    )
                 }
+            }
 
-                Spacer(Modifier = Modifier.height(10.dp))
-
-                val brandBrush = Brush.linearGradient(
-                    colors = listOf(
-                        Color(0xFF60A5FA),
-                        Color(0xFFA78BFA),
-                        Color(0xFFF472B6),
-                        Color(0xFF60A5FA)
-                    ),
-                    start = Offset(brandShift, 0f),
-                    end = Offset(brandShift + 200f, 80f)
-                )
-                Text(
-                    text = "farshad pm",
-                    style = TextStyle(
-                        brush = brandBrush,
-                        fontSize = 22.sp,
-                        fontWeight = FontWeight.Black,
-                        shadow = Shadow(
-                            color = Color(0xFF8B5CF6).copy(alpha = glowAlpha),
-                            offset = Offset(0f, 0f),
-                            blurRadius = 18f
-                        )
-                    ),
-                    modifier = Modifier.alpha(0.95f)
-                )
-
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    if (isRunning) formatDuration(elapsedSeconds) else "برای شروع، دکمه اتصال را بزنید",
-                    color = Color.White,
-                    fontSize = if (isRunning) 22.sp else 13.sp,
-                    fontWeight = FontWeight.Bold
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(statusText, color = statusColor, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
-
-                Spacer(modifier = Modifier.height(14.dp))
-
-                Button(
-                    onClick = onFariKnight,
-                    enabled = !isRunning || isFariKnightActive,
-                    shape = RoundedCornerShape(16.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = if (isFariKnightActive) Color(0xFFFFB300) else Color(0xFF7C3AED),
-                        contentColor = Color.White,
-                        disabledContainerColor = Color(0xFF7C3AED).copy(alpha = 0.35f)
-                    ),
-                    modifier = Modifier
-                        .fillMaxWidth(0.86f)
-                        .height(46.dp)
-                ) {
-                    Icon(Icons.Default.AutoAwesome, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Spacer(modifier = Modifier.width(8.dp))
+            // Protection strip
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(18.dp))
+                    .background(Color.White.copy(alpha = 0.045f))
+                    .padding(14.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(Icons.Default.Security, contentDescription = null, tint = statusColor, modifier = Modifier.size(21.dp))
+                Spacer(modifier = Modifier.width(10.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text("محافظت اتصال", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp)
                     Text(
-                        if (isFariKnightActive) "توقف فری شوالیه" else "فری شوالیه",
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 14.sp
+                        if (isRunning) "ترافیک از تونل عبور می‌کند" else "پس از اتصال فعال می‌شود",
+                        color = AppPalette.textSecondary,
+                        fontSize = 10.sp
                     )
                 }
                 Text(
-                    "اگر وصل نشد، همه پروتکل‌ها را مرحله‌به‌مرحله امتحان می‌کند",
-                    color = AppPalette.textSecondary,
-                    fontSize = 10.sp,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(top = 6.dp, start = 16.dp, end = 16.dp)
+                    if (isRunning) "فعال" else "آماده",
+                    color = statusColor,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 11.sp
                 )
             }
-        }
 
-        Row(
-            Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-            StatCard(
-                title = "دانلود",
-                value = formatTrafficBytes(sessionTraffic.downloadedBytes),
-                subtitle = formatRate(sessionTraffic.downloadSpeedBps),
-                icon = Icons.Default.Speed,
-                modifier = Modifier.weight(1f)
+            Text(
+                "نسخه $appVersion",
+                color = AppPalette.textSecondary,
+                fontSize = 10.sp,
+                modifier = Modifier.fillMaxWidth(),
+                textAlign = TextAlign.Center
             )
-            StatCard(
-                title = "آپلود",
-                value = formatTrafficBytes(sessionTraffic.uploadedBytes),
-                subtitle = formatRate(sessionTraffic.uploadSpeedBps),
-                icon = Icons.Default.Language,
-                modifier = Modifier.weight(1f)
-            )
-            StatCard(
-                title = "پینگ",
-                value = if (pingState.ms >= 0) "${pingState.ms} ms" else "—",
-                subtitle = "تأخیر",
-                icon = Icons.Default.Speed,
-                modifier = Modifier.weight(1f)
-            )
-        }
-
-        if (!isDesktop) {
-            PlatformSubscriptionCard()
-        }
-
-        // Network info panel (Box instead of Card)
-        Box(
-            Modifier
-                .fillMaxWidth()
-                .clip(cardShape)
-                .background(cardBg)
-        ) {
-            Column(
-                Modifier.padding(14.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Row(
-                    Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        if (ipInfo.flagEmoji.isNotBlank()) {
-                            Text(ipInfo.flagEmoji, fontSize = 18.sp)
-                            Spacer(modifier = Modifier.width(8.dp))
-                        } else {
-                            Icon(
-                                Icons.Default.Language,
-                                contentDescription = null,
-                                tint = AppPalette.accent,
-                                modifier = Modifier.size(18.dp)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                        }
-                        Column {
-                            Text(
-                                when {
-                                    ipInfo.isLoading -> "در حال دریافت موقعیت..."
-                                    ipInfo.country.isNotBlank() -> ipInfo.country
-                                    else -> "اطلاعات شبکه"
-                                },
-                                color = AppPalette.textSecondary,
-                                fontSize = 11.sp
-                            )
-                            if (ipInfo.countryCode.isNotBlank()) {
-                                Text(
-                                    ipInfo.countryCode,
-                                    color = Color.White.copy(alpha = 0.7f),
-                                    fontSize = 10.sp
-                                )
-                            }
-                        }
-                    }
-                    IconButton(onClick = onRefreshIpInfo) {
-                        if (ipInfo.isLoading) {
-                            CircularProgressIndicator(
-                                color = AppPalette.accent,
-                                strokeWidth = 2.dp,
-                                modifier = Modifier.size(16.dp)
-                            )
-                        } else {
-                            Icon(
-                                Icons.Default.Refresh,
-                                contentDescription = null,
-                                tint = AppPalette.textSecondary
-                            )
-                        }
-                    }
-                }
-                InfoRow(
-                    title = "IP",
-                    value = if (ipInfo.ip.isNotBlank()) ipInfo.ip else "—",
-                    onCopy = { if (ipInfo.ip.isNotBlank()) onCopy(ipInfo.ip) }
-                )
-                InfoRow(
-                    title = "کشور",
-                    value = when {
-                        ipInfo.country.isNotBlank() && ipInfo.countryCode.isNotBlank() ->
-                            "${ipInfo.country} (${ipInfo.countryCode})"
-                        ipInfo.country.isNotBlank() -> ipInfo.country
-                        ipInfo.error != null -> ipInfo.error ?: "خطا"
-                        else -> "—"
-                    },
-                    onCopy = null
-                )
-                InfoRow(
-                    title = "پروتکل",
-                    value = config.protocol.displayName,
-                    onCopy = null
-                )
-            }
-        }
-
-        // Protocol chips panel
-        Box(
-            Modifier
-                .fillMaxWidth()
-                .clip(cardShape)
-                .background(cardBg)
-        ) {
-            Column(
-                Modifier.padding(14.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                Text("پروتکل فعال", color = AppPalette.textSecondary, fontSize = 11.sp)
-                Row(
-                    Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    val protocols = AetherProtocol.entries.filter { it != AetherProtocol.ZERO_TRUST }
-                    protocols.forEach { proto ->
-                        val selected = config.protocol == proto
-                        Box(
-                            Modifier
-                                .weight(1f)
-                                .clip(RoundedCornerShape(12.dp))
-                                .background(
-                                    if (selected) AppPalette.accent.copy(alpha = 0.25f)
-                                    else Color.White.copy(alpha = 0.06f)
-                                )
-                                .border(
-                                    width = if (selected) 1.dp else 0.dp,
-                                    color = if (selected) AppPalette.accent else Color.Transparent,
-                                    shape = RoundedCornerShape(12.dp)
-                                )
-                                .clickable(enabled = !isBusy) { onUpdateProtocol(proto) }
-                                .padding(vertical = 10.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                proto.displayName,
-                                color = if (selected) Color.White else AppPalette.textSecondary,
-                                fontSize = 11.sp,
-                                fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
-                                textAlign = TextAlign.Center
-                            )
-                        }
-                    }
-                }
-            }
         }
     }
 
@@ -483,40 +481,20 @@ fun DashboardScreenV2(
             onDismissRequest = { showInfo = false },
             properties = DialogProperties(usePlatformDefaultWidth = false)
         ) {
-            Box(
-                Modifier
-                    .fillMaxWidth(0.9f)
-                    .clip(RoundedCornerShape(24.dp))
-                    .background(Color(0xFF111827))
+            Card(
+                modifier = Modifier.fillMaxWidth(0.9f),
+                shape = RoundedCornerShape(24.dp),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFF171A22))
             ) {
                 Column(
-                    Modifier.padding(22.dp),
+                    modifier = Modifier.padding(22.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Icon(
-                        Icons.Default.Lock,
-                        contentDescription = null,
-                        tint = AppPalette.accent,
-                        modifier = Modifier.size(32.dp)
-                    )
+                    Icon(Icons.Default.Lock, contentDescription = null, tint = AppPalette.accent, modifier = Modifier.size(32.dp))
                     Spacer(modifier = Modifier.height(10.dp))
-                    Text(
-                        "Feri Pm Tunnel",
-                        color = Color.White,
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.ExtraBold
-                    )
-                    Text(
-                        "farshad pm",
-                        color = AppPalette.accent,
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Text(
-                        "پنل جدید و ساده‌شده",
-                        color = AppPalette.textSecondary,
-                        fontSize = 12.sp
-                    )
+                    Text("Feri Pm Tunnel", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.ExtraBold)
+                    Text("farshad pm", color = AppPalette.accent, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                    Text("پنل جدید و ساده‌شده", color = AppPalette.textSecondary, fontSize = 12.sp)
                     Spacer(modifier = Modifier.height(18.dp))
                     Button(
                         onClick = { showInfo = false },
@@ -539,13 +517,13 @@ private fun StatCard(
     icon: ImageVector,
     modifier: Modifier = Modifier
 ) {
-    Box(
-        modifier
-            .clip(RoundedCornerShape(18.dp))
-            .background(Color.White.copy(alpha = 0.055f))
+    Card(
+        modifier = modifier,
+        shape = RoundedCornerShape(18.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.055f))
     ) {
         Column(
-            Modifier.padding(12.dp),
+            modifier = Modifier.padding(12.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Icon(icon, contentDescription = null, tint = AppPalette.accent, modifier = Modifier.size(18.dp))
@@ -578,7 +556,7 @@ private fun InfoRow(
     onCopy: (() -> Unit)?
 ) {
     Row(
-        Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
