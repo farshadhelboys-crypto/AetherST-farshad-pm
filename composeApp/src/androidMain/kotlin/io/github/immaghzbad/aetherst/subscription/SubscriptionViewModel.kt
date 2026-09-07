@@ -173,6 +173,80 @@ class SubscriptionViewModel(application: Application) : AndroidViewModel(applica
         }
     }
 
+    fun extendSubscription(code: String) {
+        val trimmedCode = code.trim().uppercase()
+        if (trimmedCode.length < 8) {
+            _activationMessage.value = "⚠️ کد باید حداقل ۸ کاراکتر باشد"
+            return
+        }
+
+        viewModelScope.launch {
+            _isLoading.value = true
+            _activationMessage.value = "🔄 در حال تمدید اشتراک..."
+
+            try {
+                val currentExpires = _subscriptionInfo.value?.expiresAtMillis ?: 0L
+                val result = repository.extendSubscription(trimmedCode, currentExpires)
+
+                when (result) {
+                    is ActivationResult.Success -> {
+                        _activationMessage.value = "✅ اشتراک با موفقیت تمدید شد! 🎉"
+                        var attempts = 0
+                        var statusUpdated = false
+                        while (attempts < 3 && !statusUpdated) {
+                            try {
+                                delay(500)
+                                val status = repository.forceRefreshStatus()
+                                _subscriptionInfo.value = status
+                                _isConnectionAllowed.value = status.isActive
+                                if (status.isActive) {
+                                    statusUpdated = true
+                                    Log.d(TAG, "Status updated after extend!")
+                                }
+                            } catch (e: Exception) {
+                                Log.e(TAG, "Update attempt $attempts failed", e)
+                            }
+                            attempts++
+                        }
+                        delay(1500)
+                        _activationMessage.value = null
+                        _isLoading.value = false
+                    }
+                    is ActivationResult.CodeNotFound -> {
+                        _activationMessage.value = "❌ کد تمدید نامعتبر است"
+                        delay(2000)
+                        _activationMessage.value = null
+                        _isLoading.value = false
+                    }
+                    is ActivationResult.CodeUsedByOtherDevice -> {
+                        _activationMessage.value = "🚫 این کد توسط دستگاه دیگری استفاده می‌شود"
+                        delay(2000)
+                        _activationMessage.value = null
+                        _isLoading.value = false
+                    }
+                    is ActivationResult.Error -> {
+                        _activationMessage.value = "❌ خطا: ${result.message}"
+                        delay(2000)
+                        _activationMessage.value = null
+                        _isLoading.value = false
+                    }
+                    else -> {
+                        _activationMessage.value = "❌ خطای ناشناخته"
+                        delay(2000)
+                        _activationMessage.value = null
+                        _isLoading.value = false
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error extending: ${e.message}", e)
+                _activationMessage.value = "❌ خطا در تمدید: ${e.message}"
+                delay(2000)
+                _activationMessage.value = null
+                _isLoading.value = false
+            }
+        }
+    }
+
     fun checkConnectionWithRetry(
         maxAttempts: Int = 5,
         delayMs: Long = 3000,
