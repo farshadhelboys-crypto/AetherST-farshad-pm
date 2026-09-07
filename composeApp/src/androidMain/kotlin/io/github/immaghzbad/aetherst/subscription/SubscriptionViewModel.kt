@@ -97,7 +97,8 @@ class SubscriptionViewModel(application: Application) : AndroidViewModel(applica
         viewModelScope.launch {
             _isLoading.value = true
             _activationMessage.value = "🔄 در حال بررسی کد..."
-
+        // قبل از try، این خط رو اضافه کن:
+        Log.d("SubscriptionVM", "Activating code: $code")
             try {
                 val result = repository.activateCode(trimmedCode, telegramId.trim())
 
