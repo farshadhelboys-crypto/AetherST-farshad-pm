@@ -478,10 +478,23 @@ class ConnectionController private constructor(context: Context) {
 
     fun setTraffic(tx: Long, rx: Long) {
         if (tx > lastManualTx || rx > lastManualRx || (tx == 0L && rx == 0L && !isManualTraffic)) {
+            val nowNanos = System.nanoTime()
+            val dt = if (lastStatsTimeNanos > 0L) {
+                ((nowNanos - lastStatsTimeNanos) / 1_000_000_000.0).coerceAtLeast(0.001)
+            } else {
+                1.0
+            }
+            val deltaTx = (tx - lastManualTx).coerceAtLeast(0L)
+            val deltaRx = (rx - lastManualRx).coerceAtLeast(0L)
+            val txSpeed = if (lastStatsTimeNanos > 0L) deltaTx / dt else 0.0
+            val rxSpeed = if (lastStatsTimeNanos > 0L) deltaRx / dt else 0.0
+
             isManualTraffic = true
             lastManualTx = tx.coerceAtLeast(lastManualTx)
             lastManualRx = rx.coerceAtLeast(lastManualRx)
-            val traffic = SessionTraffic(lastManualTx, lastManualRx)
+            lastStatsTimeNanos = nowNanos
+
+            val traffic = SessionTraffic(lastManualTx, lastManualRx, txSpeed, rxSpeed)
             _sessionTraffic.value = traffic
             Bridge.trafficOverride.value = traffic
         }
