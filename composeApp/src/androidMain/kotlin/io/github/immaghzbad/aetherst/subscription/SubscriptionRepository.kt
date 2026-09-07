@@ -21,7 +21,7 @@ private const val KEY_LICENSE_CODE = "license_code"
 private const val TAG = "SubscriptionRepository"
 
 // بعد از Deploy کردن Cloudflare Worker، فقط این آدرس را با آدرس Worker خودت عوض کن.
-private const val LICENSE_API_URL = "https://REPLACE_WITH_YOUR_WORKER.workers.dev"
+private const val LICENSE_API_URL = "https://aetherst-license-api.farshadhelboys.workers.dev"
 
 private data class ApiResult(val active: Boolean, val expiresAt: Long, val serverTime: Long)
 
