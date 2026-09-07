@@ -101,3 +101,4 @@ roborazzi = { id = "io.github.takahirom.roborazzi", version.ref = "roborazzi" }
 jetbrains-compose = { id = "org.jetbrains.compose", version.ref = "jetbrainsCompose" }
 kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
