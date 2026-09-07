@@ -109,9 +109,16 @@ class SubscriptionRepository(private val context: Context) {
             val isActive = r.active && r.expiresAt > r.serverTime
             SubscriptionInfo(if (r.active) "paid" else "none", r.expiresAt, isActive)
         } catch (e: Exception) {
-            Log.e(TAG, "Error getting subscription status: ${e.message}", e)
-            // ❌ کش رو حذف کردیم - همیشه false برگردون
-            SubscriptionInfo("error", 0L, false)
+            Log.e(TAG, "Error getting subscription status, using cache: ${e.message}", e)
+            val expiresAt = prefs.getLong(KEY_EXPIRES_AT, 0L)
+            val isActive = prefs.getBoolean(KEY_IS_ACTIVE, false)
+            val lastCheck = prefs.getLong(KEY_LAST_CHECK, 0L)
+            val cacheValid = System.currentTimeMillis() - lastCheck < 24 * 60 * 60 * 1000L
+            if (isActive && expiresAt > System.currentTimeMillis() && cacheValid) {
+                SubscriptionInfo("paid", expiresAt, true)
+            } else {
+                SubscriptionInfo("error", 0L, false)
+            }
         }
     }
 
@@ -159,11 +166,8 @@ class SubscriptionRepository(private val context: Context) {
     }
 
     /**
-     * ✅ استراتژی نهایی: فقط و فقط سرور
-     * - اگر سرور جواب داد و فعال بود → true
-     * - اگر سرور جواب داد و غیرفعال بود → false
-     * - اگر سرور جواب نداد (خطا) → false
-     * - هیچ کشی استفاده نمیشه
+     * استراتژی: اول سرور، در صورت خطای شبکه از کش محلی با اعتبار زمانی استفاده کن.
+     * این از قطع شدن لایسنس به خاطر قطع موقت اینترنت یا خطای worker جلوگیری می‌کند.
      */
     suspend fun isConnectionAllowed(): Boolean = withContext(Dispatchers.IO) {
         try {
@@ -173,9 +177,15 @@ class SubscriptionRepository(private val context: Context) {
             Log.d(TAG, "Connection allowed (server): $allowed")
             allowed
         } catch (e: Exception) {
-            Log.e(TAG, "Server unreachable - connection denied: ${e.message}")
-            // ❌ هیچ کشی استفاده نمیشه - همیشه false
-            false
+            Log.e(TAG, "Server unreachable - falling back to cache: ${e.message}")
+            val expiresAt = prefs.getLong(KEY_EXPIRES_AT, 0L)
+            val isActive = prefs.getBoolean(KEY_IS_ACTIVE, false)
+            val lastCheck = prefs.getLong(KEY_LAST_CHECK, 0L)
+            // اعتبار کش تا 24 ساعت بعد از آخرین چک موفق
+            val cacheValid = System.currentTimeMillis() - lastCheck < 24 * 60 * 60 * 1000L
+            val allowed = isActive && expiresAt > System.currentTimeMillis() && cacheValid
+            Log.d(TAG, "Connection allowed (cache): $allowed (active=$isActive, expires=$expiresAt, cacheValid=$cacheValid)")
+            allowed
         }
     }
 
