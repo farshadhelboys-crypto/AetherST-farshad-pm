@@ -173,7 +173,6 @@ class SubscriptionViewModel(application: Application) : AndroidViewModel(applica
         }
     }
 
-    // ✅ تابع جدید برای بررسی اتصال با Retry
     fun checkConnectionWithRetry(
         maxAttempts: Int = 5,
         delayMs: Long = 3000,
