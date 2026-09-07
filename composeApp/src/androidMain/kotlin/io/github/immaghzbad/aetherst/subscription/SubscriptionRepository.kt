@@ -5,6 +5,7 @@ import android.content.SharedPreferences
 import android.provider.Settings
 import android.util.Log
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
 import java.io.BufferedReader
@@ -20,7 +21,7 @@ private const val KEY_LAST_CHECK = "last_check_time"
 private const val KEY_LICENSE_CODE = "license_code"
 private const val TAG = "SubscriptionRepository"
 
-// آدرس Worker جدید
+// ✅ آدرس Worker خودت
 private const val LICENSE_API_URL = "https://aetherst-license-api.farshadhelboys.workers.dev"
 
 private data class ApiResult(val active: Boolean, val expiresAt: Long, val serverTime: Long)
@@ -79,7 +80,6 @@ class SubscriptionRepository(private val context: Context) {
             
             val json = JSONObject(text.ifBlank { "{}" })
             
-            // مدیریت خطاها
             when {
                 code == 404 && json.optString("error") == "code_not_found" -> throw CodeNotFoundException()
                 code == 409 && json.optString("error") == "code_used_by_other_device" -> throw OtherDeviceException()
@@ -88,7 +88,6 @@ class SubscriptionRepository(private val context: Context) {
                 code !in 200..299 -> throw Exception(json.optString("error", "HTTP $code"))
             }
             
-            // خواندن از پاسخ Worker
             val active = json.optBoolean("active", false)
             val expiresAt = json.optLong("expiresAt", 0L)
             val serverTime = json.optLong("serverTime", System.currentTimeMillis())
@@ -113,9 +112,8 @@ class SubscriptionRepository(private val context: Context) {
             SubscriptionInfo(if (r.active) "paid" else "none", r.expiresAt, isActive)
         } catch (e: Exception) {
             Log.e(TAG, "Error getting subscription status: ${e.message}", e)
-            val exp = prefs.getLong(KEY_EXPIRES_AT, 0L)
-            val active = prefs.getBoolean(KEY_IS_ACTIVE, false) && exp > System.currentTimeMillis()
-            SubscriptionInfo(if (active) "paid_cached" else "error", exp, active)
+            // ❌ کش رو کاملاً حذف کردیم
+            SubscriptionInfo("error", 0L, false)
         }
     }
 
@@ -158,27 +156,33 @@ class SubscriptionRepository(private val context: Context) {
             SubscriptionInfo(if (r.active) "paid" else "none", r.expiresAt, isActive)
         } catch (e: Exception) {
             Log.e(TAG, "Error force refreshing status: ${e.message}", e)
-            val exp = prefs.getLong(KEY_EXPIRES_AT, 0L)
-            SubscriptionInfo("error", exp, false)
+            SubscriptionInfo("error", 0L, false)
         }
     }
 
+    /**
+     * ✅ استراتژی نهایی:
+     * - فقط و فقط به سرور اعتماد کن
+     * - هیچ کشی معتبر نیست
+     * - اگه سرور جواب نده → قطع کن
+     */
     suspend fun isConnectionAllowed(): Boolean = withContext(Dispatchers.IO) {
         try {
             val r = statusFromServer()
             save(r)
-            val allowed = r.active && r.expiresAt > r.serverTime
-            Log.d(TAG, "Connection allowed: $allowed")
-            allowed
-        } catch (_: Exception) {
-            val exp = prefs.getLong(KEY_EXPIRES_AT, 0L)
-            val last = prefs.getLong(KEY_LAST_CHECK, 0L)
-            // فقط 24 ساعت Grace برای قطعی موقت اینترنت
-            val allowed = prefs.getBoolean(KEY_IS_ACTIVE, false) && 
-                          exp > System.currentTimeMillis() && 
-                          System.currentTimeMillis() - last <= 86_400_000L
-            Log.d(TAG, "Connection allowed (cached): $allowed")
-            allowed
+            val serverResult = r.active && r.expiresAt > r.serverTime
+            Log.d(TAG, "Server check: active=$serverResult")
+            
+            if (serverResult) {
+                return@withContext true
+            } else {
+                Log.w(TAG, "Server says inactive - disconnecting")
+                clearCache()
+                return@withContext false
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Server unreachable - disconnecting: ${e.message}")
+            return@withContext false
         }
     }
 
@@ -196,7 +200,6 @@ class SubscriptionRepository(private val context: Context) {
         Log.d(TAG, "Subscription cache cleared")
     }
     
-    // Exception classes
     private class CodeNotFoundException : Exception()
     private class OtherDeviceException : Exception()
     private class RevokedException : Exception()
