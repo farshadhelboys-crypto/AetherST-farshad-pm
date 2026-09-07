@@ -20,7 +20,7 @@ private const val KEY_LAST_CHECK = "last_check_time"
 private const val KEY_LICENSE_CODE = "license_code"
 private const val TAG = "SubscriptionRepository"
 
-// بعد از Deploy کردن Cloudflare Worker، فقط این آدرس را با آدرس Worker خودت عوض کن.
+// آدرس Worker جدید
 private const val LICENSE_API_URL = "https://aetherst-license-api.farshadhelboys.workers.dev"
 
 private data class ApiResult(val active: Boolean, val expiresAt: Long, val serverTime: Long)
@@ -45,42 +45,72 @@ class SubscriptionRepository(private val context: Context) {
         if (cached != null) return cached
         val id = Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID) ?: "unknown_device"
         prefs.edit().putString(KEY_DEVICE_ID, id).apply()
+        Log.d(TAG, "Device ID: $id")
         return id
     }
 
-    private suspend fun request(method: String, endpoint: String, body: JSONObject? = null): ApiResult = withNetwork {
-        val conn = (URL(LICENSE_API_URL.trimEnd('/') + endpoint).openConnection() as HttpURLConnection)
-        conn.requestMethod = method
-        conn.connectTimeout = 12000
-        conn.readTimeout = 12000
-        conn.useCaches = false
-        conn.setRequestProperty("Cache-Control", "no-cache, no-store")
-        conn.setRequestProperty("Accept", "application/json")
-        if (body != null) {
-            conn.doOutput = true
-            conn.setRequestProperty("Content-Type", "application/json")
-            conn.outputStream.use { it.write(body.toString().toByteArray(Charsets.UTF_8)) }
+    private suspend fun request(method: String, endpoint: String, body: JSONObject? = null): ApiResult = withContext(Dispatchers.IO) {
+        try {
+            val url = URL(LICENSE_API_URL.trimEnd('/') + endpoint)
+            Log.d(TAG, "Request: $method $url")
+            
+            val conn = url.openConnection() as HttpURLConnection
+            conn.requestMethod = method
+            conn.connectTimeout = 12000
+            conn.readTimeout = 12000
+            conn.useCaches = false
+            conn.setRequestProperty("Cache-Control", "no-cache, no-store")
+            conn.setRequestProperty("Accept", "application/json")
+            
+            if (body != null) {
+                conn.doOutput = true
+                conn.setRequestProperty("Content-Type", "application/json")
+                conn.outputStream.use { it.write(body.toString().toByteArray(Charsets.UTF_8)) }
+                Log.d(TAG, "Request Body: ${body.toString()}")
+            }
+            
+            val code = conn.responseCode
+            val stream = if (code in 200..299) conn.inputStream else conn.errorStream
+            val text = BufferedReader(InputStreamReader(stream)).use { it.readText() }
+            conn.disconnect()
+            
+            Log.d(TAG, "Response Code: $code")
+            Log.d(TAG, "Response Body: $text")
+            
+            val json = JSONObject(text.ifBlank { "{}" })
+            
+            // مدیریت خطاها
+            when {
+                code == 404 && json.optString("error") == "code_not_found" -> throw CodeNotFoundException()
+                code == 409 && json.optString("error") == "code_used_by_other_device" -> throw OtherDeviceException()
+                code == 403 && json.optString("error") == "license_revoked" -> throw RevokedException()
+                code == 401 -> throw UnauthorizedException()
+                code !in 200..299 -> throw Exception(json.optString("error", "HTTP $code"))
+            }
+            
+            // خواندن از پاسخ Worker
+            val active = json.optBoolean("active", false)
+            val expiresAt = json.optLong("expiresAt", 0L)
+            val serverTime = json.optLong("serverTime", System.currentTimeMillis())
+            
+            ApiResult(active, expiresAt, serverTime)
+        } catch (e: Exception) {
+            Log.e(TAG, "Request error: ${e.message}", e)
+            throw e
         }
-        val code = conn.responseCode
-        val stream = if (code in 200..299) conn.inputStream else conn.errorStream
-        val text = BufferedReader(InputStreamReader(stream)).use { it.readText() }
-        conn.disconnect()
-        val json = JSONObject(text.ifBlank { "{}" })
-        if (code == 404 && json.optString("error") == "code_not_found") throw CodeNotFoundException()
-        if (code == 409 && json.optString("error") == "code_used_by_other_device") throw OtherDeviceException()
-        if (code == 403 && json.optString("error") == "license_revoked") throw RevokedException()
-        if (code !in 200..299) throw Exception(json.optString("error", "HTTP $code"))
-        ApiResult(json.optBoolean("active", false), json.optLong("expiresAt", 0L), json.optLong("serverTime", System.currentTimeMillis()))
     }
 
-    private suspend fun statusFromServer(): ApiResult =
-        request("GET", "/v1/status?deviceId=${java.net.URLEncoder.encode(getDeviceId(), "UTF-8")}")
+    private suspend fun statusFromServer(): ApiResult {
+        val deviceId = getDeviceId()
+        return request("GET", "/v1/status?deviceId=${java.net.URLEncoder.encode(deviceId, "UTF-8")}")
+    }
 
     suspend fun getSubscriptionStatus(): SubscriptionInfo = withContext(Dispatchers.IO) {
         try {
             val r = statusFromServer()
             save(r)
-            SubscriptionInfo(if (r.active) "paid" else "none", r.expiresAt, r.active && r.expiresAt > r.serverTime)
+            val isActive = r.active && r.expiresAt > r.serverTime
+            SubscriptionInfo(if (r.active) "paid" else "none", r.expiresAt, isActive)
         } catch (e: Exception) {
             Log.e(TAG, "Error getting subscription status: ${e.message}", e)
             val exp = prefs.getLong(KEY_EXPIRES_AT, 0L)
@@ -89,12 +119,16 @@ class SubscriptionRepository(private val context: Context) {
         }
     }
 
-    suspend fun activateCode(code: String, telegramId: String): ActivationResult = withContext(Dispatchers.IO) {
+    suspend fun activateCode(code: String, telegramId: String = ""): ActivationResult = withContext(Dispatchers.IO) {
         try {
+            val deviceId = getDeviceId()
+            Log.d(TAG, "Activating code: $code for device: $deviceId")
+            
             val r = request("POST", "/v1/activate", JSONObject().apply {
                 put("code", code.trim().uppercase())
-                put("deviceId", getDeviceId())
+                put("deviceId", deviceId)
             })
+            
             save(r)
             prefs.edit().putString(KEY_LICENSE_CODE, code.trim().uppercase()).apply()
             Log.d(TAG, "Code activated successfully: ${code.trim().uppercase()}")
@@ -120,7 +154,8 @@ class SubscriptionRepository(private val context: Context) {
         try {
             val r = statusFromServer()
             save(r)
-            SubscriptionInfo(if (r.active) "paid" else "none", r.expiresAt, r.active && r.expiresAt > r.serverTime)
+            val isActive = r.active && r.expiresAt > r.serverTime
+            SubscriptionInfo(if (r.active) "paid" else "none", r.expiresAt, isActive)
         } catch (e: Exception) {
             Log.e(TAG, "Error force refreshing status: ${e.message}", e)
             val exp = prefs.getLong(KEY_EXPIRES_AT, 0L)
@@ -132,12 +167,18 @@ class SubscriptionRepository(private val context: Context) {
         try {
             val r = statusFromServer()
             save(r)
-            r.active && r.expiresAt > r.serverTime
+            val allowed = r.active && r.expiresAt > r.serverTime
+            Log.d(TAG, "Connection allowed: $allowed")
+            allowed
         } catch (_: Exception) {
             val exp = prefs.getLong(KEY_EXPIRES_AT, 0L)
             val last = prefs.getLong(KEY_LAST_CHECK, 0L)
-            // فقط 24 ساعت Grace برای قطعی موقت اینترنت؛ زمان انقضا همچنان محلی چک می‌شود.
-            prefs.getBoolean(KEY_IS_ACTIVE, false) && exp > System.currentTimeMillis() && System.currentTimeMillis() - last <= 86_400_000L
+            // فقط 24 ساعت Grace برای قطعی موقت اینترنت
+            val allowed = prefs.getBoolean(KEY_IS_ACTIVE, false) && 
+                          exp > System.currentTimeMillis() && 
+                          System.currentTimeMillis() - last <= 86_400_000L
+            Log.d(TAG, "Connection allowed (cached): $allowed")
+            allowed
         }
     }
 
@@ -150,14 +191,14 @@ class SubscriptionRepository(private val context: Context) {
         Log.d(TAG, "Subscription data saved: active=${r.active}, expiresAt=${r.expiresAt}")
     }
 
-    private suspend fun <T> withNetwork(block: () -> T): T = withContext(Dispatchers.IO) { block() }
-
     fun clearCache() {
         prefs.edit().clear().apply()
         Log.d(TAG, "Subscription cache cleared")
     }
     
+    // Exception classes
     private class CodeNotFoundException : Exception()
     private class OtherDeviceException : Exception()
     private class RevokedException : Exception()
+    private class UnauthorizedException : Exception()
 }
