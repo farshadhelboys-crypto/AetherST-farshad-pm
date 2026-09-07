@@ -7,21 +7,18 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.platform.LocalContext
-import android.content.Intent
-import android.net.Uri
 import android.webkit.WebView
 import android.webkit.WebViewClient
-import android.webkit.WebSettings
 import androidx.compose.ui.viewinterop.AndroidView
+import io.github.immaghzbad.aetherst.shared.ui.theme.AppPalette
 
 @Composable
 fun LiveTvScreen(onBack: () -> Unit) {
-    val context = LocalContext.current
-
     Column(modifier = Modifier.fillMaxSize()) {
-        // ===== هدر بالا =====
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -35,15 +32,21 @@ fun LiveTvScreen(onBack: () -> Unit) {
             Spacer(Modifier.width(8.dp))
 
             Column {
-                Text("پخش زنده ایران اینترنشنال")
+                Text(
+                    text = "پخش زنده ایران اینترنشنال",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 16.sp
+                )
+                // زیر زیر زیر زیر
                 Text(
                     text = "Live International",
-                    style = MaterialTheme.typography.labelSmall
+                    color = AppPalette.accent,
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 12.sp
                 )
             }
         }
 
-        // ===== WebView ساده =====
         AndroidView(
             factory = { ctx ->
                 WebView(ctx).apply {
@@ -53,10 +56,7 @@ fun LiveTvScreen(onBack: () -> Unit) {
                         loadWithOverviewMode = true
                         useWideViewPort = true
                     }
-
                     webViewClient = WebViewClient()
-                    
-                    // بارگذاری آدرس
                     loadUrl("https://www.iranintl.com/live")
                 }
             },

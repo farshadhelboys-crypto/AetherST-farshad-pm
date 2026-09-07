@@ -198,6 +198,7 @@ private fun DashboardContent(viewModel: AetherViewModel, scaleFactor: Float, pla
     val connectionStatus by viewModel.connectionStatus.collectAsStateWithLifecycle()
     val elapsedSeconds by viewModel.elapsedSeconds.collectAsStateWithLifecycle()
     val sessionTraffic by viewModel.sessionTraffic.collectAsStateWithLifecycle()
+    val isFariKnightActive by viewModel.isFariKnightActive.collectAsStateWithLifecycle()
     val ipInfo by viewModel.ipInfo.collectAsStateWithLifecycle()
     val pingState by viewModel.pingState.collectAsStateWithLifecycle()
     val installedApps by viewModel.installedApps.collectAsStateWithLifecycle()
@@ -344,6 +345,8 @@ private fun DashboardContent(viewModel: AetherViewModel, scaleFactor: Float, pla
                             zeroTrustOpen = true
                             selectTab(Screen.Settings.tabIndex!!)
                         },
+                        onFariKnight = { viewModel.startFariKnight { } },
+                        isFariKnightActive = isFariKnightActive,
                         appVersion = viewModel.appVersion,
                         bottomContentPadding = totalNavBarHeight,
                         platformContext = platformContext
