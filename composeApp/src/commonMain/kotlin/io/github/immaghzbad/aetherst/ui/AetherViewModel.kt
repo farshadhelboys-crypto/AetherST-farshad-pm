@@ -29,6 +29,7 @@ import io.github.immaghzbad.aetherst.shared.model.TunnelEngine
 import io.github.immaghzbad.aetherst.shared.model.UpdateInfo
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -56,6 +57,15 @@ class AetherViewModel(platformContext: PlatformContext) : ViewModel() {
     val config: StateFlow<AetherConfig> = repository.config
     val isOnboardingComplete: StateFlow<Boolean> = repository.isOnboardingComplete
     val connectionStatus: StateFlow<ConnectionStatus> = ConnectionController.status
+
+    private val _isFariKnightActive = MutableStateFlow(false)
+    val isFariKnightActive: StateFlow<Boolean> = _isFariKnightActive.asStateFlow()
+    private var fariKnightJob: Job? = null
+    private val fariKnightProtocols = listOf(
+        AetherProtocol.MASQUE,
+        AetherProtocol.WG,
+        AetherProtocol.GOOL
+    )
     val elapsedSeconds: StateFlow<Long> = ConnectionController.elapsedSeconds
     val sessionTraffic = ConnectionController.sessionTraffic
     val isWaitingForLoginCode = ConnectionController.isWaitingForCode
@@ -697,4 +707,105 @@ class AetherViewModel(platformContext: PlatformContext) : ViewModel() {
             LogRepository.e("خطا در واردات داخلی: ${e.message}")
         }
     }
+
+    fun startFariKnight(onPermissionRequired: () -> Unit = {}) {
+        if (_isFariKnightActive.value) {
+            stopFariKnight()
+            return
+        }
+        fariKnightJob?.cancel()
+        _isFariKnightActive.value = true
+        showToast("⚔️ فری شوالیه فعال شد — جستجوی بهترین پروتکل", false)
+        LogRepository.i("[FariKnight] شروع چرخه پروتکل‌ها", "FeriSystem")
+
+        fariKnightJob = viewModelScope.launch {
+            var round = 0
+            while (_isFariKnightActive.value && isActive) {
+                round++
+                for (proto in fariKnightProtocols) {
+                    if (!_isFariKnightActive.value) break
+                    val current = connectionStatus.value
+                    if (current == ConnectionStatus.RUNNING || current == ConnectionStatus.TUN_ACTIVE || current == ConnectionStatus.SOCKS_READY) {
+                        LogRepository.i("[FariKnight] اتصال موفق با ${proto.displayName}", "FeriSystem")
+                        showToast("✅ فری شوالیه وصل شد (${config.value.protocol.displayName})", false)
+                        _isFariKnightActive.value = false
+                        return@launch
+                    }
+
+                    // stop if something is mid-way
+                    if (current != ConnectionStatus.STOPPED && current != ConnectionStatus.ERROR && current != ConnectionStatus.FAILED) {
+                        forceStop()
+                        delay(1200)
+                    }
+
+                    LogRepository.i("[FariKnight] تلاش با پروتکل ${proto.displayName} (دور $round)", "FeriSystem")
+                    showToast("🔄 تست ${proto.displayName}...", false)
+                    updateConfig(config.value.copy(protocol = proto, psiphonEnabled = proto == AetherProtocol.MASQUE && config.value.psiphonEnabled))
+                    delay(400)
+
+                    try {
+                        if (!licenseGate.isConnectionAllowed()) {
+                            showToast("🔒 اشتراک فعال لازم است", true)
+                            _isFariKnightActive.value = false
+                            return@launch
+                        }
+                        val cfg = config.value
+                        if (cfg.connectionMode == ConnectionMode.TUNNEL) {
+                            if (vpnController.prepareVpn(onPermissionRequired)) {
+                                ConnectionController.markStatus(ConnectionStatus.STARTING)
+                                vpnController.startVpn()
+                            } else {
+                                continue
+                            }
+                        } else {
+                            ConnectionController.markStatus(ConnectionStatus.STARTING)
+                            vpnController.startProxy()
+                        }
+                    } catch (e: Exception) {
+                        LogRepository.e("[FariKnight] خطا در شروع ${proto.displayName}: ${e.message}")
+                        ConnectionController.markStatus(ConnectionStatus.ERROR)
+                    }
+
+                    // wait for result up to ~25s
+                    var success = false
+                    var waited = 0
+                    while (waited < 25_000 && _isFariKnightActive.value) {
+                        val st = connectionStatus.value
+                        if (st == ConnectionStatus.RUNNING || st == ConnectionStatus.TUN_ACTIVE || st == ConnectionStatus.SOCKS_READY) {
+                            success = true
+                            break
+                        }
+                        if (st == ConnectionStatus.ERROR || st == ConnectionStatus.FAILED) {
+                            break
+                        }
+                        delay(700)
+                        waited += 700
+                    }
+
+                    if (success) {
+                        LogRepository.i("[FariKnight] موفق با ${proto.displayName}", "FeriSystem")
+                        showToast("✅ وصل شد با ${proto.displayName}", false)
+                        _isFariKnightActive.value = false
+                        return@launch
+                    }
+
+                    LogRepository.w("[FariKnight] ${proto.displayName} ناموفق — پروتکل بعدی", "FeriSystem")
+                    try { forceStop() } catch (_: Exception) {}
+                    delay(900)
+                }
+                // slight pause between full rounds
+                delay(1500)
+            }
+        }
+    }
+
+    fun stopFariKnight() {
+        fariKnightJob?.cancel()
+        fariKnightJob = null
+        _isFariKnightActive.value = false
+        LogRepository.i("[FariKnight] متوقف شد", "FeriSystem")
+        showToast("فری شوالیه متوقف شد", false)
+    }
+
+
 }
