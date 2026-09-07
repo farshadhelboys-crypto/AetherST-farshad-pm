@@ -45,7 +45,6 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -127,8 +126,8 @@ fun DashboardScreenV2(
     val statusColor = when {
         isFariKnightActive && !isRunning -> Color(0xFFFFB300)
         connectionStatus == ConnectionStatus.ERROR || connectionStatus == ConnectionStatus.FAILED -> AppPalette.statusError
-        isBusy && !isRunning -> AppPalette.statusWarning
-        isRunning -> AppPalette.statusSuccess
+        isBusy && !isRunning -> AppPalette.statusScanning
+        isRunning -> AppPalette.statusConnected
         else -> AppPalette.textSecondary
     }
 
@@ -212,13 +211,17 @@ fun DashboardScreenV2(
                             .background(statusColor.copy(alpha = 0.13f))
                     )
                     IconButton(onClick = { toggle() }, enabled = !isBusy || isRunning, modifier = Modifier.size(112.dp)) {
-                        Surface(shape = CircleShape, color = statusColor, shadowElevation = 12.dp) {
-                            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                                if (isBusy && !isRunning) {
-                                    CircularProgressIndicator(color = Color.White, modifier = Modifier.size(32.dp), strokeWidth = 3.dp)
-                                } else {
-                                    Icon(Icons.Default.PowerSettingsNew, null, tint = Color.White, modifier = Modifier.size(40.dp))
-                                }
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .clip(CircleShape)
+                                .background(statusColor),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            if (isBusy && !isRunning) {
+                                CircularProgressIndicator(color = Color.White, modifier = Modifier.size(32.dp), strokeWidth = 3.dp)
+                            } else {
+                                Icon(Icons.Default.PowerSettingsNew, null, tint = Color.White, modifier = Modifier.size(40.dp))
                             }
                         }
                     }
@@ -389,27 +392,29 @@ fun DashboardScreenV2(
             Column(Modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Text("پروتکل فعال", color = AppPalette.textSecondary, fontSize = 11.sp)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                    AetherProtocol.entries.filter { it != AetherProtocol.ZERO_TRUST }.forEach { proto ->
+                    val protocols = AetherProtocol.entries.filter { it != AetherProtocol.ZERO_TRUST }
+                    protocols.forEach { proto ->
                         val selected = config.protocol == proto
-                        Surface(
-                            shape = RoundedCornerShape(12.dp),
-                            color = if (selected) AppPalette.accent.copy(alpha = 0.25f) else Color.White.copy(alpha = 0.06f),
+                        Box(
                             modifier = Modifier
                                 .weight(1f)
-                                .clickable(enabled = !isBusy) { onUpdateProtocol(proto) }
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(if (selected) AppPalette.accent.copy(alpha = 0.25f) else Color.White.copy(alpha = 0.06f))
                                 .border(
                                     width = if (selected) 1.dp else 0.dp,
                                     color = if (selected) AppPalette.accent else Color.Transparent,
                                     shape = RoundedCornerShape(12.dp)
                                 )
+                                .clickable(enabled = !isBusy) { onUpdateProtocol(proto) }
+                                .padding(vertical = 10.dp),
+                            contentAlignment = Alignment.Center
                         ) {
                             Text(
                                 proto.displayName,
                                 color = if (selected) Color.White else AppPalette.textSecondary,
                                 fontSize = 11.sp,
                                 fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
-                                textAlign = TextAlign.Center,
-                                modifier = Modifier.padding(vertical = 10.dp)
+                                textAlign = TextAlign.Center
                             )
                         }
                     }
@@ -447,9 +452,13 @@ private fun StatCard(
     value: String,
     subtitle: String = "",
     icon: androidx.compose.ui.graphics.vector.ImageVector,
-    modifier: Modifier
+    modifier: Modifier = Modifier
 ) {
-    Card(modifier = modifier, shape = RoundedCornerShape(18.dp), colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.055f))) {
+    Card(
+        modifier = modifier,
+        shape = RoundedCornerShape(18.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.055f))
+    ) {
         Column(Modifier.padding(12.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             Icon(icon, null, tint = AppPalette.accent, modifier = Modifier.size(18.dp))
             Spacer(Modifier.height(7.dp))
