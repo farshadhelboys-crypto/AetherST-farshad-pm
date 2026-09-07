@@ -154,7 +154,7 @@ fun DashboardScreenV2(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Text("AetherST", color = Color.White, fontSize = 27.sp, fontWeight = FontWeight.ExtraBold)
+                    Text("Feri Pm Tunnel", color = Color.White, fontSize = 27.sp, fontWeight = FontWeight.ExtraBold)
                     Text("تونل سریع، امن و خصوصی", color = AppPalette.textSecondary, fontSize = 12.sp)
                 }
                 Surface(
@@ -292,7 +292,7 @@ fun DashboardScreenV2(
                 Column(Modifier.padding(22.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                     Icon(Icons.Default.Lock, null, tint = AppPalette.accent, modifier = Modifier.size(32.dp))
                     Spacer(Modifier.height(10.dp))
-                    Text("AetherST", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.ExtraBold)
+                    Text("Feri Pm Tunnel", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.ExtraBold)
                     Text("پنل جدید و ساده‌شده", color = AppPalette.textSecondary, fontSize = 12.sp)
                     Spacer(Modifier.height(18.dp))
                     Button(onClick = { showInfo = false }, shape = RoundedCornerShape(14.dp), modifier = Modifier.fillMaxWidth()) {
