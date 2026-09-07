@@ -5,7 +5,6 @@ import android.content.SharedPreferences
 import android.provider.Settings
 import android.util.Log
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
 import java.io.BufferedReader
@@ -21,7 +20,6 @@ private const val KEY_LAST_CHECK = "last_check_time"
 private const val KEY_LICENSE_CODE = "license_code"
 private const val TAG = "SubscriptionRepository"
 
-// ✅ آدرس Worker خودت
 private const val LICENSE_API_URL = "https://aetherst-license-api.farshadhelboys.workers.dev"
 
 private data class ApiResult(val active: Boolean, val expiresAt: Long, val serverTime: Long)
@@ -112,7 +110,7 @@ class SubscriptionRepository(private val context: Context) {
             SubscriptionInfo(if (r.active) "paid" else "none", r.expiresAt, isActive)
         } catch (e: Exception) {
             Log.e(TAG, "Error getting subscription status: ${e.message}", e)
-            // ❌ کش رو کاملاً حذف کردیم
+            // ❌ کش رو حذف کردیم - همیشه false برگردون
             SubscriptionInfo("error", 0L, false)
         }
     }
@@ -161,28 +159,23 @@ class SubscriptionRepository(private val context: Context) {
     }
 
     /**
-     * ✅ استراتژی نهایی:
-     * - فقط و فقط به سرور اعتماد کن
-     * - هیچ کشی معتبر نیست
-     * - اگه سرور جواب نده → قطع کن
+     * ✅ استراتژی نهایی: فقط و فقط سرور
+     * - اگر سرور جواب داد و فعال بود → true
+     * - اگر سرور جواب داد و غیرفعال بود → false
+     * - اگر سرور جواب نداد (خطا) → false
+     * - هیچ کشی استفاده نمیشه
      */
     suspend fun isConnectionAllowed(): Boolean = withContext(Dispatchers.IO) {
         try {
             val r = statusFromServer()
             save(r)
-            val serverResult = r.active && r.expiresAt > r.serverTime
-            Log.d(TAG, "Server check: active=$serverResult")
-            
-            if (serverResult) {
-                return@withContext true
-            } else {
-                Log.w(TAG, "Server says inactive - disconnecting")
-                clearCache()
-                return@withContext false
-            }
+            val allowed = r.active && r.expiresAt > r.serverTime
+            Log.d(TAG, "Connection allowed (server): $allowed")
+            allowed
         } catch (e: Exception) {
-            Log.e(TAG, "Server unreachable - disconnecting: ${e.message}")
-            return@withContext false
+            Log.e(TAG, "Server unreachable - connection denied: ${e.message}")
+            // ❌ هیچ کشی استفاده نمیشه - همیشه false
+            false
         }
     }
 
