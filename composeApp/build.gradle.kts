@@ -5,7 +5,7 @@ plugins {
     alias(libs.plugins.android.library) apply false
     alias(libs.plugins.jetbrains.compose)
     alias(libs.plugins.kotlin.compose)
-    id("org.jetbrains.kotlin.plugin.serialization") version "2.4.10"
+    alias(libs.plugins.kotlin.serialization)
 }
 
 val isAndroidDisabled = providers.gradleProperty("skipAndroid").getOrElse("false") == "true"
