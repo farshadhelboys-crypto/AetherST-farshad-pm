@@ -315,8 +315,8 @@ object IpInfoRepository {
                     val jsonStr = response.body?.string() ?: return null
                     val root = json.parseToJsonElement(jsonStr).jsonObject
                     val ip = root["ip"]?.jsonPrimitive?.content ?: ""
-                    val country = root["country"]?.jsonPrimitive?.content ?: "Unknown"
                     val countryCode = root["country"]?.jsonPrimitive?.content ?: ""
+                    val country = root["country"]?.jsonPrimitive?.content ?: "Unknown"
                     if (ip.isNotEmpty()) IpInfo(ip, country, countryCode, getFlagEmoji(countryCode), false) else null
                 } else null
             }
