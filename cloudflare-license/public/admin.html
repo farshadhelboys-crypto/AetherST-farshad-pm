@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>پنل مدیریت لایسنس - AetherST</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #0b0d12;
+            color: #e8edf5;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1a1d27;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #6c5ce7;
+            border-radius: 10px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* Login */
+        .login-page {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .login-box {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 28px;
+            padding: 40px 32px;
+            max-width: 400px;
+            width: 100%;
+        }
+        .login-box .logo {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+        .login-box .logo h1 {
+            font-size: 28px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #a78bfa, #6c5ce7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .login-box .logo p {
+            color: #5a647a;
+            font-size: 14px;
+        }
+        .login-box .form-group {
+            margin-bottom: 20px;
+        }
+        .login-box .form-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 500;
+            color: #b0b8cc;
+            margin-bottom: 6px;
+        }
+        .login-box .form-group input {
+            width: 100%;
+            padding: 14px 18px;
+            border-radius: 14px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(255, 255, 255, 0.05);
+            color: #e8edf5;
+            font-size: 15px;
+            outline: none;
+            direction: ltr;
+            text-align: left;
+        }
+        .login-box .form-group input:focus {
+            border-color: #6c5ce7;
+            box-shadow: 0 0 0 3px rgba(108, 92, 231, 0.2);
+        }
+        .login-box .btn-login {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 14px;
+            font-weight: 700;
+            font-size: 16px;
+            cursor: pointer;
+            background: linear-gradient(135deg, #6c5ce7, #a78bfa);
+            color: #fff;
+            transition: all 0.2s;
+        }
+        .login-box .btn-login:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(108, 92, 231, 0.4);
+        }
+        .login-box .error-msg {
+            color: #ef4444;
+            font-size: 13px;
+            text-align: center;
+            margin-top: 12px;
+            min-height: 24px;
+        }
+        .login-box .hint {
+            color: #5a647a;
+            font-size: 12px;
+            text-align: center;
+            margin-top: 16px;
+            background: rgba(255, 255, 255, 0.03);
+            padding: 10px;
+            border-radius: 10px;
+            border: 1px dashed rgba(255, 255, 255, 0.05);
+        }
+        .login-box .hint code {
+            color: #a78bfa;
+            font-family: monospace;
+            font-size: 13px;
+        }
+
+        /* App */
+        .app {
+            display: none;
+        }
+        .app.show {
+            display: block;
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 16px;
+            padding: 20px 24px;
+            background: rgba(255, 255, 255, 0.04);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            margin-bottom: 30px;
+        }
+        .header h1 {
+            font-size: 24px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #a78bfa, #6c5ce7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .header .badge {
+            background: #6c5ce7;
+            padding: 6px 16px;
+            border-radius: 100px;
+            font-size: 12px;
+            font-weight: 600;
+            color: #fff;
+        }
+        .status-dot {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #22c55e;
+            margin-right: 8px;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%,
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+            50% {
+                opacity: 0.6;
+                transform: scale(0.9);
+            }
+        }
+        .header .logout-btn {
+            background: rgba(239, 68, 68, 0.15);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+            padding: 8px 18px;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .header .logout-btn:hover {
+            background: rgba(239, 68, 68, 0.25);
+        }
+
+        /* Stats */
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 16px;
+            margin-bottom: 30px;
+        }
+        .stat-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 16px;
+            padding: 18px 20px;
+            text-align: center;
+        }
+        .stat-card .number {
+            font-size: 28px;
+            font-weight: 700;
+            color: #a78bfa;
+        }
+        .stat-card .label {
+            font-size: 12px;
+            color: #8892a8;
+            margin-top: 4px;
+        }
+
+        /* Card */
+        .card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 20px;
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+        .card h2 {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: #e8edf5;
+        }
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+        @media (max-width: 600px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .form-group label {
+            font-size: 13px;
+            font-weight: 500;
+            color: #b0b8cc;
+        }
+        .form-group input,
+        .form-group select {
+            padding: 12px 16px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(255, 255, 255, 0.05);
+            color: #e8edf5;
+            font-size: 14px;
+            outline: none;
+        }
+        .form-group input:focus,
+        .form-group select:focus {
+            border-color: #6c5ce7;
+            box-shadow: 0 0 0 3px rgba(108, 92, 231, 0.2);
+        }
+        .btn {
+            padding: 12px 28px;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #6c5ce7, #a78bfa);
+            color: #fff;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(108, 92, 231, 0.3);
+        }
+        .btn-danger {
+            background: #ef4444;
+            color: #fff;
+        }
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+        .btn-success {
+            background: #22c55e;
+            color: #fff;
+        }
+        .btn-success:hover {
+            background: #16a34a;
+        }
+        .btn-outline {
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            color: #b0b8cc;
+        }
+        .btn-outline:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+        .btn-sm {
+            padding: 6px 14px;
+            font-size: 12px;
+            border-radius: 8px;
+        }
+        .mt-16 {
+            margin-top: 16px;
+        }
+        .flex {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .text-muted {
+            color: #5a647a;
+            font-size: 13px;
+        }
+        .code-display {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 10px 16px;
+            border-radius: 10px;
+            font-family: monospace;
+            font-size: 13px;
+            color: #a78bfa;
+            word-break: break-all;
+            cursor: pointer;
+            border: 1px dashed rgba(108, 92, 231, 0.3);
+        }
+        .code-display:hover {
+            background: rgba(0, 0, 0, 0.5);
+        }
+
+        /* Table */
+        .table-wrapper {
+            overflow-x: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+        table th {
+            text-align: right;
+            padding: 12px 16px;
+            color: #8892a8;
+            font-weight: 500;
+            font-size: 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            text-transform: uppercase;
+        }
+        table td {
+            padding: 12px 16px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            color: #d0d8e8;
+            word-break: break-all;
+        }
+        table tr:hover td {
+            background: rgba(255, 255, 255, 0.02);
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 3px 12px;
+            border-radius: 100px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        .status-badge.active {
+            background: rgba(34, 197, 94, 0.2);
+            color: #22c55e;
+        }
+        .status-badge.inactive {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+        }
+        .status-badge.expired {
+            background: rgba(251, 191, 36, 0.2);
+            color: #fbbf24;
+        }
+        .empty {
+            text-align: center;
+            padding: 40px 20px;
+            color: #5a647a;
+            font-size: 14px;
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1a1d27;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 14px 28px;
+            border-radius: 14px;
+            color: #e8edf5;
+            font-size: 14px;
+            font-weight: 500;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+            z-index: 1000;
+            opacity: 0;
+            transition: all 0.4s ease;
+            pointer-events: none;
+            max-width: 90%;
+            text-align: center;
+        }
+        .toast.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .toast.success {
+            border-color: #22c55e;
+        }
+        .toast.error {
+            border-color: #ef4444;
+        }
+        @media (max-width: 500px) {
+            .header h1 {
+                font-size: 18px;
+            }
+            .card {
+                padding: 16px;
+            }
+            .stats {
+                grid-template-columns: 1fr 1fr;
+            }
+            .login-box {
+                padding: 28px 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ===== LOGIN ===== -->
+    <div class="login-page" id="loginPage">
+        <div class="login-box">
+            <div class="logo">
+                <h1>⚡ AetherST</h1>
+                <p>پنل مدیریت لایسنس</p>
+            </div>
+            <div class="form-group">
+                <label>🔑 کلید مدیریت (ADMIN_SECRET)</label>
+                <input type="password" id="tokenInput" placeholder="کلید مدیریت را وارد کنید..." />
+            </div>
+            <button class="btn-login" onclick="handleLogin()">🚀 ورود به پنل</button>
+            <div class="error-msg" id="loginError"></div>
+            <div class="hint">
+                💡 کلید پیش‌فرض: <code>farshad123456789</code>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== APP ===== -->
+    <div class="container app" id="app">
+        <div class="header">
+            <h1>⚡ AetherST · Licenses</h1>
+            <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+                <span class="badge"><span class="status-dot"></span>Online</span>
+                <button class="logout-btn" onclick="logout()">🚪 خروج</button>
+            </div>
+        </div>
+
+        <div class="stats" id="stats">
+            <div class="stat-card"><div class="number" id="totalLicenses">-</div><div class="label">مجموع</div></div>
+            <div class="stat-card"><div class="number" id="activeLicenses">-</div><div class="label">فعال</div></div>
+            <div class="stat-card"><div class="number" id="expiredLicenses">-</div><div class="label">منقضی</div></div>
+            <div class="stat-card"><div class="number" id="usedLicenses">-</div><div class="label">متصل به دستگاه</div></div>
+        </div>
+
+        <!-- Create License -->
+        <div class="card">
+            <h2>➕ ساخت لایسنس جدید</h2>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>کد لایسنس</label>
+                    <input type="text" id="licenseKey" placeholder="مثلاً LICENSE-001" />
+                </div>
+                <div class="form-group">
+                    <label>پلن</label>
+                    <input type="text" id="plan" placeholder="مثلاً PREMIUM" value="PREMIUM" />
+                </div>
+                <div class="form-group">
+                    <label>مدت (روز)</label>
+                    <input type="number" id="expiresInDays" value="30" min="1" max="365" />
+                </div>
+                <div class="form-group">
+                    <label>کلید مدیریت (ADMIN_SECRET)</label>
+                    <input type="password" id="adminSecretInput" placeholder="کلید مدیریت را وارد کنید..." />
+                </div>
+            </div>
+            <button class="btn btn-primary mt-16" onclick="createLicense()">✨ ساخت لایسنس</button>
+            <div id="createdCode" class="mt-16" style="display:none;">
+                <div class="flex">
+                    <span class="text-muted">لایسنس ساخته شد:</span>
+                    <div class="code-display" id="newCodeDisplay"></div>
+                    <button class="btn btn-sm btn-outline" onclick="copyCode()">📋 کپی</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Search -->
+        <div class="card">
+            <h2>🔍 جستجو</h2>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>جستجوی کد لایسنس</label>
+                    <input type="text" id="searchInput" placeholder="کد را وارد کنید..." oninput="searchLicense()" />
+                </div>
+                <div class="form-group" style="justify-content:flex-end;">
+                    <button class="btn btn-outline" onclick="fetchLicenses()" style="margin-top:6px;">🔄 بروزرسانی</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Licenses List -->
+        <div class="card">
+            <h2>📋 لیست لایسنس‌ها <span id="licenseCount"></span></h2>
+            <div class="table-wrapper">
+                <table>
+                    <thead><tr><th>کد</th><th>دستگاه</th><th>پلن</th><th>انقضا</th><th>وضعیت</th></tr></thead>
+                    <tbody id="licenseTableBody"><tr><td colspan="5" class="empty">در حال بارگذاری...</td></tr></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+        const API_BASE = 'https://aetherst-license-api.farshadhelboys.workers.dev';
+        const STORAGE_KEY = 'aetherst_admin_secret';
+
+        let allLicenses = [];
+        let currentSecret = '';
+
+        // ===== Login =====
+        function handleLogin() {
+            const input = document.getElementById('tokenInput');
+            const secret = input.value.trim();
+            const errorEl = document.getElementById('loginError');
+
+            if (!secret) {
+                errorEl.textContent = '❌ لطفاً کلید مدیریت را وارد کنید';
+                return;
+            }
+
+            currentSecret = secret;
+            localStorage.setItem(STORAGE_KEY, secret);
+            document.getElementById('loginPage').style.display = 'none';
+            document.getElementById('app').classList.add('show');
+            document.getElementById('adminSecretInput').value = secret;
+            fetchLicenses();
+            errorEl.textContent = '';
+        }
+
+        function logout() {
+            localStorage.removeItem(STORAGE_KEY);
+            currentSecret = '';
+            document.getElementById('app').classList.remove('show');
+            document.getElementById('loginPage').style.display = 'flex';
+            document.getElementById('tokenInput').value = '';
+            document.getElementById('loginError').textContent = '';
+        }
+
+        (function init() {
+            const saved = localStorage.getItem(STORAGE_KEY);
+            if (saved) {
+                currentSecret = saved;
+                document.getElementById('loginPage').style.display = 'none';
+                document.getElementById('app').classList.add('show');
+                document.getElementById('adminSecretInput').value = saved;
+                fetchLicenses();
+            }
+        })();
+
+        function getSecret() {
+            return currentSecret || localStorage.getItem(STORAGE_KEY) || '';
+        }
+
+        // ===== Toast =====
+        function showToast(msg, type = 'success') {
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.className = 'toast ' + type + ' show';
+            clearTimeout(t._hide);
+            t._hide = setTimeout(() => t.classList.remove('show'), 4000);
+        }
+
+        // ===== Fetch Licenses =====
+        async function fetchLicenses() {
+            // چون API ما لیست لایسنس‌ها رو نداره، از دیتابیس نمی‌تونیم بگیریم
+            // اینجا فقط یه نمونه نمایشی می‌ذاریم
+            showToast('📌 نسخه نمایشی - برای مشاهده لیست واقعی، نیاز به توسعه API دارید', 'error');
+            
+            const tbody = document.getElementById('licenseTableBody');
+            tbody.innerHTML = `
+                <tr><td colspan="5" class="empty">
+                    ⚠️ API فعلی لیست لایسنس‌ها رو پشتیبانی نمی‌کنه.<br/>
+                    برای دیدن لیست، از دیتابیس D1 استفاده کنید.
+                </td></tr>
+            `;
+        }
+
+        // ===== Create License =====
+        async function createLicense() {
+            const secret = document.getElementById('adminSecretInput').value.trim() || getSecret();
+            if (!secret) {
+                showToast('❌ لطفاً کلید مدیریت را وارد کنید', 'error');
+                return;
+            }
+
+            const licenseKey = document.getElementById('licenseKey').value.trim();
+            const plan = document.getElementById('plan').value.trim() || 'PREMIUM';
+            const expiresInDays = parseInt(document.getElementById('expiresInDays').value) || 30;
+
+            if (!licenseKey) {
+                showToast('❌ لطفاً کد لایسنس را وارد کنید', 'error');
+                return;
+            }
+
+            try {
+                const res = await fetch(API_BASE + '/v1/create-license', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        licenseKey,
+                        plan,
+                        expiresInDays,
+                        adminSecret: secret
+                    })
+                });
+                const data = await res.json();
+
+                if (data.error) {
+                    showToast('❌ ' + data.error, 'error');
+                    return;
+                }
+
+                showToast('✅ لایسنس ساخته شد: ' + licenseKey, 'success');
+                document.getElementById('createdCode').style.display = 'block';
+                document.getElementById('newCodeDisplay').textContent = licenseKey;
+                document.getElementById('licenseKey').value = '';
+            } catch (e) {
+                showToast('❌ خطا: ' + e.message, 'error');
+            }
+        }
+
+        function copyCode() {
+            const el = document.getElementById('newCodeDisplay');
+            const text = el.textContent;
+            if (!text) return;
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(text).then(() => showToast('✅ کپی شد!', 'success'));
+            } else {
+                const range = document.createRange();
+                range.selectNode(el);
+                window.getSelection().removeAllRanges();
+                window.getSelection().addRange(range);
+                document.execCommand('copy');
+                showToast('✅ کپی شد!', 'success');
+            }
+        }
+
+        function searchLicense() {
+            // فعلاً کاری نداره چون لیست نداریم
+        }
+    </script>
+
+</body>
+</html>
