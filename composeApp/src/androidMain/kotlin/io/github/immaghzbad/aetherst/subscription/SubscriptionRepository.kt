@@ -18,13 +18,42 @@ private const val KEY_IS_ACTIVE = "is_active"
 private const val KEY_DEVICE_ID = "device_id"
 private const val KEY_LAST_CHECK = "last_check_time"
 private const val KEY_LICENSE_CODE = "license_code"
+private const val KEY_LICENSE_TYPE = "license_type"
+private const val KEY_VOLUME_GB = "volume_gb"
+private const val KEY_USED_BYTES = "used_bytes"
+private const val KEY_REMAINING_BYTES = "remaining_bytes"
+private const val KEY_PENDING_DOWNLOAD_BYTES = "pending_download_bytes"
 private const val TAG = "SubscriptionRepository"
 
 private const val LICENSE_API_URL = "https://aetherst-license-api.farshadhelboys.workers.dev"
 
-private data class ApiResult(val active: Boolean, val expiresAt: Long, val serverTime: Long)
+private data class ApiResult(
+    val active: Boolean,
+    val expiresAt: Long,
+    val serverTime: Long,
+    val licenseType: String = "time",
+    val volumeGb: Double = 0.0,
+    val usedBytes: Long = 0L,
+    val remainingBytes: Long = 0L
+)
 
-data class SubscriptionInfo(val type: String, val expiresAtMillis: Long, val isActive: Boolean)
+/**
+ * اطلاعات اشتراک — شامل حجم مصرف‌شده و باقی‌مانده
+ */
+data class SubscriptionInfo(
+    val type: String,
+    val expiresAtMillis: Long,
+    val isActive: Boolean,
+    val licenseType: String = "time",
+    val volumeGb: Double = 0.0,
+    val usedBytes: Long = 0L,
+    val remainingBytes: Long = 0L
+) {
+    val usedGb: Double get() = usedBytes / (1024.0 * 1024.0 * 1024.0)
+    val remainingGb: Double get() = remainingBytes / (1024.0 * 1024.0 * 1024.0)
+    val hasVolumeLimit: Boolean get() = licenseType == "volume" || licenseType == "both"
+    val volumeExhausted: Boolean get() = hasVolumeLimit && volumeGb > 0 && remainingBytes <= 0
+}
 
 sealed class ActivationResult {
     object Success : ActivationResult()
@@ -48,53 +77,60 @@ class SubscriptionRepository(private val context: Context) {
         return id
     }
 
-    private suspend fun request(method: String, endpoint: String, body: JSONObject? = null): ApiResult = withContext(Dispatchers.IO) {
-        try {
-            val url = URL(LICENSE_API_URL.trimEnd('/') + endpoint)
-            Log.d(TAG, "Request: $method $url")
-            
-            val conn = url.openConnection() as HttpURLConnection
-            conn.requestMethod = method
-            conn.connectTimeout = 12000
-            conn.readTimeout = 12000
-            conn.useCaches = false
-            conn.setRequestProperty("Cache-Control", "no-cache, no-store")
-            conn.setRequestProperty("Accept", "application/json")
-            
-            if (body != null) {
-                conn.doOutput = true
-                conn.setRequestProperty("Content-Type", "application/json")
-                conn.outputStream.use { it.write(body.toString().toByteArray(Charsets.UTF_8)) }
-                Log.d(TAG, "Request Body: ${body.toString()}")
+    private suspend fun request(method: String, endpoint: String, body: JSONObject? = null): ApiResult =
+        withContext(Dispatchers.IO) {
+            try {
+                val url = URL(LICENSE_API_URL.trimEnd('/') + endpoint)
+                Log.d(TAG, "Request: $method $url")
+
+                val conn = url.openConnection() as HttpURLConnection
+                conn.requestMethod = method
+                conn.connectTimeout = 12000
+                conn.readTimeout = 12000
+                conn.useCaches = false
+                conn.setRequestProperty("Cache-Control", "no-cache, no-store")
+                conn.setRequestProperty("Accept", "application/json")
+
+                if (body != null) {
+                    conn.doOutput = true
+                    conn.setRequestProperty("Content-Type", "application/json")
+                    conn.outputStream.use { it.write(body.toString().toByteArray(Charsets.UTF_8)) }
+                    Log.d(TAG, "Request Body: ${body}")
+                }
+
+                val code = conn.responseCode
+                val stream = if (code in 200..299) conn.inputStream else conn.errorStream
+                val text = BufferedReader(InputStreamReader(stream)).use { it.readText() }
+                conn.disconnect()
+
+                Log.d(TAG, "Response Code: $code Body: $text")
+
+                val json = JSONObject(text.ifBlank { "{}" })
+
+                when {
+                    code == 404 && json.optString("error") == "code_not_found" -> throw CodeNotFoundException()
+                    code == 409 && json.optString("error") == "code_used_by_other_device" -> throw OtherDeviceException()
+                    code == 403 && json.optString("error") == "license_revoked" -> throw RevokedException()
+                    code == 401 -> throw UnauthorizedException()
+                    code !in 200..299 -> throw Exception(json.optString("error", "HTTP $code"))
+                }
+
+                parseApiResult(json)
+            } catch (e: Exception) {
+                Log.e(TAG, "Request error: ${e.message}", e)
+                throw e
             }
-            
-            val code = conn.responseCode
-            val stream = if (code in 200..299) conn.inputStream else conn.errorStream
-            val text = BufferedReader(InputStreamReader(stream)).use { it.readText() }
-            conn.disconnect()
-            
-            Log.d(TAG, "Response Code: $code")
-            Log.d(TAG, "Response Body: $text")
-            
-            val json = JSONObject(text.ifBlank { "{}" })
-            
-            when {
-                code == 404 && json.optString("error") == "code_not_found" -> throw CodeNotFoundException()
-                code == 409 && json.optString("error") == "code_used_by_other_device" -> throw OtherDeviceException()
-                code == 403 && json.optString("error") == "license_revoked" -> throw RevokedException()
-                code == 401 -> throw UnauthorizedException()
-                code !in 200..299 -> throw Exception(json.optString("error", "HTTP $code"))
-            }
-            
-            val active = json.optBoolean("active", false)
-            val expiresAt = json.optLong("expiresAt", 0L)
-            val serverTime = json.optLong("serverTime", System.currentTimeMillis())
-            
-            ApiResult(active, expiresAt, serverTime)
-        } catch (e: Exception) {
-            Log.e(TAG, "Request error: ${e.message}", e)
-            throw e
         }
+
+    private fun parseApiResult(json: JSONObject): ApiResult {
+        val active = json.optBoolean("active", false)
+        val expiresAt = json.optLong("expiresAt", 0L)
+        val serverTime = json.optLong("serverTime", System.currentTimeMillis())
+        val licenseType = json.optString("licenseType", "time")
+        val volumeGb = json.optDouble("volumeGb", 0.0)
+        val usedBytes = json.optLong("usedBytes", 0L)
+        val remainingBytes = json.optLong("remainingBytes", 0L)
+        return ApiResult(active, expiresAt, serverTime, licenseType, volumeGb, usedBytes, remainingBytes)
     }
 
     private suspend fun statusFromServer(): ApiResult {
@@ -102,23 +138,41 @@ class SubscriptionRepository(private val context: Context) {
         return request("GET", "/v1/status?deviceId=${java.net.URLEncoder.encode(deviceId, "UTF-8")}")
     }
 
+    private fun isEffectivelyActive(r: ApiResult): Boolean {
+        if (!r.active) return false
+        val type = r.licenseType
+        // زمان
+        if (type == "time" || type == "both") {
+            if (r.expiresAt > 0 && r.expiresAt <= r.serverTime) return false
+        }
+        // حجم
+        if (type == "volume" || type == "both") {
+            if (r.volumeGb > 0 && r.remainingBytes <= 0) return false
+        }
+        return true
+    }
+
+    private fun toInfo(r: ApiResult): SubscriptionInfo {
+        val active = isEffectivelyActive(r)
+        return SubscriptionInfo(
+            type = if (active) "paid" else "none",
+            expiresAtMillis = r.expiresAt,
+            isActive = active,
+            licenseType = r.licenseType,
+            volumeGb = r.volumeGb,
+            usedBytes = r.usedBytes,
+            remainingBytes = r.remainingBytes
+        )
+    }
+
     suspend fun getSubscriptionStatus(): SubscriptionInfo = withContext(Dispatchers.IO) {
         try {
             val r = statusFromServer()
             save(r)
-            val isActive = r.active && r.expiresAt > r.serverTime
-            SubscriptionInfo(if (r.active) "paid" else "none", r.expiresAt, isActive)
+            toInfo(r)
         } catch (e: Exception) {
-            Log.e(TAG, "Error getting subscription status, using cache: ${e.message}", e)
-            val expiresAt = prefs.getLong(KEY_EXPIRES_AT, 0L)
-            val isActive = prefs.getBoolean(KEY_IS_ACTIVE, false)
-            val lastCheck = prefs.getLong(KEY_LAST_CHECK, 0L)
-            val cacheValid = System.currentTimeMillis() - lastCheck < 24 * 60 * 60 * 1000L
-            if (isActive && expiresAt > System.currentTimeMillis() && cacheValid) {
-                SubscriptionInfo("paid", expiresAt, true)
-            } else {
-                SubscriptionInfo("error", 0L, false)
-            }
+            Log.e(TAG, "Error getting status, using cache: ${e.message}", e)
+            fromCache()
         }
     }
 
@@ -126,28 +180,25 @@ class SubscriptionRepository(private val context: Context) {
         try {
             val deviceId = getDeviceId()
             Log.d(TAG, "Activating code: $code for device: $deviceId")
-            
+
             val r = request("POST", "/v1/activate", JSONObject().apply {
                 put("code", code.trim().uppercase())
                 put("deviceId", deviceId)
             })
-            
+
             save(r)
             prefs.edit().putString(KEY_LICENSE_CODE, code.trim().uppercase()).apply()
-            Log.d(TAG, "Code activated successfully: ${code.trim().uppercase()}")
+            Log.d(TAG, "Code activated: ${code.trim().uppercase()}")
             ActivationResult.Success
-        } catch (_: CodeNotFoundException) { 
-            Log.w(TAG, "Code not found: $code")
+        } catch (_: CodeNotFoundException) {
             ActivationResult.CodeNotFound
-        } catch (_: OtherDeviceException) { 
-            Log.w(TAG, "Code used by other device: $code")
+        } catch (_: OtherDeviceException) {
             ActivationResult.CodeUsedByOtherDevice
-        } catch (_: RevokedException) { 
-            Log.w(TAG, "Code revoked: $code")
+        } catch (_: RevokedException) {
             ActivationResult.Error("این لایسنس توسط مدیر غیرفعال شده است")
-        } catch (e: Exception) { 
-            Log.e(TAG, "Error activating code: ${e.message}", e)
-            ActivationResult.Error(e.message ?: "خطا در ارتباط با سرور") 
+        } catch (e: Exception) {
+            Log.e(TAG, "Error activating: ${e.message}", e)
+            ActivationResult.Error(e.message ?: "خطا در ارتباط با سرور")
         }
     }
 
@@ -157,52 +208,132 @@ class SubscriptionRepository(private val context: Context) {
         try {
             val r = statusFromServer()
             save(r)
-            val isActive = r.active && r.expiresAt > r.serverTime
-            SubscriptionInfo(if (r.active) "paid" else "none", r.expiresAt, isActive)
+            toInfo(r)
         } catch (e: Exception) {
-            Log.e(TAG, "Error force refreshing status: ${e.message}", e)
+            Log.e(TAG, "Error force refresh: ${e.message}", e)
             SubscriptionInfo("error", 0L, false)
         }
     }
 
     /**
-     * استراتژی: اول سرور، در صورت خطای شبکه از کش محلی با اعتبار زمانی استفاده کن.
-     * این از قطع شدن لایسنس به خاطر قطع موقت اینترنت یا خطای worker جلوگیری می‌کند.
+     * ثبت بایت‌های دانلود شده (محلی) — بعداً با reportPendingUsage به سرور ارسال می‌شود
+     */
+    fun addDownloadedBytes(bytes: Long) {
+        if (bytes <= 0) return
+        val pending = prefs.getLong(KEY_PENDING_DOWNLOAD_BYTES, 0L) + bytes
+        // به‌روزرسانی تخمینی محلی used/remaining
+        val used = prefs.getLong(KEY_USED_BYTES, 0L) + bytes
+        val remaining = (prefs.getLong(KEY_REMAINING_BYTES, 0L) - bytes).coerceAtLeast(0L)
+        prefs.edit()
+            .putLong(KEY_PENDING_DOWNLOAD_BYTES, pending)
+            .putLong(KEY_USED_BYTES, used)
+            .putLong(KEY_REMAINING_BYTES, remaining)
+            .apply()
+    }
+
+    /**
+     * ارسال مصرف انباشته‌شده به سرور و دریافت وضعیت جدید
+     * @return SubscriptionInfo به‌روز؛ اگر حجم تمام شده باشد isActive=false
+     */
+    suspend fun reportPendingUsage(): SubscriptionInfo = withContext(Dispatchers.IO) {
+        val pending = prefs.getLong(KEY_PENDING_DOWNLOAD_BYTES, 0L)
+        if (pending <= 0) {
+            return@withContext getSubscriptionStatus()
+        }
+        try {
+            val deviceId = getDeviceId()
+            val r = request("POST", "/v1/report-usage", JSONObject().apply {
+                put("deviceId", deviceId)
+                put("deltaBytes", pending)
+            })
+            // بعد از ارسال موفق، pending را صفر کن
+            prefs.edit().putLong(KEY_PENDING_DOWNLOAD_BYTES, 0L).apply()
+            save(r)
+            toInfo(r)
+        } catch (e: Exception) {
+            Log.e(TAG, "reportPendingUsage failed: ${e.message}", e)
+            // در صورت خطا، مصرف محلی را نگه دار و از کش برگردان
+            fromCache()
+        }
+    }
+
+    /**
+     * استراتژی: اول سرور؛ در خطای شبکه از کش (تا ۲۴ ساعت)
+     * برای لایسنس حجمی، remainingBytes هم چک می‌شود.
      */
     suspend fun isConnectionAllowed(): Boolean = withContext(Dispatchers.IO) {
         try {
+            // قبل از چک، اگر pending زیاد است گزارش بده
+            val pending = prefs.getLong(KEY_PENDING_DOWNLOAD_BYTES, 0L)
+            if (pending > 256 * 1024) { // بیش از ۲۵۶KB
+                reportPendingUsage()
+            }
             val r = statusFromServer()
             save(r)
-            val allowed = r.active && r.expiresAt > r.serverTime
-            Log.d(TAG, "Connection allowed (server): $allowed")
+            val allowed = isEffectivelyActive(r)
+            Log.d(TAG, "Connection allowed (server): $allowed type=${r.licenseType} rem=${r.remainingBytes}")
             allowed
         } catch (e: Exception) {
-            Log.e(TAG, "Server unreachable - falling back to cache: ${e.message}")
-            val expiresAt = prefs.getLong(KEY_EXPIRES_AT, 0L)
-            val isActive = prefs.getBoolean(KEY_IS_ACTIVE, false)
+            Log.e(TAG, "Server unreachable - cache fallback: ${e.message}")
+            val info = fromCache()
             val lastCheck = prefs.getLong(KEY_LAST_CHECK, 0L)
-            // اعتبار کش تا 24 ساعت بعد از آخرین چک موفق
             val cacheValid = System.currentTimeMillis() - lastCheck < 24 * 60 * 60 * 1000L
-            val allowed = isActive && expiresAt > System.currentTimeMillis() && cacheValid
-            Log.d(TAG, "Connection allowed (cache): $allowed (active=$isActive, expires=$expiresAt, cacheValid=$cacheValid)")
+            val allowed = info.isActive && cacheValid
+            Log.d(TAG, "Connection allowed (cache): $allowed")
             allowed
         }
     }
 
+    /** وضعیت محلی فوری (بدون شبکه) — برای UI */
+    fun getCachedInfo(): SubscriptionInfo = fromCache()
+
+    private fun fromCache(): SubscriptionInfo {
+        val expiresAt = prefs.getLong(KEY_EXPIRES_AT, 0L)
+        val isActiveFlag = prefs.getBoolean(KEY_IS_ACTIVE, false)
+        val licenseType = prefs.getString(KEY_LICENSE_TYPE, "time") ?: "time"
+        val volumeGb = prefs.getFloat(KEY_VOLUME_GB, 0f).toDouble()
+        val usedBytes = prefs.getLong(KEY_USED_BYTES, 0L)
+        val remainingBytes = prefs.getLong(KEY_REMAINING_BYTES, 0L)
+        val now = System.currentTimeMillis()
+
+        var active = isActiveFlag
+        if (licenseType == "time" || licenseType == "both") {
+            if (expiresAt > 0 && expiresAt <= now) active = false
+        }
+        if (licenseType == "volume" || licenseType == "both") {
+            if (volumeGb > 0 && remainingBytes <= 0) active = false
+        }
+
+        return SubscriptionInfo(
+            type = if (active) "paid" else "none",
+            expiresAtMillis = expiresAt,
+            isActive = active,
+            licenseType = licenseType,
+            volumeGb = volumeGb,
+            usedBytes = usedBytes,
+            remainingBytes = remainingBytes
+        )
+    }
+
     private fun save(r: ApiResult) {
+        val active = isEffectivelyActive(r)
         prefs.edit().apply {
             putLong(KEY_EXPIRES_AT, r.expiresAt)
-            putBoolean(KEY_IS_ACTIVE, r.active && r.expiresAt > r.serverTime)
+            putBoolean(KEY_IS_ACTIVE, active)
             putLong(KEY_LAST_CHECK, System.currentTimeMillis())
+            putString(KEY_LICENSE_TYPE, r.licenseType)
+            putFloat(KEY_VOLUME_GB, r.volumeGb.toFloat())
+            putLong(KEY_USED_BYTES, r.usedBytes)
+            putLong(KEY_REMAINING_BYTES, r.remainingBytes)
         }.apply()
-        Log.d(TAG, "Subscription data saved: active=${r.active}, expiresAt=${r.expiresAt}")
+        Log.d(TAG, "Saved: active=$active type=${r.licenseType} used=${r.usedBytes} rem=${r.remainingBytes}")
     }
 
     fun clearCache() {
         prefs.edit().clear().apply()
         Log.d(TAG, "Subscription cache cleared")
     }
-    
+
     private class CodeNotFoundException : Exception()
     private class OtherDeviceException : Exception()
     private class RevokedException : Exception()

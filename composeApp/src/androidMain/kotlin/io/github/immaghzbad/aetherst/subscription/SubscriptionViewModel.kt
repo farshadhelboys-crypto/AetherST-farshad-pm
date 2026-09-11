@@ -33,8 +33,12 @@ class SubscriptionViewModel(application: Application) : AndroidViewModel(applica
     private val _isConnectionAllowed = MutableStateFlow(false)
     val isConnectionAllowed: StateFlow<Boolean> = _isConnectionAllowed.asStateFlow()
 
+    private val _showPurchaseRequired = MutableStateFlow(false)
+    val showPurchaseRequired: StateFlow<Boolean> = _showPurchaseRequired.asStateFlow()
+
     init {
         loadSubscriptionStatus()
+        startUsageReporter()
     }
 
     fun loadSubscriptionStatus() {
@@ -42,14 +46,7 @@ class SubscriptionViewModel(application: Application) : AndroidViewModel(applica
             _isLoading.value = true
             try {
                 val status = repository.getSubscriptionStatus()
-                _subscriptionInfo.value = status
-                _isConnectionAllowed.value = status.isActive
-
-                if (status.isActive) {
-                    _activationMessage.value = null
-                } else {
-                    _activationMessage.value = "⚠️ اشتراک شما منقضی شده است. لطفاً آن را تمدید کنید."
-                }
+                applyStatus(status)
             } catch (e: Exception) {
                 Log.e(TAG, "Error loading status: ${e.message}", e)
                 _activationMessage.value = "❌ خطا در ارتباط با سرور"
@@ -62,28 +59,17 @@ class SubscriptionViewModel(application: Application) : AndroidViewModel(applica
     fun refreshStatus() {
         viewModelScope.launch {
             if (_isRefreshing.value) return@launch
-
             _isRefreshing.value = true
             _activationMessage.value = "🔄 در حال به‌روزرسانی..."
-
             try {
                 val status = repository.forceRefreshStatus()
-                _subscriptionInfo.value = status
-                _isConnectionAllowed.value = status.isActive
-
+                applyStatus(status)
                 when {
-                    status.isActive -> {
-                        _activationMessage.value = null
-                    }
-                    status.type.startsWith("error") -> {
-                        _activationMessage.value = "❌ خطا در ارتباط با سرور"
-                    }
-                    status.type == "pending" -> {
-                        _activationMessage.value = "⏳ کد در انتظار تایید است..."
-                    }
-                    else -> {
-                        _activationMessage.value = "ℹ️ اشتراک فعالی یافت نشد"
-                    }
+                    status.isActive -> _activationMessage.value = null
+                    status.type.startsWith("error") -> _activationMessage.value = "❌ خطا در ارتباط با سرور"
+                    status.volumeExhausted ->
+                        _activationMessage.value = "📉 حجم اشتراک شما تمام شده است. لطفاً اشتراک جدید خریداری کنید."
+                    else -> _activationMessage.value = "ℹ️ اشتراک فعالی یافت نشد"
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Error refreshing: ${e.message}", e)
@@ -96,177 +82,134 @@ class SubscriptionViewModel(application: Application) : AndroidViewModel(applica
 
     fun activateCode(code: String, telegramId: String = "") {
         val trimmedCode = code.trim().uppercase()
-        if (trimmedCode.length < 8) {
-            _activationMessage.value = "⚠️ کد باید حداقل ۸ کاراکتر باشد"
+        if (trimmedCode.length < 4) {
+            _activationMessage.value = "⚠️ کد معتبر نیست"
             return
         }
-
         viewModelScope.launch {
             _isLoading.value = true
-            _activationMessage.value = "🔄 در حال بررسی کد..."
-
-            try {
-                val result = repository.activateCode(trimmedCode, telegramId.trim())
-
-                when (result) {
-                    is ActivationResult.Success -> {
-                        _activationMessage.value = "✅ اشتراک با موفقیت فعال شد! 🎉"
-                        
-                        var attempts = 0
-                        var statusUpdated = false
-                        while (attempts < 3 && !statusUpdated) {
-                            try {
-                                delay(500)
-                                val status = repository.forceRefreshStatus()
-                                _subscriptionInfo.value = status
-                                _isConnectionAllowed.value = status.isActive
-                                if (status.isActive) {
-                                    statusUpdated = true
-                                    Log.d(TAG, "Status updated successfully!")
-                                }
-                            } catch (e: Exception) {
-                                Log.e(TAG, "Update attempt $attempts failed", e)
-                            }
-                            attempts++
-                        }
-                        
-                        delay(1500)
-                        _activationMessage.value = null
-                        _isLoading.value = false
-                    }
-
-                    is ActivationResult.CodeNotFound -> {
-                        _activationMessage.value = "❌ کد فعال‌سازی نامعتبر است"
-                        delay(2000)
-                        _activationMessage.value = null
-                        _isLoading.value = false
-                    }
-
-                    is ActivationResult.CodeUsedByOtherDevice -> {
-                        _activationMessage.value = "🚫 این کد توسط دستگاه دیگری استفاده می‌شود"
-                        delay(2000)
-                        _activationMessage.value = null
-                        _isLoading.value = false
-                    }
-
-                    is ActivationResult.Error -> {
-                        _activationMessage.value = "❌ خطا: ${result.message}"
-                        delay(2000)
-                        _activationMessage.value = null
-                        _isLoading.value = false
-                    }
-
-                    else -> {
-                        _activationMessage.value = "❌ خطای ناشناخته"
-                        delay(2000)
-                        _activationMessage.value = null
-                        _isLoading.value = false
-                    }
+            _activationMessage.value = "⏳ در حال فعال‌سازی..."
+            when (val result = repository.activateCode(trimmedCode, telegramId)) {
+                is ActivationResult.Success -> {
+                    val status = repository.getSubscriptionStatus()
+                    applyStatus(status)
+                    _activationMessage.value = "✅ لایسنس با موفقیت فعال شد"
+                    delay(1500)
+                    _activationMessage.value = null
                 }
-            } catch (e: Exception) {
-                Log.e(TAG, "Error activating: ${e.message}", e)
-                _activationMessage.value = "❌ خطا در فعال‌سازی: ${e.message}"
-                delay(2000)
-                _activationMessage.value = null
-                _isLoading.value = false
+                is ActivationResult.CodeNotFound -> {
+                    _activationMessage.value = "❌ کد لایسنس یافت نشد"
+                }
+                is ActivationResult.CodeUsedByOtherDevice -> {
+                    _activationMessage.value = "❌ این کد روی دستگاه دیگری فعال است"
+                }
+                is ActivationResult.Error -> {
+                    _activationMessage.value = "❌ ${result.message}"
+                }
+                else -> {
+                    _activationMessage.value = "❌ خطا در فعال‌سازی"
+                }
             }
+            _isLoading.value = false
         }
     }
 
     fun extendSubscription(code: String) {
         val trimmedCode = code.trim().uppercase()
-        if (trimmedCode.length < 8) {
-            _activationMessage.value = "⚠️ کد باید حداقل ۸ کاراکتر باشد"
+        if (trimmedCode.length < 4) {
+            _activationMessage.value = "⚠️ کد معتبر نیست"
             return
         }
-
         viewModelScope.launch {
             _isLoading.value = true
             _activationMessage.value = "🔄 در حال تمدید اشتراک..."
-
             try {
                 val currentExpires = _subscriptionInfo.value?.expiresAtMillis ?: 0L
-                val result = repository.extendSubscription(trimmedCode, currentExpires)
-
-                when (result) {
+                when (val result = repository.extendSubscription(trimmedCode, currentExpires)) {
                     is ActivationResult.Success -> {
                         _activationMessage.value = "✅ اشتراک با موفقیت تمدید شد! 🎉"
-                        var attempts = 0
-                        var statusUpdated = false
-                        while (attempts < 3 && !statusUpdated) {
-                            try {
-                                delay(500)
-                                val status = repository.forceRefreshStatus()
-                                _subscriptionInfo.value = status
-                                _isConnectionAllowed.value = status.isActive
-                                if (status.isActive) {
-                                    statusUpdated = true
-                                    Log.d(TAG, "Status updated after extend!")
-                                }
-                            } catch (e: Exception) {
-                                Log.e(TAG, "Update attempt $attempts failed", e)
-                            }
-                            attempts++
-                        }
+                        val status = repository.forceRefreshStatus()
+                        applyStatus(status)
                         delay(1500)
                         _activationMessage.value = null
-                        _isLoading.value = false
                     }
                     is ActivationResult.CodeNotFound -> {
                         _activationMessage.value = "❌ کد تمدید نامعتبر است"
-                        delay(2000)
-                        _activationMessage.value = null
-                        _isLoading.value = false
                     }
                     is ActivationResult.CodeUsedByOtherDevice -> {
                         _activationMessage.value = "🚫 این کد توسط دستگاه دیگری استفاده می‌شود"
-                        delay(2000)
-                        _activationMessage.value = null
-                        _isLoading.value = false
                     }
                     is ActivationResult.Error -> {
-                        _activationMessage.value = "❌ خطا: ${result.message}"
-                        delay(2000)
-                        _activationMessage.value = null
-                        _isLoading.value = false
+                        _activationMessage.value = "❌ ${result.message}"
                     }
                     else -> {
-                        _activationMessage.value = "❌ خطای ناشناخته"
-                        delay(2000)
-                        _activationMessage.value = null
-                        _isLoading.value = false
+                        _activationMessage.value = "❌ خطا در تمدید"
                     }
                 }
             } catch (e: Exception) {
-                Log.e(TAG, "Error extending: ${e.message}", e)
-                _activationMessage.value = "❌ خطا در تمدید: ${e.message}"
-                delay(2000)
-                _activationMessage.value = null
+                _activationMessage.value = "❌ ${e.message ?: "خطا"}"
+            } finally {
                 _isLoading.value = false
             }
         }
     }
 
+    fun onDownloadBytes(bytes: Long) {
+        if (bytes <= 0) return
+        repository.addDownloadedBytes(bytes)
+        val cached = repository.getCachedInfo()
+        _subscriptionInfo.value = cached
+        if (cached.volumeExhausted || !cached.isActive) {
+            _isConnectionAllowed.value = false
+            _showPurchaseRequired.value = true
+            _activationMessage.value = "📉 حجم اشتراک تمام شد. لطفاً اشتراک جدید بخرید."
+        }
+    }
+
+    fun flushUsageAndCheck() {
+        viewModelScope.launch {
+            try {
+                val status = repository.reportPendingUsage()
+                applyStatus(status)
+            } catch (e: Exception) {
+                Log.e(TAG, "flushUsage failed: ${e.message}")
+            }
+        }
+    }
+
+    fun checkConnectionAllowed(onResult: (Boolean) -> Unit) {
+        viewModelScope.launch {
+            val allowed = repository.isConnectionAllowed()
+            _isConnectionAllowed.value = allowed
+            if (!allowed) {
+                val info = repository.getCachedInfo()
+                _showPurchaseRequired.value = true
+                _activationMessage.value = if (info.volumeExhausted) {
+                    "📉 حجم اشتراک تمام شد. لطفاً اشتراک جدید بخرید."
+                } else {
+                    "⚠️ اشتراک شما منقضی شده است."
+                }
+            }
+            onResult(allowed)
+        }
+    }
+
     fun checkConnectionWithRetry(
-        maxAttempts: Int = 5,
-        delayMs: Long = 3000,
+        maxAttempts: Int = 3,
+        delayMs: Long = 1500L,
         onResult: (Boolean) -> Unit
     ) {
         viewModelScope.launch {
             var attempts = 0
-            var success = false
-            
-            while (attempts < maxAttempts && !success) {
+            while (attempts < maxAttempts) {
                 attempts++
-                _activationMessage.value = "🔄 تلاش $attempts از $maxAttempts برای اتصال به سرور..."
-                
                 try {
                     val allowed = repository.isConnectionAllowed()
                     if (allowed) {
-                        success = true
                         _isConnectionAllowed.value = true
                         _activationMessage.value = "✅ اتصال برقرار شد"
                         onResult(true)
+                        return@launch
                     } else {
                         _activationMessage.value = "⏳ لایسنس فعال نیست یا منقضی شده"
                         onResult(false)
@@ -274,9 +217,8 @@ class SubscriptionViewModel(application: Application) : AndroidViewModel(applica
                     }
                 } catch (e: Exception) {
                     Log.e(TAG, "Attempt $attempts failed: ${e.message}")
-                    if (attempts < maxAttempts) {
-                        delay(delayMs)
-                    } else {
+                    if (attempts < maxAttempts) delay(delayMs)
+                    else {
                         _activationMessage.value = "❌ پس از $maxAttempts تلاش، سرور پاسخ نداد"
                         _isConnectionAllowed.value = false
                         onResult(false)
@@ -284,6 +226,12 @@ class SubscriptionViewModel(application: Application) : AndroidViewModel(applica
                 }
             }
         }
+    }
+
+    fun checkAndAllowConnection(): Boolean {
+        val allowed = _isConnectionAllowed.value
+        Log.d(TAG, "Connection check: $allowed")
+        return allowed
     }
 
     fun clearMessage() {
@@ -301,17 +249,19 @@ class SubscriptionViewModel(application: Application) : AndroidViewModel(applica
         }
     }
 
+    fun dismissPurchasePrompt() {
+        _showPurchaseRequired.value = false
+    }
+
     fun getRemainingTimeText(): String {
         val info = _subscriptionInfo.value ?: return "نامشخص"
         if (!info.isActive) return "منقضی شده"
-
+        if (info.licenseType == "volume") return "نامحدود زمانی"
         val remaining = info.expiresAtMillis - System.currentTimeMillis()
         if (remaining <= 0) return "منقضی شده"
-
         val days = remaining / (1000 * 60 * 60 * 24)
         val hours = (remaining / (1000 * 60 * 60)) % 24
         val minutes = (remaining / (1000 * 60)) % 60
-
         return when {
             days > 0 -> "$days روز و $hours ساعت"
             hours > 0 -> "$hours ساعت و $minutes دقیقه"
@@ -322,18 +272,52 @@ class SubscriptionViewModel(application: Application) : AndroidViewModel(applica
     fun getProgressPercentage(): Float {
         val info = _subscriptionInfo.value ?: return 0f
         if (!info.isActive) return 0f
-
+        if (info.hasVolumeLimit && info.volumeGb > 0) {
+            return (1f - (info.usedGb / info.volumeGb).toFloat()).coerceIn(0f, 1f)
+        }
         val totalDays = 30
         val remaining = info.expiresAtMillis - System.currentTimeMillis()
         if (remaining <= 0) return 0f
-
         return (remaining / (1000f * 60 * 60 * 24) / totalDays).coerceIn(0f, 1f)
     }
 
-    fun checkAndAllowConnection(): Boolean {
-        val allowed = _isConnectionAllowed.value
-        Log.d(TAG, "Connection check: $allowed")
-        return allowed
+    fun formatVolumeUsed(): String {
+        val info = _subscriptionInfo.value ?: return "—"
+        if (!info.hasVolumeLimit) return "بدون محدودیت حجم"
+        return String.format("%.2f / %.1f GB", info.usedGb, info.volumeGb)
+    }
+
+    fun formatVolumeRemaining(): String {
+        val info = _subscriptionInfo.value ?: return "—"
+        if (!info.hasVolumeLimit) return "—"
+        return String.format("%.2f GB", info.remainingGb.coerceAtLeast(0.0))
+    }
+
+    private fun applyStatus(status: SubscriptionInfo) {
+        _subscriptionInfo.value = status
+        _isConnectionAllowed.value = status.isActive
+        _showPurchaseRequired.value = !status.isActive
+        if (!status.isActive) {
+            if (status.volumeExhausted) {
+                _activationMessage.value = "📉 حجم اشتراک شما تمام شده است. لطفاً اشتراک جدید خریداری کنید."
+            } else if (_activationMessage.value == null) {
+                _activationMessage.value = "⚠️ اشتراک شما منقضی شده است. لطفاً آن را تمدید کنید."
+            }
+        }
+    }
+
+    private fun startUsageReporter() {
+        viewModelScope.launch {
+            while (true) {
+                delay(60_000L)
+                try {
+                    val status = repository.reportPendingUsage()
+                    applyStatus(status)
+                } catch (e: Exception) {
+                    Log.w(TAG, "Periodic report failed: ${e.message}")
+                }
+            }
+        }
     }
 
     override fun onCleared() {

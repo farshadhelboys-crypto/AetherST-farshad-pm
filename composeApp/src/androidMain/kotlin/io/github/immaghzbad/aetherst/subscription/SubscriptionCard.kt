@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.viewmodel.compose.viewModel
 import io.github.immaghzbad.aetherst.shared.ui.theme.AppPalette
+import io.github.immaghzbad.aetherst.shared.core.ConnectionController
 import kotlinx.coroutines.delay
 import java.text.SimpleDateFormat
 import java.util.*
@@ -43,6 +44,23 @@ fun SubscriptionCard(viewModel: SubscriptionViewModel = viewModel()) {
         while (true) {
             delay(1000)
             now = System.currentTimeMillis()
+        }
+    }
+
+    // گزارش مصرف دانلود VPN به لایسنس حجمی
+    val sessionTraffic by ConnectionController.sessionTraffic.collectAsState()
+    var lastDownloaded by remember { mutableStateOf(0L) }
+    LaunchedEffect(sessionTraffic.downloadedBytes) {
+        val current = sessionTraffic.downloadedBytes
+        val delta = current - lastDownloaded
+        if (delta > 0 && lastDownloaded >= 0) {
+            viewModel.onDownloadBytes(delta)
+        }
+        // اگر سشن ریست شد (مثلاً قطع و وصل)
+        if (current < lastDownloaded) {
+            lastDownloaded = current
+        } else {
+            lastDownloaded = current
         }
     }
 
@@ -74,7 +92,8 @@ fun SubscriptionCard(viewModel: SubscriptionViewModel = viewModel()) {
             } else {
                 val currentInfo = info
                 val remainingMillis = (currentInfo?.expiresAtMillis ?: 0L) - now
-                val isActive = currentInfo?.type == "paid" && remainingMillis > 0
+                // لایسنس حجمی ممکن است expires خیلی دور باشد؛ از isActive سرور/کش استفاده کن
+                val isActive = currentInfo?.isActive == true
 
                 Column {
                     Row(
@@ -142,6 +161,57 @@ fun SubscriptionCard(viewModel: SubscriptionViewModel = viewModel()) {
                             trackColor = AppPalette.divider
                         )
 
+
+                        // ===== نمایش حجم لایسنس (مصرف / باقی‌مانده) =====
+                        if (currentInfo?.hasVolumeLimit == true) {
+                            Spacer(Modifier.height(14.dp))
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "حجم مصرفی",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = AppPalette.textSecondary
+                                )
+                                Text(
+                                    text = String.format("%.2f / %.1f GB", currentInfo.usedGb, currentInfo.volumeGb),
+                                    style = MaterialTheme.typography.labelMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.White
+                                )
+                            }
+                            Spacer(Modifier.height(6.dp))
+                            val volProgress = if (currentInfo.volumeGb > 0) {
+                                (currentInfo.usedGb / currentInfo.volumeGb).toFloat().coerceIn(0f, 1f)
+                            } else 0f
+                            val volColor = when {
+                                volProgress >= 0.95f -> AppPalette.statusError
+                                volProgress >= 0.8f -> AppPalette.statusScanning
+                                else -> AppPalette.accent
+                            }
+                            LinearProgressIndicator(
+                                progress = { volProgress.coerceIn(0.01f, 1f) },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(6.dp)
+                                    .clip(RoundedCornerShape(3.dp)),
+                                color = volColor,
+                                trackColor = AppPalette.divider
+                            )
+                            Spacer(Modifier.height(4.dp))
+                            Text(
+                                text = if (currentInfo.remainingBytes <= 0)
+                                    "حجم تمام شده — لطفاً اشتراک بخرید"
+                                else
+                                    "باقی‌مانده: ${String.format("%.2f", currentInfo.remainingGb)} GB",
+                                color = if (currentInfo.remainingBytes <= 0) AppPalette.statusError else AppPalette.textSecondary,
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+
                         if (days <= 3 && days >= 0) {
                             Spacer(Modifier.height(4.dp))
                             val expiryDate = SimpleDateFormat("dd MMM yyyy", Locale("fa"))
@@ -157,6 +227,8 @@ fun SubscriptionCard(viewModel: SubscriptionViewModel = viewModel()) {
                         Text(
                             text = if (currentInfo?.type?.startsWith("error") == true)
                                 "⚠️ خطا در بررسی اشتراک. اتصال خود را بررسی کنید."
+                            else if (currentInfo?.volumeExhausted == true)
+                                "📉 حجم اشتراک تمام شده است. لطفاً اشتراک جدید بخرید."
                             else if (currentInfo?.type == "pending")
                                 "⏳ کد فعال‌سازی در انتظار تایید است..."
                             else
@@ -164,6 +236,15 @@ fun SubscriptionCard(viewModel: SubscriptionViewModel = viewModel()) {
                             style = MaterialTheme.typography.bodyMedium,
                             color = AppPalette.textSecondary
                         )
+                        // حتی اگر منقضی است، اگر قبلاً حجم داشته نمایش بده
+                        if (currentInfo?.hasVolumeLimit == true && (currentInfo.volumeGb > 0)) {
+                            Spacer(Modifier.height(10.dp))
+                            Text(
+                                text = String.format("مصرف: %.2f / %.1f GB", currentInfo.usedGb, currentInfo.volumeGb),
+                                color = AppPalette.textSecondary,
+                                fontSize = 12.sp
+                            )
+                        }
                     }
 
                     Spacer(Modifier.height(12.dp))
